@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-type" CONTENT="text/html";>
+     <style media="screen" type="text/css">
+	    /*.container iframe {width: 100%;height: 550px;display: block;margin: auto;}*/
+	    /*.container {width: 98%;margin: 0 auto;display: block;}*/
+	    iframe{width: 1px;min-width: 100%;}
+	    h2 {text-align: center;}
+	  </style>
+  	  <script src = "./js/iframeResizer.min.js">var iframes = iFrameResize();</script>
+
+  </head>
+
+  <body>
+  	<!-- <div id="container" class="container" align="center"> -->
+    	<iframe id="evoscheduler" type="text/html" frameborder="0" src="https://openhab.smar.co.uk:8447" scrolling="no"> </iframe>
+    	<script>iFrameResize({log:false, checkOrigin:false, heightCalculationMethod: 'max'}, '#evoscheduler')</script>
+    <!-- </div> -->
+  </body>
+</html>

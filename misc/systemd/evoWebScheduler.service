@@ -1,0 +1,15 @@
+[Unit]
+Description=Evohome Browser-based Schedule Manager
+Documentation=
+After=network.target
+
+[Service]
+Environment=NODE_PORT=3000
+Type=simple
+User=root
+WorkingDirectory=/opt/scripts/evohome/webScheduler
+ExecStart=/usr/bin/node --inspect=0.0.0.0:9229 server.js /opt/scripts/evohome/webScheduler/server.js 
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

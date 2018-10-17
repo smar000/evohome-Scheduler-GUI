@@ -1,0 +1,35 @@
+{
+  "name": "evo-webscheduler",
+  "version": "0.8.0",
+  "description": "Evohome browser based schedule manager interface",
+  "main": "server.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "deferred": "^0.7.9",
+    "express": "^4.16.3",
+    "iframe-resizer": "^3.6.1",
+    "lodash": "^4.17.10",
+    "moment": "^2.22.1",
+    "morgan": "^1.9.0",
+    "request": "^2.85.0",
+    "winston": "^2.4.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://nas.smar.co.uk:30003/suhail/evoScheduler.git"
+  },
+  "keywords": [
+    "Evohome",
+    "schedule"
+  ],
+  "author": "SMAR",
+  "license": "ISC"
+}

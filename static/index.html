@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="./lib/scheduler.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <META HTTP-EQUIV="Pragma" CONTENT="no-cache"> 
+    <META HTTP-EQUIV="Expires" CONTENT="-1">
+    </head>
+    <body>
+
+    <script src="./lib/jquery.qtip.min.js"></script>
+
+    <script src="./lib/iframeResizer.contentWindow.min.js"></script>
+    <!-- Credits:
+         Using iFrameResizer from https://github.com/davidjbradshaw/iframe-resizer/blob/master/js/iframeResizer.contentWindow.min.js to support automatic
+         resize when used in an iFrame (e.g. openHAB Basic UI etc)  
+        
+         Credit for sliders: https://github.com/emoncms/development/blob/master/experimental/control/open_thermostat_scheduler/web/heating.html   
+        
+    -->
+
+    <!-- ================================================================================================================== -->
+    <div class="page-block">
+        <!-- <button id="toggle" style="float:right">OFF</button> -->
+        <div style="float:left;">
+            <form id="zoneSelectForm">
+                <select id="displayFilter">
+                    <option value='_undefined'>--- Select Zone ---</option>
+                </select>
+            </form>
+        </div>
+        <div style="padding-left: 3px; padding-right: 3px;">
+            <button id="btn-load" class="btn-small btn-standalone" style="float: right; margin-left: 3px;" >Refresh Schedule</button>
+            <!-- <div class="zone-title" style="clear:both; float:left;"><span id="zone-title-text">--- Select Zone ---</span></div> -->
+            <button id="mode-zoneview" class="btn-small btn-right viewmode" style="float: right;margin-left: 1px; margin-right: 10px;">Week View</button>
+            <button id="mode-dayview" class="btn-small btn-left viewmode" style="float: right; margin-right: 1px;">Day View</button>
+        </div>
+
+
+        <div style="clear: both;"></div>
+        <hr> 
+        <div class="statusBar" style="display: none">Status...</div>
+        
+        <!-- sliders container -->
+        <div id="slider-segment-blank">
+        
+            <div id="slider-segment-block" style="display:none; background:#d1d5ff;border-bottom: 2px solid #555 ;">
+                Start:<input type="text" id="slider-segment-start" style="margin-right:10px"/>
+                End:<input type="text" id="slider-segment-end" style="margin-right:10px"/>
+                Setpoint:<input type="text" id="slider-segment-temperature"/>&deg;C
+
+                <button id="slider-segment-ok" style="float:right">&nbsp;&nbsp;&nbsp;OK&nbsp;&nbsp;&nbsp;</button>
+                <button id="slider-segment-cancel" style="float:right">Cancel</button>
+                
+            </div>
+            
+            <div id="slider-segment-block-movepos" style="display:none">
+                TIME: <input type="text" id="slider-segment-time"/>
+                <button id="slider-segment-movepos-ok" style="float:right; display: none;" >OK</button>
+                <!-- <button id="slider-segment-movepos-cancel" style="float:right">Cancel</button> -->
+            </div>
+        </div>
+
+        <div id="console"></div>
+        <div class="slider-wrapper"><div class="slider" day="timeline"></div></div>
+        <div class="sliders-container" id="sliders-container" >TEST</div>
+
+        <!-- <div id="timemarker"></div> -->
+
+        <!-- lower buttons -->
+        <div style="padding-top:10px">
+            <button id="mode-split" class="btn-small btn-left editmode">Split</button>
+            <button id="mode-merge" class="btn-small btn-center editmode">Merge</button>
+            <button id="mode-move" class="btn-small btn-right editmode">Drag</button>
+            &nbsp;&nbsp;&nbsp;
+            <button id="copy-cancel" class="btn-small btn-standalone editmode" style="display: none; float: right; margin-left:10px; margin-right:10px;" >Cancel</button>
+            <button id="copy-rows" class="btn-small btn-standalone editmode" style="display: none; float: right;margin-left:10px; margin-right:10px;">Copy</button>
+            <button id="save-changes" class="btn-small btn-standalone editmode" style="float: right; display: none; margin-left:10px; margin-right:10px;" >Save</button>
+        </div>
+
+    </div>
+
+    <!-- ================================================================================================================== -->
+
+    <script src="./lib/main.js"></script>
+</body>
+</html>

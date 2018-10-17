@@ -1,0 +1,4 @@
+const GET_ZONES_URL = "https://myserver:3001/rest/getzones"
+const GET_ALL_SCHEDULES_URL = "https://myserver:3001/rest/getschedules"
+const POST_ZONE_SCHEDULE_URL = "https://myserver:3001/rest/savezoneschedule"
+const POST_ALL_SCHEDULES_URL = "https://myserver:3001/rest/saveallschedules"

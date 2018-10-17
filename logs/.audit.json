@@ -1,0 +1,34 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 5
+    },
+    "auditLog": "logs/.audit.json",
+    "files": [
+        {
+            "date": 1525684689966,
+            "name": "logs/application-2018-05-07-10.log",
+            "hash": "2094e2d1c5d4b7277335b19d9860a185"
+        },
+        {
+            "date": 1525685213769,
+            "name": "logs/application-2018-05-07-10.log",
+            "hash": "4e5febd546741550fe73a3b3c1d8416a"
+        },
+        {
+            "date": 1525685304493,
+            "name": "logs/evoscheduler-2018-05-07-10.log",
+            "hash": "068904583177784c92288318cbe6e720"
+        },
+        {
+            "date": 1525685408949,
+            "name": "logs/evoscheduler-2018-05-07-10.log",
+            "hash": "eb0caa7dc82e328b7b3b3eee8b95ce54"
+        },
+        {
+            "date": 1525685423144,
+            "name": "logs/evoscheduler-2018-05-07-10.log",
+            "hash": "122d486b0b538723b5826ac8ec57722a"
+        }
+    ]
+}

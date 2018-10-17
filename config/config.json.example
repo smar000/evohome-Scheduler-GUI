@@ -1,0 +1,14 @@
+{
+    "platform": "Evohome",
+    "name" : "Evohome",
+    "port" : 3000,
+    "sslPort" : 3001,
+    "sslCertPath": "/path/to/cert.pem" ,
+    "sslCAPath":  "/path/to/chain.pem",
+    "sslKeyPath": "/path/to/privkey.pem",
+    "username" : "my email address",
+    "password" : "mypassword",
+    "temperatureUnit" : "Celsius",
+    "locationIndex" : 0,
+    "keepSessionAlive" : false
+}
