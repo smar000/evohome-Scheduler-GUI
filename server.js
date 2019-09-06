@@ -105,7 +105,7 @@ app.get('/rest/getcurrentstatus/:forItem?', async function (req, res, next) { //
     if (req.query.refresh || secondsAgo > 180){ //we reuse the same data if less than 3 minutes ago; saves hammering the evohome server
         var json = await session.getCurrentStatus(session.locations[locationIndex].locationID);
         lastDataUpdate = moment().unix();
-    } else log.debug(`/getcurrentstatus: resuing previous data as last refresh was ${secondsAgo} seconds ago` )
+    } else log.debug(`/getcurrentstatus: re-using previous data as last refresh was ${secondsAgo} seconds ago` )
     if (forItem){ //Filter by forItem - this should be zone name or dhw or system
         log.silly(`/getcurrentstatus: filtering for '${forItem}'`)
         if (forItem == "dhw"){
