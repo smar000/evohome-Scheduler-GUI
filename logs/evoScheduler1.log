@@ -4690,3 +4690,681 @@
 2019-09-06T08:20:41.077Z - debug: getAllSchedules: Getting schedule for zone: Kitchen UFH
 2019-09-06T08:20:41.413Z - debug: getAllSchedules: Getting schedule for zone: Hallway
 2019-09-06T08:20:42.120Z - debug: /getSchedules: Schedules found for 13 zones
+2019-09-06T08:25:00.209Z - debug: getSession: Existing session expiry is  2019-09-06 09:50:17. Reusing session
+2019-09-06T08:25:00.210Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:30:10.202Z - info:  
+2019-09-06T08:30:10.203Z - info:  
+2019-09-06T08:30:10.204Z - info: ----------------------------------------------
+2019-09-06T08:30:10.204Z - info: Listening on port 3333(http) and port 3334(https)
+2019-09-06T08:35:00.219Z - debug: getSession: : session is undefined....
+2019-09-06T08:35:00.220Z - info: getSession: Existing valid session not found. Creating new session...
+2019-09-06T08:35:00.221Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T08:35:01.515Z - info: Done logging in.
+2019-09-06T08:35:01.518Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T08:35:01.519Z - debug: createNewSession: Got new session. session.isValid = true, Expiry = 2019-09-06 10:04:59
+2019-09-06T08:35:01.519Z - debug: createNewSession: Session zones: 12
+2019-09-06T08:35:01.519Z - debug: zone: 3596253 - Living Room [RadiatorZone]
+2019-09-06T08:35:01.520Z - debug: zone: 3626398 - Main Bedroom [RadiatorZone]
+2019-09-06T08:35:01.520Z - debug: zone: 3626436 - Um's Room [RadiatorZone]
+2019-09-06T08:35:01.520Z - debug: zone: 3626454 - Hanee's Room [RadiatorZone]
+2019-09-06T08:35:01.520Z - debug: zone: 3626473 - Safi's Room [RadiatorZone]
+2019-09-06T08:35:01.521Z - debug: zone: 3626570 - Office [RadiatorZone]
+2019-09-06T08:35:01.521Z - debug: zone: 3626647 - Kitchen [RadiatorZone]
+2019-09-06T08:35:01.521Z - debug: zone: 3626680 - Dining Room [UnderfloorHeating]
+2019-09-06T08:35:01.521Z - debug: zone: 3626694 - Landing [RadiatorZone]
+2019-09-06T08:35:01.521Z - debug: zone: 3627058 - Bathroom [RadiatorZone]
+2019-09-06T08:35:01.522Z - debug: zone: 3632031 - Kitchen UFH [UnderfloorHeating]
+2019-09-06T08:35:01.522Z - debug: zone: 3942430 - Hallway [UnderfloorHeating]
+2019-09-06T08:35:01.522Z - debug: DHW:  3611905 - Hot Water [dhw]
+2019-09-06T08:35:01.524Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:38:51.668Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:38:51.669Z - debug: /getzones: request received (forItem = undefined
+2019-09-06T08:38:51.714Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:38:51.715Z - info: /getschedules: request params:  {}
+2019-09-06T08:38:51.715Z - debug: /getschedules: Refreshing all schedules from server...
+2019-09-06T08:38:51.716Z - debug: getAllSchedules: Getting schedule for zone: Living Room
+2019-09-06T08:38:52.204Z - debug: getAllSchedules: Getting schedule for zone: Main Bedroom
+2019-09-06T08:38:52.558Z - debug: getAllSchedules: Getting schedule for zone: Um's Room
+2019-09-06T08:38:52.906Z - debug: getAllSchedules: Getting schedule for zone: Hanee's Room
+2019-09-06T08:38:53.352Z - debug: getAllSchedules: Getting schedule for zone: Safi's Room
+2019-09-06T08:38:53.714Z - debug: getAllSchedules: Getting schedule for zone: Office
+2019-09-06T08:38:54.061Z - debug: getAllSchedules: Getting schedule for zone: Kitchen
+2019-09-06T08:38:54.414Z - debug: getAllSchedules: Getting schedule for zone: Dining Room
+2019-09-06T08:38:54.766Z - debug: getAllSchedules: Getting schedule for zone: Landing
+2019-09-06T08:38:55.100Z - debug: getAllSchedules: Getting schedule for zone: Bathroom
+2019-09-06T08:38:55.496Z - debug: getAllSchedules: Getting schedule for zone: Kitchen UFH
+2019-09-06T08:38:55.861Z - debug: getAllSchedules: Getting schedule for zone: Hallway
+2019-09-06T08:38:56.545Z - debug: /getSchedules: Schedules found for 13 zones
+2019-09-06T08:39:49.533Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:39:49.535Z - info: /saveallschedules received.
+2019-09-06T08:39:49.538Z - debug: /saveallschedules: Saving schedule for zone: Living Room (3596253)
+2019-09-06T08:39:50.070Z - debug: /saveallschedules: returned from saveScheduleForzone ('Living Room)'
+2019-09-06T08:39:50.071Z - debug: /saveallschedules: Saving schedule for zone: Main Bedroom (3626398)
+2019-09-06T08:39:50.558Z - debug: /saveallschedules: returned from saveScheduleForzone ('Main Bedroom)'
+2019-09-06T08:39:50.559Z - debug: /saveallschedules: Saving schedule for zone: Um's Room (3626436)
+2019-09-06T08:39:51.120Z - debug: /saveallschedules: returned from saveScheduleForzone ('Um's Room)'
+2019-09-06T08:39:51.121Z - debug: /saveallschedules: Saving schedule for zone: Hanee's Room (3626454)
+2019-09-06T08:39:51.533Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hanee's Room)'
+2019-09-06T08:39:51.534Z - debug: /saveallschedules: Saving schedule for zone: Safi's Room (3626473)
+2019-09-06T08:39:51.977Z - debug: /saveallschedules: returned from saveScheduleForzone ('Safi's Room)'
+2019-09-06T08:39:51.978Z - debug: /saveallschedules: Saving schedule for zone: Office (3626570)
+2019-09-06T08:39:52.445Z - debug: /saveallschedules: returned from saveScheduleForzone ('Office)'
+2019-09-06T08:39:52.446Z - debug: /saveallschedules: Saving schedule for zone: Kitchen (3626647)
+2019-09-06T08:39:52.842Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen)'
+2019-09-06T08:39:52.842Z - debug: /saveallschedules: Saving schedule for zone: Dining Room (3626680)
+2019-09-06T08:39:53.316Z - debug: /saveallschedules: returned from saveScheduleForzone ('Dining Room)'
+2019-09-06T08:39:53.316Z - debug: /saveallschedules: Saving schedule for zone: Landing (3626694)
+2019-09-06T08:39:53.742Z - debug: /saveallschedules: returned from saveScheduleForzone ('Landing)'
+2019-09-06T08:39:53.742Z - debug: /saveallschedules: Saving schedule for zone: Bathroom (3627058)
+2019-09-06T08:39:54.171Z - debug: /saveallschedules: returned from saveScheduleForzone ('Bathroom)'
+2019-09-06T08:39:54.171Z - debug: /saveallschedules: Saving schedule for zone: Kitchen UFH (3632031)
+2019-09-06T08:39:54.640Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen UFH)'
+2019-09-06T08:39:54.643Z - debug: /saveallschedules: Saving schedule for zone: Hallway (3942430)
+2019-09-06T08:39:55.081Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hallway)'
+2019-09-06T08:39:55.083Z - debug: /saveallschedules: returned from saving all zones' schedules
+2019-09-06T08:40:00.241Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:40:00.243Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:40:29.943Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:40:29.943Z - debug: /getzones: request received (forItem = undefined
+2019-09-06T08:40:29.983Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:40:29.983Z - info: /getschedules: request params:  {}
+2019-09-06T08:40:29.983Z - debug: /getschedules: Sending previously downloaded schedules...
+2019-09-06T08:40:29.984Z - debug: /getSchedules: Schedules found for 13 zones
+2019-09-06T08:40:59.257Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:40:59.258Z - info: /saveallschedules received.
+2019-09-06T08:40:59.259Z - debug: /saveallschedules: Saving schedule for zone: Living Room (3596253)
+2019-09-06T08:40:59.672Z - debug: /saveallschedules: returned from saveScheduleForzone ('Living Room)'
+2019-09-06T08:40:59.672Z - debug: /saveallschedules: Saving schedule for zone: Main Bedroom (3626398)
+2019-09-06T08:41:00.093Z - debug: /saveallschedules: returned from saveScheduleForzone ('Main Bedroom)'
+2019-09-06T08:41:00.094Z - debug: /saveallschedules: Saving schedule for zone: Um's Room (3626436)
+2019-09-06T08:41:00.494Z - debug: /saveallschedules: returned from saveScheduleForzone ('Um's Room)'
+2019-09-06T08:41:00.495Z - debug: /saveallschedules: Saving schedule for zone: Hanee's Room (3626454)
+2019-09-06T08:41:01.053Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hanee's Room)'
+2019-09-06T08:41:01.054Z - debug: /saveallschedules: Saving schedule for zone: Safi's Room (3626473)
+2019-09-06T08:41:01.482Z - debug: /saveallschedules: returned from saveScheduleForzone ('Safi's Room)'
+2019-09-06T08:41:01.483Z - debug: /saveallschedules: Saving schedule for zone: Office (3626570)
+2019-09-06T08:41:01.939Z - debug: /saveallschedules: returned from saveScheduleForzone ('Office)'
+2019-09-06T08:41:01.940Z - debug: /saveallschedules: Saving schedule for zone: Kitchen (3626647)
+2019-09-06T08:41:02.345Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen)'
+2019-09-06T08:41:02.346Z - debug: /saveallschedules: Saving schedule for zone: Dining Room (3626680)
+2019-09-06T08:41:02.749Z - debug: /saveallschedules: returned from saveScheduleForzone ('Dining Room)'
+2019-09-06T08:41:02.749Z - debug: /saveallschedules: Saving schedule for zone: Landing (3626694)
+2019-09-06T08:41:03.169Z - debug: /saveallschedules: returned from saveScheduleForzone ('Landing)'
+2019-09-06T08:41:03.170Z - debug: /saveallschedules: Saving schedule for zone: Bathroom (3627058)
+2019-09-06T08:41:03.601Z - debug: /saveallschedules: returned from saveScheduleForzone ('Bathroom)'
+2019-09-06T08:41:03.602Z - debug: /saveallschedules: Saving schedule for zone: Kitchen UFH (3632031)
+2019-09-06T08:41:04.044Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen UFH)'
+2019-09-06T08:41:04.044Z - debug: /saveallschedules: Saving schedule for zone: Hallway (3942430)
+2019-09-06T08:41:04.468Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hallway)'
+2019-09-06T08:41:04.469Z - debug: /saveallschedules: returned from saving all zones' schedules
+2019-09-06T08:41:30.459Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:41:30.459Z - info: /saveallschedules received.
+2019-09-06T08:41:30.461Z - debug: /saveallschedules: Saving schedule for zone: Living Room (3596253)
+2019-09-06T08:41:30.899Z - debug: /saveallschedules: returned from saveScheduleForzone ('Living Room)'
+2019-09-06T08:41:30.899Z - debug: /saveallschedules: Saving schedule for zone: Main Bedroom (3626398)
+2019-09-06T08:41:31.495Z - debug: /saveallschedules: returned from saveScheduleForzone ('Main Bedroom)'
+2019-09-06T08:41:31.496Z - debug: /saveallschedules: Saving schedule for zone: Um's Room (3626436)
+2019-09-06T08:41:31.927Z - debug: /saveallschedules: returned from saveScheduleForzone ('Um's Room)'
+2019-09-06T08:41:31.928Z - debug: /saveallschedules: Saving schedule for zone: Hanee's Room (3626454)
+2019-09-06T08:41:32.437Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hanee's Room)'
+2019-09-06T08:41:32.437Z - debug: /saveallschedules: Saving schedule for zone: Safi's Room (3626473)
+2019-09-06T08:41:32.878Z - debug: /saveallschedules: returned from saveScheduleForzone ('Safi's Room)'
+2019-09-06T08:41:32.878Z - debug: /saveallschedules: Saving schedule for zone: Office (3626570)
+2019-09-06T08:41:33.401Z - debug: /saveallschedules: returned from saveScheduleForzone ('Office)'
+2019-09-06T08:41:33.402Z - debug: /saveallschedules: Saving schedule for zone: Kitchen (3626647)
+2019-09-06T08:41:33.841Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen)'
+2019-09-06T08:41:33.842Z - debug: /saveallschedules: Saving schedule for zone: Dining Room (3626680)
+2019-09-06T08:41:34.373Z - debug: /saveallschedules: returned from saveScheduleForzone ('Dining Room)'
+2019-09-06T08:41:34.373Z - debug: /saveallschedules: Saving schedule for zone: Landing (3626694)
+2019-09-06T08:41:34.836Z - debug: /saveallschedules: returned from saveScheduleForzone ('Landing)'
+2019-09-06T08:41:34.836Z - debug: /saveallschedules: Saving schedule for zone: Bathroom (3627058)
+2019-09-06T08:41:35.271Z - debug: /saveallschedules: returned from saveScheduleForzone ('Bathroom)'
+2019-09-06T08:41:35.272Z - debug: /saveallschedules: Saving schedule for zone: Kitchen UFH (3632031)
+2019-09-06T08:41:35.742Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen UFH)'
+2019-09-06T08:41:35.742Z - debug: /saveallschedules: Saving schedule for zone: Hallway (3942430)
+2019-09-06T08:41:36.173Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hallway)'
+2019-09-06T08:41:36.174Z - debug: /saveallschedules: returned from saving all zones' schedules
+2019-09-06T08:42:35.051Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:42:35.052Z - info: /saveallschedules received.
+2019-09-06T08:42:35.053Z - debug: /saveallschedules: Saving schedule for zone: Living Room (3596253)
+2019-09-06T08:42:35.576Z - debug: /saveallschedules: returned from saveScheduleForzone ('Living Room)'
+2019-09-06T08:42:35.577Z - debug: /saveallschedules: Saving schedule for zone: Main Bedroom (3626398)
+2019-09-06T08:42:36.119Z - debug: /saveallschedules: returned from saveScheduleForzone ('Main Bedroom)'
+2019-09-06T08:42:36.120Z - debug: /saveallschedules: Saving schedule for zone: Um's Room (3626436)
+2019-09-06T08:42:36.646Z - debug: /saveallschedules: returned from saveScheduleForzone ('Um's Room)'
+2019-09-06T08:42:36.647Z - debug: /saveallschedules: Saving schedule for zone: Hanee's Room (3626454)
+2019-09-06T08:42:37.121Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hanee's Room)'
+2019-09-06T08:42:37.121Z - debug: /saveallschedules: Saving schedule for zone: Safi's Room (3626473)
+2019-09-06T08:42:37.575Z - debug: /saveallschedules: returned from saveScheduleForzone ('Safi's Room)'
+2019-09-06T08:42:37.575Z - debug: /saveallschedules: Saving schedule for zone: Office (3626570)
+2019-09-06T08:42:37.998Z - debug: /saveallschedules: returned from saveScheduleForzone ('Office)'
+2019-09-06T08:42:37.999Z - debug: /saveallschedules: Saving schedule for zone: Kitchen (3626647)
+2019-09-06T08:42:38.457Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen)'
+2019-09-06T08:42:38.457Z - debug: /saveallschedules: Saving schedule for zone: Dining Room (3626680)
+2019-09-06T08:42:38.914Z - debug: /saveallschedules: returned from saveScheduleForzone ('Dining Room)'
+2019-09-06T08:42:38.914Z - debug: /saveallschedules: Saving schedule for zone: Landing (3626694)
+2019-09-06T08:42:39.384Z - debug: /saveallschedules: returned from saveScheduleForzone ('Landing)'
+2019-09-06T08:42:39.385Z - debug: /saveallschedules: Saving schedule for zone: Bathroom (3627058)
+2019-09-06T08:42:39.821Z - debug: /saveallschedules: returned from saveScheduleForzone ('Bathroom)'
+2019-09-06T08:42:39.821Z - debug: /saveallschedules: Saving schedule for zone: Kitchen UFH (3632031)
+2019-09-06T08:42:40.272Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen UFH)'
+2019-09-06T08:42:40.272Z - debug: /saveallschedules: Saving schedule for zone: Hallway (3942430)
+2019-09-06T08:42:40.710Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hallway)'
+2019-09-06T08:42:40.712Z - debug: /saveallschedules: returned from saving all zones' schedules
+2019-09-06T08:43:02.353Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:43:02.354Z - debug: /getzones: request received (forItem = undefined
+2019-09-06T08:43:02.390Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:43:02.390Z - info: /getschedules: request params:  {}
+2019-09-06T08:43:02.390Z - debug: /getschedules: Sending previously downloaded schedules...
+2019-09-06T08:43:02.391Z - debug: /getSchedules: Schedules found for 13 zones
+2019-09-06T08:43:35.984Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:43:35.984Z - info: /saveallschedules received.
+2019-09-06T08:43:35.985Z - debug: /saveallschedules: Saving schedule for zone: Living Room (3596253)
+2019-09-06T08:43:37.060Z - debug: /saveallschedules: returned from saveScheduleForzone ('Living Room)'
+2019-09-06T08:43:37.061Z - debug: /saveallschedules: Saving schedule for zone: Main Bedroom (3626398)
+2019-09-06T08:43:37.526Z - debug: /saveallschedules: returned from saveScheduleForzone ('Main Bedroom)'
+2019-09-06T08:43:37.526Z - debug: /saveallschedules: Saving schedule for zone: Um's Room (3626436)
+2019-09-06T08:43:38.263Z - debug: /saveallschedules: returned from saveScheduleForzone ('Um's Room)'
+2019-09-06T08:43:38.263Z - debug: /saveallschedules: Saving schedule for zone: Hanee's Room (3626454)
+2019-09-06T08:43:38.727Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hanee's Room)'
+2019-09-06T08:43:38.727Z - debug: /saveallschedules: Saving schedule for zone: Safi's Room (3626473)
+2019-09-06T08:43:39.244Z - debug: /saveallschedules: returned from saveScheduleForzone ('Safi's Room)'
+2019-09-06T08:43:39.245Z - debug: /saveallschedules: Saving schedule for zone: Office (3626570)
+2019-09-06T08:43:39.667Z - debug: /saveallschedules: returned from saveScheduleForzone ('Office)'
+2019-09-06T08:43:39.668Z - debug: /saveallschedules: Saving schedule for zone: Kitchen (3626647)
+2019-09-06T08:43:40.091Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen)'
+2019-09-06T08:43:40.092Z - debug: /saveallschedules: Saving schedule for zone: Dining Room (3626680)
+2019-09-06T08:43:40.734Z - debug: /saveallschedules: returned from saveScheduleForzone ('Dining Room)'
+2019-09-06T08:43:40.734Z - debug: /saveallschedules: Saving schedule for zone: Landing (3626694)
+2019-09-06T08:43:41.202Z - debug: /saveallschedules: returned from saveScheduleForzone ('Landing)'
+2019-09-06T08:43:41.202Z - debug: /saveallschedules: Saving schedule for zone: Bathroom (3627058)
+2019-09-06T08:43:41.653Z - debug: /saveallschedules: returned from saveScheduleForzone ('Bathroom)'
+2019-09-06T08:43:41.653Z - debug: /saveallschedules: Saving schedule for zone: Kitchen UFH (3632031)
+2019-09-06T08:43:42.075Z - debug: /saveallschedules: returned from saveScheduleForzone ('Kitchen UFH)'
+2019-09-06T08:43:42.075Z - debug: /saveallschedules: Saving schedule for zone: Hallway (3942430)
+2019-09-06T08:43:42.531Z - debug: /saveallschedules: returned from saveScheduleForzone ('Hallway)'
+2019-09-06T08:43:42.532Z - debug: /saveallschedules: returned from saving all zones' schedules
+2019-09-06T08:45:00.200Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:45:00.202Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:50:00.214Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:50:00.215Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:51:07.093Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:51:07.093Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T08:55:00.198Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T08:55:00.200Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:00:00.219Z - debug: getSession: Existing session expiry is  2019-09-06 10:04:59. Reusing session
+2019-09-06T09:00:00.220Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:04:00.601Z - debug: doSessionRenewal: function called
+2019-09-06T09:04:00.602Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T09:04:00.603Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T09:04:01.030Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 10:04:59
+2019-09-06T09:04:01.031Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T09:05:00.222Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:05:00.223Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:10:00.230Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:10:00.231Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:15:00.208Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:15:00.208Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:20:00.219Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:20:00.219Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:25:00.201Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:25:00.202Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:30:00.216Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:30:00.217Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:32:52.361Z - debug: getSession: Existing session expiry is  2019-09-06 10:34:00. Reusing session
+2019-09-06T09:32:52.361Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:33:00.039Z - debug: doSessionRenewal: function called
+2019-09-06T09:33:00.040Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T09:33:00.040Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T09:33:00.351Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 10:34:00
+2019-09-06T09:33:00.352Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T09:35:00.204Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:35:00.205Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:35:37.365Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:35:37.366Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:37:07.373Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:37:07.373Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:38:22.386Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:38:22.386Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:39:37.385Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:39:37.385Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:40:00.201Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:40:00.202Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:45:00.209Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:45:00.209Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:50:00.224Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:50:00.225Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T09:55:00.200Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T09:55:00.201Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:00:00.250Z - debug: getSession: Existing session expiry is  2019-09-06 11:02:59. Reusing session
+2019-09-06T10:00:00.250Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:01:59.447Z - debug: doSessionRenewal: function called
+2019-09-06T10:01:59.448Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T10:01:59.448Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T10:01:59.784Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 11:02:59
+2019-09-06T10:01:59.785Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T10:05:00.198Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:05:00.198Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:10:00.247Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:10:00.248Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:15:00.212Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:15:00.213Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:20:00.236Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:20:00.237Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:25:00.217Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:25:00.217Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:30:00.227Z - debug: getSession: Existing session expiry is  2019-09-06 11:31:58. Reusing session
+2019-09-06T10:30:00.228Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:30:58.825Z - debug: doSessionRenewal: function called
+2019-09-06T10:30:58.825Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T10:30:58.826Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T10:30:59.129Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 11:31:58
+2019-09-06T10:30:59.130Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T10:35:00.209Z - debug: getSession: Existing session expiry is  2019-09-06 12:00:58. Reusing session
+2019-09-06T10:35:00.209Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:40:00.208Z - debug: getSession: Existing session expiry is  2019-09-06 12:00:58. Reusing session
+2019-09-06T10:40:00.208Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:45:00.221Z - debug: getSession: Existing session expiry is  2019-09-06 12:00:58. Reusing session
+2019-09-06T10:45:00.221Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:50:00.216Z - debug: getSession: Existing session expiry is  2019-09-06 12:00:58. Reusing session
+2019-09-06T10:50:00.216Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:55:00.211Z - debug: getSession: Existing session expiry is  2019-09-06 12:00:58. Reusing session
+2019-09-06T10:55:00.212Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T10:59:58.220Z - debug: doSessionRenewal: function called
+2019-09-06T10:59:58.220Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T10:59:58.221Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T10:59:58.626Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 12:00:58
+2019-09-06T10:59:58.626Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T11:00:00.244Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:00:00.244Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:05:00.209Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:05:00.210Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:10:00.226Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:10:00.227Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:15:00.221Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:15:00.221Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:20:00.392Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:20:00.394Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:25:00.306Z - debug: getSession: Existing session expiry is  2019-09-06 12:29:57. Reusing session
+2019-09-06T11:25:00.307Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:28:57.726Z - debug: doSessionRenewal: function called
+2019-09-06T11:28:57.727Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T11:28:57.727Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T11:28:58.205Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 12:29:57
+2019-09-06T11:28:58.205Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T11:30:00.336Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:30:00.337Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:35:00.317Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:35:00.317Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:40:00.359Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:40:00.360Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:41:07.140Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:41:07.141Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:45:00.315Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:45:00.316Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:50:00.324Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:50:00.325Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:51:53.181Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:51:53.182Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:52:23.193Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:52:23.195Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:53:38.198Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:53:38.198Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:55:00.312Z - debug: getSession: Existing session expiry is  2019-09-06 12:58:57. Reusing session
+2019-09-06T11:55:00.313Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:57:57.236Z - debug: doSessionRenewal: function called
+2019-09-06T11:57:57.236Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T11:57:57.236Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T11:57:57.647Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 12:58:57
+2019-09-06T11:57:57.647Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T11:58:38.233Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T11:58:38.233Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T11:59:53.237Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T11:59:53.238Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:00:00.345Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:00:00.346Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:04:23.269Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:04:23.272Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:05:00.345Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:05:00.346Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:05:23.280Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:05:23.281Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:10:00.362Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:10:00.363Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:15:00.352Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:15:00.353Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:20:00.345Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:20:00.345Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:25:00.335Z - debug: getSession: Existing session expiry is  2019-09-06 13:27:56. Reusing session
+2019-09-06T12:25:00.335Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:26:56.729Z - debug: doSessionRenewal: function called
+2019-09-06T12:26:56.730Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T12:26:56.730Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T12:26:57.031Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 13:27:56
+2019-09-06T12:26:57.032Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T12:30:00.348Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:30:00.348Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:35:00.333Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:35:00.334Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:40:00.343Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:40:00.345Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:45:00.346Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:45:00.347Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:50:00.349Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:50:00.350Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:55:00.360Z - debug: getSession: Existing session expiry is  2019-09-06 13:56:56. Reusing session
+2019-09-06T12:55:00.361Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T12:55:56.088Z - debug: doSessionRenewal: function called
+2019-09-06T12:55:56.088Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T12:55:56.088Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T12:55:56.407Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 13:56:56
+2019-09-06T12:55:56.407Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T13:00:00.489Z - debug: getSession: Existing session expiry is  2019-09-06 14:25:55. Reusing session
+2019-09-06T13:00:00.489Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:05:00.463Z - debug: getSession: Existing session expiry is  2019-09-06 14:25:55. Reusing session
+2019-09-06T13:05:00.464Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:10:00.458Z - debug: getSession: Existing session expiry is  2019-09-06 14:25:55. Reusing session
+2019-09-06T13:10:00.459Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:15:00.455Z - debug: getSession: Existing session expiry is  2019-09-06 14:25:55. Reusing session
+2019-09-06T13:15:00.455Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:20:00.456Z - debug: getSession: Existing session expiry is  2019-09-06 14:25:55. Reusing session
+2019-09-06T13:20:00.457Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:24:55.460Z - debug: doSessionRenewal: function called
+2019-09-06T13:24:55.460Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T13:24:55.460Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T13:24:55.862Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 14:25:55
+2019-09-06T13:24:55.862Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T13:25:00.448Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:25:00.448Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:27:07.768Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:27:07.769Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:30:00.459Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:30:00.459Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:35:00.440Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:35:00.440Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:40:00.454Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:40:00.455Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:45:00.449Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:45:00.450Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:50:00.447Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:50:00.447Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:51:08.926Z - debug: getSession: Existing session expiry is  2019-09-06 14:54:54. Reusing session
+2019-09-06T13:51:08.927Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T13:53:54.867Z - debug: doSessionRenewal: function called
+2019-09-06T13:53:54.867Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T13:53:54.867Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T13:53:55.304Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 14:54:54
+2019-09-06T13:53:55.304Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T13:55:00.445Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T13:55:00.446Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:00:00.462Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T14:00:00.463Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:05:00.458Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T14:05:00.458Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:10:00.602Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T14:10:00.602Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:15:00.444Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T14:15:00.444Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:20:00.458Z - debug: getSession: Existing session expiry is  2019-09-06 15:23:54. Reusing session
+2019-09-06T14:20:00.460Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:22:54.345Z - debug: doSessionRenewal: function called
+2019-09-06T14:22:54.345Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T14:22:54.346Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T14:22:54.736Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 15:23:54
+2019-09-06T14:22:54.737Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T14:25:00.447Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:25:00.448Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:30:00.456Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:30:00.456Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:35:00.455Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:35:00.456Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:40:00.486Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:40:00.487Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:45:00.456Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:45:00.456Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:50:00.460Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:50:00.462Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:51:08.272Z - debug: getSession: Existing session expiry is  2019-09-06 15:52:53. Reusing session
+2019-09-06T14:51:08.273Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T14:51:53.782Z - debug: doSessionRenewal: function called
+2019-09-06T14:51:53.782Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T14:51:53.783Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T14:51:54.082Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 15:52:53
+2019-09-06T14:51:54.083Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T14:55:00.452Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T14:55:00.453Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:00:00.451Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T15:00:00.452Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:05:00.449Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T15:05:00.449Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:10:00.457Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T15:10:00.457Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:15:00.453Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T15:15:00.453Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:20:00.468Z - debug: getSession: Existing session expiry is  2019-09-06 16:21:53. Reusing session
+2019-09-06T15:20:00.469Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:20:53.135Z - debug: doSessionRenewal: function called
+2019-09-06T15:20:53.136Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T15:20:53.136Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T15:20:53.444Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 16:21:53
+2019-09-06T15:20:53.444Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T15:25:00.461Z - debug: getSession: Existing session expiry is  2019-09-06 16:50:52. Reusing session
+2019-09-06T15:25:00.461Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:30:00.467Z - debug: getSession: Existing session expiry is  2019-09-06 16:50:52. Reusing session
+2019-09-06T15:30:00.468Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:35:00.458Z - debug: getSession: Existing session expiry is  2019-09-06 16:50:52. Reusing session
+2019-09-06T15:35:00.458Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:40:00.465Z - debug: getSession: Existing session expiry is  2019-09-06 16:50:52. Reusing session
+2019-09-06T15:40:00.466Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:45:00.457Z - debug: getSession: Existing session expiry is  2019-09-06 16:50:52. Reusing session
+2019-09-06T15:45:00.457Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:49:52.498Z - debug: doSessionRenewal: function called
+2019-09-06T15:49:52.498Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T15:49:52.499Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T15:49:52.912Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 16:50:52
+2019-09-06T15:49:52.913Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T15:50:00.455Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T15:50:00.456Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:51:08.641Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T15:51:08.641Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T15:55:00.457Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T15:55:00.458Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:00:00.458Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T16:00:00.459Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:05:00.463Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T16:05:00.463Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:10:00.468Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T16:10:00.469Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:15:00.463Z - debug: getSession: Existing session expiry is  2019-09-06 17:19:51. Reusing session
+2019-09-06T16:15:00.463Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:18:51.994Z - debug: doSessionRenewal: function called
+2019-09-06T16:18:51.994Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T16:18:51.994Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T16:18:52.458Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 17:19:51
+2019-09-06T16:18:52.458Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T16:20:00.462Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:20:00.463Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:25:00.455Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:25:00.455Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:30:00.470Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:30:00.470Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:35:00.462Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:35:00.462Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:40:00.466Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:40:00.467Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:45:00.465Z - debug: getSession: Existing session expiry is  2019-09-06 17:48:51. Reusing session
+2019-09-06T16:45:00.465Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:47:51.509Z - debug: doSessionRenewal: function called
+2019-09-06T16:47:51.509Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T16:47:51.510Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T16:47:51.920Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 17:48:51
+2019-09-06T16:47:51.921Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T16:50:00.462Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T16:50:00.463Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:51:08.989Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T16:51:08.989Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T16:55:00.467Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T16:55:00.468Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:00:00.465Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T17:00:00.465Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:05:00.461Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T17:05:00.461Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:10:00.479Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T17:10:00.480Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:15:00.477Z - debug: getSession: Existing session expiry is  2019-09-06 18:17:50. Reusing session
+2019-09-06T17:15:00.478Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:16:50.956Z - debug: doSessionRenewal: function called
+2019-09-06T17:16:50.956Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T17:16:50.956Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T17:16:51.283Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 18:17:50
+2019-09-06T17:16:51.283Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T17:20:00.465Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:20:00.465Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:25:00.460Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:25:00.461Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:30:00.464Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:30:00.465Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:35:00.470Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:35:00.471Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:40:00.469Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:40:00.469Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:45:00.468Z - debug: getSession: Existing session expiry is  2019-09-06 18:46:50. Reusing session
+2019-09-06T17:45:00.468Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:45:50.332Z - debug: doSessionRenewal: function called
+2019-09-06T17:45:50.333Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T17:45:50.333Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T17:45:50.687Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 18:46:50
+2019-09-06T17:45:50.687Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T17:50:00.508Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T17:50:00.509Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:51:09.386Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T17:51:09.387Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T17:55:00.501Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T17:55:00.502Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:00:00.510Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T18:00:00.511Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:05:00.473Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T18:05:00.473Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:10:00.497Z - debug: getSession: Existing session expiry is  2019-09-06 19:15:49. Reusing session
+2019-09-06T18:10:00.498Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:14:49.768Z - debug: doSessionRenewal: function called
+2019-09-06T18:14:49.768Z - debug: DoSession: Calling Login for userid 'suhail@smar.co.uk'...
+2019-09-06T18:14:49.768Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T18:14:50.199Z - info: doSessionRenewal: session renewed: isValid status: true. Expiry 2019-09-06 19:15:49
+2019-09-06T18:14:50.200Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T18:15:00.482Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:15:00.483Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:20:00.481Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:20:00.482Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:25:00.481Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:25:00.481Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:29:10.594Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:29:10.595Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:30:00.484Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:30:00.484Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:32:10.625Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:32:10.626Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:35:00.498Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:35:00.500Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:39:02.525Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:39:02.525Z - debug: /getcurrentstatus: request received. Parameters: {}
+2019-09-06T18:39:16.496Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:39:16.497Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:39:16.497Z - debug: /getcurrentstatus: re-using previous data as last refresh was 13 seconds ago
+2019-09-06T18:40:00.482Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:40:00.483Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:40:01.449Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:40:01.450Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:40:01.450Z - debug: /getcurrentstatus: re-using previous data as last refresh was 1 seconds ago
+2019-09-06T18:40:13.627Z - debug: getSession: Existing session expiry is  2019-09-06 19:44:49. Reusing session
+2019-09-06T18:40:13.627Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:40:13.627Z - debug: /getcurrentstatus: re-using previous data as last refresh was 13 seconds ago
+2019-09-06T18:42:03.151Z - info:  
+2019-09-06T18:42:03.152Z - info:  
+2019-09-06T18:42:03.153Z - info: ----------------------------------------------
+2019-09-06T18:42:03.153Z - info: Listening on port 3333(http) and port 3334(https)
+2019-09-06T18:42:05.634Z - debug: getSession: : session is undefined....
+2019-09-06T18:42:05.634Z - info: getSession: Existing valid session not found. Creating new session...
+2019-09-06T18:42:05.635Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T18:42:06.895Z - info: Done logging in.
+2019-09-06T18:42:06.897Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T18:42:06.898Z - debug: createNewSession: Got new session. session.isValid = true, Expiry = 2019-09-06 20:12:05
+2019-09-06T18:42:06.898Z - debug: createNewSession: Session zones: 12
+2019-09-06T18:42:06.899Z - debug: zone: 3596253 - Living Room [RadiatorZone]
+2019-09-06T18:42:06.899Z - debug: zone: 3626398 - Main Bedroom [RadiatorZone]
+2019-09-06T18:42:06.899Z - debug: zone: 3626436 - Um's Room [RadiatorZone]
+2019-09-06T18:42:06.899Z - debug: zone: 3626454 - Hanee's Room [RadiatorZone]
+2019-09-06T18:42:06.899Z - debug: zone: 3626473 - Safi's Room [RadiatorZone]
+2019-09-06T18:42:06.899Z - debug: zone: 3626570 - Office [RadiatorZone]
+2019-09-06T18:42:06.900Z - debug: zone: 3626647 - Kitchen [RadiatorZone]
+2019-09-06T18:42:06.900Z - debug: zone: 3626680 - Dining Room [UnderfloorHeating]
+2019-09-06T18:42:06.900Z - debug: zone: 3626694 - Landing [RadiatorZone]
+2019-09-06T18:42:06.900Z - debug: zone: 3627058 - Bathroom [RadiatorZone]
+2019-09-06T18:42:06.901Z - debug: zone: 3632031 - Kitchen UFH [UnderfloorHeating]
+2019-09-06T18:42:06.901Z - debug: zone: 3942430 - Hallway [UnderfloorHeating]
+2019-09-06T18:42:06.901Z - debug: DHW:  3611905 - Hot Water [dhw]
+2019-09-06T18:42:06.903Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:42:06.903Z - debug: session.getCurrentStatus url: https://tccna.honeywell.com/WebAPI/emea/api/v1/location/2810527/status?includeTemperatureControlSystems=True
+2019-09-06T18:42:07.450Z - debug: Session.getCurrentStatus: updatedZoneData = [{"zoneId":"3596253","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Living Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-12T21:07:05"}],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"TemporaryOverride","until":"2019-09-06T19:49:00Z"}},{"zoneId":"3626398","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Main Bedroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-14T10:12:56"},{"faultType":"TempZoneSensorLowBattery","since":"2019-08-14T10:12:59"}],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},{"zoneId":"3626436","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Um's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},{"zoneId":"3626454","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Hanee's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":20.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},{"zoneId":"3626473","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Safi's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},{"zoneId":"3626570","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Office","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},{"zoneId":"3626647","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Kitchen","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22.5,"setpointMode":"FollowSchedule"}},{"zoneId":"3626680","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Dining Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},{"zoneId":"3626694","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Landing","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},{"zoneId":"3627058","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Bathroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":24,"setpointMode":"FollowSchedule"}},{"zoneId":"3632031","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Kitchen UFH","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},{"zoneId":"3942430","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Hallway","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}}]
+2019-09-06T18:43:35.342Z - info:  
+2019-09-06T18:43:35.344Z - info:  
+2019-09-06T18:43:35.344Z - info: ----------------------------------------------
+2019-09-06T18:43:35.344Z - info: Listening on port 3333(http) and port 3334(https)
+2019-09-06T18:43:37.656Z - debug: getSession: : session is undefined....
+2019-09-06T18:43:37.657Z - info: getSession: Existing valid session not found. Creating new session...
+2019-09-06T18:43:37.658Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T18:43:39.020Z - info: Done logging in.
+2019-09-06T18:43:39.024Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T18:43:39.027Z - debug: createNewSession: Got new session. session.isValid = true, Expiry = 2019-09-06 20:13:37
+2019-09-06T18:43:39.027Z - debug: createNewSession: Session zones: 12
+2019-09-06T18:43:39.027Z - debug: zone: 3596253 - Living Room [RadiatorZone]
+2019-09-06T18:43:39.028Z - debug: zone: 3626398 - Main Bedroom [RadiatorZone]
+2019-09-06T18:43:39.028Z - debug: zone: 3626436 - Um's Room [RadiatorZone]
+2019-09-06T18:43:39.028Z - debug: zone: 3626454 - Hanee's Room [RadiatorZone]
+2019-09-06T18:43:39.028Z - debug: zone: 3626473 - Safi's Room [RadiatorZone]
+2019-09-06T18:43:39.029Z - debug: zone: 3626570 - Office [RadiatorZone]
+2019-09-06T18:43:39.029Z - debug: zone: 3626647 - Kitchen [RadiatorZone]
+2019-09-06T18:43:39.029Z - debug: zone: 3626680 - Dining Room [UnderfloorHeating]
+2019-09-06T18:43:39.030Z - debug: zone: 3626694 - Landing [RadiatorZone]
+2019-09-06T18:43:39.030Z - debug: zone: 3627058 - Bathroom [RadiatorZone]
+2019-09-06T18:43:39.030Z - debug: zone: 3632031 - Kitchen UFH [UnderfloorHeating]
+2019-09-06T18:43:39.030Z - debug: zone: 3942430 - Hallway [UnderfloorHeating]
+2019-09-06T18:43:39.031Z - debug: DHW:  3611905 - Hot Water [dhw]
+2019-09-06T18:43:39.034Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:43:39.034Z - debug: session.getCurrentStatus url: https://tccna.honeywell.com/WebAPI/emea/api/v1/location/2810527/status?includeTemperatureControlSystems=True
+2019-09-06T18:43:39.509Z - debug: Session.getCurrentStatus: updatedZoneData = {"0":{"zoneId":"3596253","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Living Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-12T21:07:05"}],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"TemporaryOverride","until":"2019-09-06T19:49:00Z"}},"1":{"zoneId":"3626398","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Main Bedroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-14T10:12:56"},{"faultType":"TempZoneSensorLowBattery","since":"2019-08-14T10:12:59"}],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},"2":{"zoneId":"3626436","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Um's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},"3":{"zoneId":"3626454","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Hanee's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":20.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},"4":{"zoneId":"3626473","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Safi's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},"5":{"zoneId":"3626570","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Office","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},"6":{"zoneId":"3626647","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Kitchen","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22.5,"setpointMode":"FollowSchedule"}},"7":{"zoneId":"3626680","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Dining Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},"8":{"zoneId":"3626694","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Landing","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},"9":{"zoneId":"3627058","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Bathroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":24,"setpointMode":"FollowSchedule"}},"10":{"zoneId":"3632031","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Kitchen UFH","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},"11":{"zoneId":"3942430","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Hallway","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}}}
+2019-09-06T18:45:00.541Z - debug: getSession: Existing session expiry is  2019-09-06 20:13:37. Reusing session
+2019-09-06T18:45:00.542Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:45:00.542Z - debug: session.getCurrentStatus url: https://tccna.honeywell.com/WebAPI/emea/api/v1/location/2810527/status?includeTemperatureControlSystems=True
+2019-09-06T18:45:01.031Z - debug: Session.getCurrentStatus: updatedZoneData = {"0":{"zoneId":"3596253","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Living Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-12T21:07:05"}],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"TemporaryOverride","until":"2019-09-06T19:49:00Z"}},"1":{"zoneId":"3626398","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Main Bedroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[{"faultType":"TempZoneActuatorLowBattery","since":"2019-08-14T10:12:56"},{"faultType":"TempZoneSensorLowBattery","since":"2019-08-14T10:12:59"}],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},"2":{"zoneId":"3626436","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Um's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},"3":{"zoneId":"3626454","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Hanee's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":20.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":20,"setpointMode":"FollowSchedule"}},"4":{"zoneId":"3626473","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Safi's Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},"5":{"zoneId":"3626570","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Office","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":21.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":21,"setpointMode":"FollowSchedule"}},"6":{"zoneId":"3626647","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Kitchen","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22.5,"setpointMode":"FollowSchedule"}},"7":{"zoneId":"3626680","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Dining Room","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},"8":{"zoneId":"3626694","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Landing","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":22,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":22,"setpointMode":"FollowSchedule"}},"9":{"zoneId":"3627058","zoneType":"RadiatorZone","modelType":"HeatingZone","name":"Bathroom","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":24,"setpointMode":"FollowSchedule"}},"10":{"zoneId":"3632031","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Kitchen UFH","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":24,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}},"11":{"zoneId":"3942430","zoneType":"UnderfloorHeating","modelType":"HeatingZone","name":"Hallway","setpointCapabilities":{"allowedSetpointModes":["PermanentOverride","FollowSchedule","TemporaryOverride"],"minHeatSetpoint":5,"maxHeatSetpoint":35,"canControlHeat":true,"timingResolution":"00:10:00","maxDuration":"1.00:00:00"},"ScheduleCapabilities":{"maxSwitchpointsPerDay":6,"minSwitchpointsPerDay":1,"timingResolution":"00:10:00","setpointValueResolution":0.5},"temperatureStatus":{"temperature":23.5,"isAvailable":true},"activeFaults":[],"setpointStatus":{"targetHeatTemperature":23.5,"setpointMode":"FollowSchedule"}}}
+2019-09-06T18:46:27.274Z - info:  
+2019-09-06T18:46:27.276Z - info:  
+2019-09-06T18:46:27.276Z - info: ----------------------------------------------
+2019-09-06T18:46:27.276Z - info: Listening on port 3333(http) and port 3334(https)
+2019-09-06T18:46:30.283Z - debug: getSession: : session is undefined....
+2019-09-06T18:46:30.284Z - info: getSession: Existing valid session not found. Creating new session...
+2019-09-06T18:46:30.285Z - debug: login: Attempting login for userid 'suhail@smar.co.uk'
+2019-09-06T18:46:31.563Z - info: Done logging in.
+2019-09-06T18:46:31.567Z - debug: setSessionRenewalTimer: setting timer for token renewal in 1754 seconds
+2019-09-06T18:46:31.569Z - debug: createNewSession: Got new session. session.isValid = true, Expiry = 2019-09-06 20:16:29
+2019-09-06T18:46:31.569Z - debug: createNewSession: Session zones: 12
+2019-09-06T18:46:31.570Z - debug: zone: 3596253 - Living Room [RadiatorZone]
+2019-09-06T18:46:31.570Z - debug: zone: 3626398 - Main Bedroom [RadiatorZone]
+2019-09-06T18:46:31.570Z - debug: zone: 3626436 - Um's Room [RadiatorZone]
+2019-09-06T18:46:31.571Z - debug: zone: 3626454 - Hanee's Room [RadiatorZone]
+2019-09-06T18:46:31.571Z - debug: zone: 3626473 - Safi's Room [RadiatorZone]
+2019-09-06T18:46:31.571Z - debug: zone: 3626570 - Office [RadiatorZone]
+2019-09-06T18:46:31.572Z - debug: zone: 3626647 - Kitchen [RadiatorZone]
+2019-09-06T18:46:31.572Z - debug: zone: 3626680 - Dining Room [UnderfloorHeating]
+2019-09-06T18:46:31.572Z - debug: zone: 3626694 - Landing [RadiatorZone]
+2019-09-06T18:46:31.572Z - debug: zone: 3627058 - Bathroom [RadiatorZone]
+2019-09-06T18:46:31.572Z - debug: zone: 3632031 - Kitchen UFH [UnderfloorHeating]
+2019-09-06T18:46:31.572Z - debug: zone: 3942430 - Hallway [UnderfloorHeating]
+2019-09-06T18:46:31.573Z - debug: DHW:  3611905 - Hot Water [dhw]
+2019-09-06T18:46:31.574Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:50:00.520Z - debug: getSession: Existing session expiry is  2019-09-06 20:16:29. Reusing session
+2019-09-06T18:50:00.522Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T18:55:00.493Z - debug: getSession: Existing session expiry is  2019-09-06 20:16:29. Reusing session
+2019-09-06T18:55:00.494Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
+2019-09-06T19:00:00.505Z - debug: getSession: Existing session expiry is  2019-09-06 20:16:29. Reusing session
+2019-09-06T19:00:00.506Z - debug: /getcurrentstatus: request received. Parameters: {"forItem":"dhw"}
