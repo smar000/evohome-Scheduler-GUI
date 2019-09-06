@@ -1,0 +1,9 @@
+*log
+*log.*
+*.old.*
+*.old
+bak_*
+old_*
+*.pyc
+.vscode*
+*.sh
