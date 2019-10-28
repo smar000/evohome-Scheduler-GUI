@@ -1,6 +1,6 @@
 # Browser-based Graphical Schedule Editor for evohome
 
-At present, the Honeywell evohome smart thermostat system only supports editing of heating/hotwater schedules using a mobile phone app. Honeywell's browser based Total Connect Comfort web portal seems to have ignored scheduling entirely. 
+At present (May 2018), the Honeywell evohome smart thermostat system only supports editing of heating/hotwater schedules using a mobile phone app. Honeywell's browser based Total Connect Comfort web portal seems to have ignored scheduling entirely. 
 
 As I prefer editing schedules on a larger screen - especially when making changes across upto 12 zones - and preferably integrated into my home automation system [openHAB](https://www.openhab.org), I put together a simple node.js based system which provides a front-end for viewing/editing zone schedules a week at a time, or across all zones for a given day. 
 
@@ -13,7 +13,7 @@ Prerequisite: **node.js version 8.x is required**. Testing has only been done on
 
 With node installed correctly, go into the folder into which you have downloaded the source, install the required dependencies:
 
-    npm installsudo apt-get install -y nodejs
+    npm install
 
 Copy the `config/config.json.example` file to `config/config.json`, and edit it as required.
 
