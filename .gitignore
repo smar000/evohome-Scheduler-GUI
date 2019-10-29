@@ -8,3 +8,4 @@ old_*
 *.pyc
 .vscode*
 *.sh
+config.json
