@@ -1,5 +1,6 @@
 *log
 *log.*
+logs/*
 *.old.*
 *.old
 bak_*
