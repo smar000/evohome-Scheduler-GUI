@@ -163,6 +163,7 @@ app.post('/rest/saveallschedules', async function (req, res, next) { // Save Sch
         log.debug("/saveallschedules: returned from saveScheduleForzone ('" + zone.name + ")'");    
         log.silly(`/saveallschedules: ${zone}: ${JSON.stringify(zoneSchedule)}`);
     }
+    
     res.send(responses);
     // res.sendStatus(200);
     log.debug("/saveallschedules: returned from saving all zones' schedules");

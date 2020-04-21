@@ -74,7 +74,7 @@ intialise();
 
 if (Object.keys(workingSchedule).length >0 ) {
     $('select>option:eq(1)').attr('selected', true);
-    screenSchedule = workingSchedule[Object.keys(workingSchedule)[0]];
+    screenSchedule = workingSchedule[Object.keys(workingSchedule)[0]]; // default to showing the first set of slots in the working Schedule
     drawSchedule();
 }
 
@@ -325,13 +325,13 @@ $("#btn-load").click(function(){
         if (!confirm("There are unsaved changes which will be lost.\n\nAre you sure you want to re-load the schedule?")) return;
     }
     loadAllSchedules();	
-    populateDisplayFilter();
+    populateDisplayFilter(); // populate dropdown filter; this also does screen redraw
 });
 
 // Copy button clicked
 $("#copy-cancel").click(function(){
     if ($('#copy-cancel').text().toLowerCase().includes("cancel")) {
-    cancelCopy();
+        cancelCopy();
     } else {
         
         if ($('.chk-day').css("display") == "none") 
@@ -385,7 +385,8 @@ $("#copy-rows").click(function(){
 
 // Save the screenSchedule
 $("#save-changes").click(function() {
-save();
+    if (modified) stashCurrentChanges();
+    save();
 });
 
 //  Functions ================================================
@@ -440,6 +441,7 @@ function initDayView(){
 }
 
 function populateDisplayFilter(){
+    // Populate the filter dropdown
     $('#displayFilter').empty();
 
     if (viewmode == ZONEVIEW){
@@ -789,7 +791,6 @@ function clearBusy(){
     $('.page-block').removeClass("spinner");
 }
 
-
 //TODO.... This may now be redundent as schedule objects directly updated. Test and update as requried. 
 function stashCurrentChanges(){
     var currentFilter = $('#displayFilter option:selected').val();
@@ -814,6 +815,10 @@ function stashCurrentChanges(){
 }  
 
 function setupWorkingSchedule(){
+    // Set up a 'working' copy of the master evoschedule (so that we can revert back if cancel clicked etc). 
+    // This is more than a simple copy, as working set is geared up to represent 'slots' during the day, which can be more easily edited/displayed 
+    // using the existing display code
+
     // console.log(evoschedule);
     workingSchedule={};
     var dhw = {};
@@ -860,7 +865,7 @@ function setupWorkingSchedule(){
     // }
 }
 
-function updateEvoScheduleWithChanges(){
+function updateEvoScheduleWithWorkingSet(){
 
     for (zoneId in zones) {
         if (zones[zoneId].name !== "dhw"){ //Hotwater is different. Leave out for now.
@@ -948,7 +953,7 @@ function loadAllSchedules(){ //Gets schedules for all zones. Can take some time.
     return new Promise((resolve, reject) => {
         showBusy("Loading all zone schedules from Evohome server...");
         // console.log("Getting schedule data from server...")
-        $.getJSON(HOST_URL_BASE + "/rest/getallschedules", function(json){
+        $.getJSON(HOST_URL_BASE + "/rest/getallschedules?refresh=1", function(json){
             // console.log("Received JSON: " + JSON.stringify(json));
             evoschedule = json;
             setupWorkingSchedule();
@@ -972,7 +977,7 @@ function save(){
     return new Promise((resolve, reject) => {
         console.log("Saving changes...");
         showBusy("Saving schedules to Evohome server...");
-        updateEvoScheduleWithChanges();
+        updateEvoScheduleWithWorkingSet();
 
         $.ajax
         ({
