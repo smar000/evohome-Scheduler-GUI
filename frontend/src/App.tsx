@@ -36,33 +36,37 @@ function App() {
       {loading && zones.length === 0 ? (
          <div className="flex items-center justify-center h-64 bg-slate-100 text-slate-600 rounded-xl">Loading your heating system...</div>
       ) : (
-        <main className="space-y-8">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <main className="space-y-12">
+          {/* Schedule Manager now at the top */}
+          <Scheduler />
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
+            {/* Main Status & Zones Section */}
             <section className="xl:col-span-2 space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold flex items-center gap-2">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
                   <Activity size={24} className="text-indigo-500" />
                   Zones & Rooms
                 </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {zones.map((zone) => (
-                  <div key={zone.zoneId} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow group">
+                  <div key={zone.zoneId} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <h3 className="text-lg font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{zone.name}</h3>
-                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{zone.setpointMode}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">{zone.setpointMode}</p>
                       </div>
                       <Thermometer size={24} className={zone.temperature < zone.setpoint ? "text-orange-500 animate-pulse" : "text-slate-300"} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Current</span>
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                        <span className="text-[10px] uppercase font-black text-slate-400 block mb-1">Current</span>
                         <span className="text-2xl font-black text-slate-800">{zone.temperature.toFixed(1)}°</span>
                       </div>
-                      <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-                        <span className="text-[10px] uppercase font-bold text-indigo-400 block mb-1">Target</span>
-                        <span className="text-2xl font-black text-indigo-700">{zone.setpoint.toFixed(1)}°</span>
+                      <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-50">
+                        <span className="text-[10px] uppercase font-black text-indigo-400 block mb-1 text-center">Target</span>
+                        <span className="text-2xl font-black text-indigo-700 block text-center">{zone.setpoint.toFixed(1)}°</span>
                       </div>
                     </div>
                   </div>
@@ -70,25 +74,26 @@ function App() {
               </div>
             </section>
 
+            {/* Sidebar Status (DHW) */}
             <aside className="space-y-8">
-              <h2 className="text-xl font-bold flex items-center gap-2">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
                 <Droplets size={24} className="text-blue-500" />
                 Hot Water
               </h2>
               {dhw && (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="font-bold text-slate-800 text-lg">Cylinder Status</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${dhw.state === 'On' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                    <span className="font-bold text-slate-800 text-lg tracking-tight">Cylinder Status</span>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${dhw.state === 'On' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                       {dhw.state}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <div className="bg-white p-3 rounded-lg shadow-sm">
+                  <div className="flex items-center gap-4 bg-blue-50 p-4 rounded-2xl border border-blue-50">
+                    <div className="bg-white p-3 rounded-xl shadow-sm">
                       <Droplets size={20} className="text-blue-600" />
                     </div>
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-blue-400 block">Temperature</span>
+                      <span className="text-[10px] uppercase font-black text-blue-400 block tracking-widest">Temperature</span>
                       <span className="text-3xl font-black text-blue-700">{dhw.temperature.toFixed(1)}°</span>
                     </div>
                   </div>
@@ -96,9 +101,6 @@ function App() {
               )}
             </aside>
           </div>
-          
-          <Scheduler />
-
         </main>
       )}
     </div>

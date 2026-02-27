@@ -13,10 +13,15 @@ const TIME_RESOLUTION_MINUTES = 10;
 
 // --- Color & Style Helpers ---
 const getTempColor = (temp: number): string => {
-  if (temp <= 5) return '#94a3b8'; // slate-400
-  if (temp <= 12) return '#38bdf8'; // sky-400
-  if (temp <= 20) return '#facc15'; // yellow-400
-  return '#f97316'; // orange-500
+  if (temp <= 5) return '#94a3b8'; // Slate
+  if (temp <= 10) return '#3b82f6'; // Blue
+  if (temp <= 15) return '#38bdf8'; // Sky
+  if (temp <= 17) return '#4ade80'; // Green
+  if (temp <= 20) return '#facc15'; // Yellow
+  if (temp <= 22) return '#fbbf24'; // Amber
+  if (temp <= 24) return '#f97316'; // Orange
+  if (temp <= 30) return '#ea580c'; // Deep Orange
+  return '#ef4444'; // Red
 };
 
 const timeToMinutes = (time: string): number => {
