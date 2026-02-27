@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Activity, Scissors, Move, Save, X, Calendar, User } from 'lucide-react';
+import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -13,10 +13,10 @@ const TIME_RESOLUTION_MINUTES = 10;
 
 // --- Color & Style Helpers ---
 const getTempColor = (temp: number): string => {
-  if (temp <= 5) return '#e2e8f0'; // slate-200 (Light Gray)
-  if (temp <= 12) return '#bae6fd'; // sky-200 (Light Blue)
-  if (temp <= 20) return '#fef08a'; // yellow-200 (Yellow)
-  return '#fed7aa'; // orange-200 (Orange)
+  if (temp <= 5) return '#94a3b8'; // slate-400
+  if (temp <= 12) return '#38bdf8'; // sky-400
+  if (temp <= 20) return '#facc15'; // yellow-400
+  return '#f97316'; // orange-500
 };
 
 const timeToMinutes = (time: string): number => {
@@ -95,6 +95,8 @@ export const Scheduler: React.FC = () => {
   const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>(DAYS[0]);
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
+  const [clipboard, setClipboard] = useState<any[] | null>(null);
+  const [clipboardSource, setClipboardSource] = useState<string | null>(null); // Track which row was copied
 
   useEffect(() => {
     if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {
@@ -135,12 +137,10 @@ export const Scheduler: React.FC = () => {
       const sched = draft[zoneId]?.schedule.find(s => s.dayOfWeek === day);
       if (!sched) return;
 
-      // Filter out old points and add new ones
       sched.switchpoints = sched.switchpoints.filter(sp => sp.timeOfDay !== oldStart && sp.timeOfDay !== oldEnd);
       if (newStart !== "00:00") sched.switchpoints.push({ timeOfDay: newStart, heatSetpoint: newTemp });
       if (newEnd !== "24:00") sched.switchpoints.push({ timeOfDay: newEnd, heatSetpoint: parseFloat(element.dataset.temp!) });
 
-      // Handle midnight temp case
       if (newStart === "00:00" || oldStart === "00:00") {
         const sorted = [...sched.switchpoints].sort((a,b) => a.timeOfDay.localeCompare(b.timeOfDay));
         const lastSp = sorted[sorted.length - 1];
@@ -162,6 +162,45 @@ export const Scheduler: React.FC = () => {
       if (sched) sched.switchpoints = sched.switchpoints.filter(sp => sp.timeOfDay !== start);
     }));
     setEditingSlot(null);
+  };
+
+  const handleCopy = (dayName: string, zoneId: string, rowLabel: string) => {
+    const daySchedule = schedules[zoneId]?.schedule.find(s => s.dayOfWeek === dayName);
+    if (daySchedule) {
+        setClipboard([...daySchedule.switchpoints]);
+        setClipboardSource(rowLabel);
+    }
+  };
+
+  const handlePaste = (dayName: string, zoneId: string) => {
+    if (!clipboard) return;
+    setSchedules(produce(schedules, draft => {
+        const sched = draft[zoneId]?.schedule.find(s => s.dayOfWeek === dayName);
+        if (sched) {
+            sched.switchpoints = JSON.parse(JSON.stringify(clipboard));
+        }
+    }));
+  };
+
+  const handlePasteToAll = () => {
+    if (!clipboard) return;
+    setSchedules(produce(schedules, draft => {
+        if (viewMode === 'zone' && selectedZoneId) {
+            const zone = draft[selectedZoneId];
+            if (zone) {
+                zone.schedule.forEach(day => {
+                    day.switchpoints = JSON.parse(JSON.stringify(clipboard));
+                });
+            }
+        } else if (viewMode === 'day') {
+            Object.values(draft).forEach(zone => {
+                const day = zone.schedule.find(s => s.dayOfWeek === selectedDay);
+                if (day) {
+                    day.switchpoints = JSON.parse(JSON.stringify(clipboard));
+                }
+            });
+        }
+    }));
   };
 
   const renderRow = (label: string, dayName: string, zoneId: string) => {
@@ -201,11 +240,41 @@ export const Scheduler: React.FC = () => {
       );
     }
 
+    const isSource = clipboardSource === label;
+
     return (
-      <div key={`${zoneId}-${dayName}`} className="flex items-center group">
-        <div className="w-24 pr-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</div>
+      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-2">
+        <div className="w-24 pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</div>
         <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100">
           {slots.length > 0 ? slots : <div className="w-full bg-slate-50" />}
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+            <button 
+                onClick={() => handleCopy(dayName, zoneId, label)}
+                title="Copy schedule"
+                className={`p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+            >
+                <Copy size={14} />
+            </button>
+            {clipboard && (
+                isSource ? (
+                    <button 
+                        onClick={handlePasteToAll}
+                        title={`Paste to all ${viewMode === 'zone' ? 'days' : 'zones'}`}
+                        className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm"
+                    >
+                        <ClipboardPaste size={14} />
+                    </button>
+                ) : (
+                    <button 
+                        onClick={() => handlePaste(dayName, zoneId)}
+                        title="Paste schedule"
+                        className="p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                    >
+                        <ClipboardCheck size={14} />
+                    </button>
+                )
+            )}
         </div>
       </div>
     );
@@ -223,12 +292,12 @@ export const Scheduler: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setViewMode('zone')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}><User size={16}/>Zones</button>
-            <button onClick={() => setViewMode('day')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-700'}`}><Calendar size={16}/>Days</button>
+            <button onClick={() => setViewMode('zone')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}><User size={16}/>Zones</button>
+            <button onClick={() => setViewMode('day')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}><Calendar size={16}/>Days</button>
           </div>
           <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setEditMode('resize')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-700'}`}><Move size={16}/>Edit Slots</button>
-            <button onClick={() => setEditMode('split')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-700'}`}><Scissors size={16}/>Split Slots</button>
+            <button onClick={() => setEditMode('resize')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}><Move size={16}/>Edit Slots</button>
+            <button onClick={() => setEditMode('split')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:bg-slate-200'}`}><Scissors size={16}/>Split Slots</button>
           </div>
           <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden sm:block" />
           <button onClick={() => fetchAllSchedules()} disabled={!isDirty} className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-400 hover:bg-slate-200 disabled:opacity-50 transition-all"><X size={18}/>Cancel</button>
@@ -238,9 +307,11 @@ export const Scheduler: React.FC = () => {
 
       <div className="mb-8">
         {viewMode === 'zone' ? (
-          <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
+          <div className="w-full max-w-md">
+            <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
+          </div>
         ) : (
-          <div className="max-w-xs">
+          <div className="max-w-xs w-full">
             <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Select Active Day</label>
             <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 focus:border-indigo-500 transition-all outline-none">
               {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
