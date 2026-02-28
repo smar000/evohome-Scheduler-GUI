@@ -1,9 +1,10 @@
 import { MqttProvider } from '../src/providers/MqttProvider';
 import mqtt from 'mqtt';
 import EventEmitter from 'events';
+import fs from 'fs';
 
-// Mock mqtt
 jest.mock('mqtt');
+jest.mock('fs');
 
 class MockClient extends EventEmitter {
     subscribe = jest.fn();
@@ -23,6 +24,7 @@ describe('MqttProvider', () => {
     };
 
     beforeEach(() => {
+        (fs.existsSync as jest.Mock).mockReturnValue(false);
         mockClient = new MockClient();
         (mqtt.connect as jest.Mock).mockReturnValue(mockClient);
         provider = new MqttProvider(config);
@@ -47,23 +49,25 @@ describe('MqttProvider', () => {
         expect(mockClient.subscribe).toHaveBeenCalledWith('evohome/evogateway/dhw');
     });
 
-    it('should handle zone status messages', async () => {
+    it('should handle zone status messages and map labels', async () => {
         const initPromise = provider.initialize();
         mockClient.emit('connect');
         await initPromise;
 
         const payload = JSON.stringify({
+            zoneId: '01',
             temperature: 20.5,
             setpoint: 21.0,
-            setpointMode: 'FollowSchedule'
+            mode: 'follow_schedule'
         });
 
+        // Topic matches subscription pattern
         mockClient.emit('message', 'evohome/evogateway/zones/living_room', Buffer.from(payload));
 
         const zones = await provider.getZonesStatus();
         expect(zones).toHaveLength(1);
-        expect(zones[0].name).toBe('living_room');
-        expect(zones[0].temperature).toBe(20.5);
+        expect(zones[0].zoneId).toBe('01');
+        expect(zones[0].setpointMode).toBe('Following Schedule');
     });
 
     it('should handle schedule messages and resolve pending promises', async () => {

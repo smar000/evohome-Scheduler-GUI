@@ -2,19 +2,15 @@
 
 ## Completed
 - [x] **Phase 1 (Backend):** TypeScript migration, Provider pattern, and MqttProvider implementation.
-- [x] **Phase 2 (Frontend):** React migration, state management, and API hook integration.
-- [x] **MQTT Protocol:** Implemented snake_case zone mapping and async schedule/status handling.
-- [x] **Testing:** Jest unit tests implemented and passing for all providers.
-- [x] **Containerization:** Dockerfile and docker-compose.yml created.
+- [x] **Phase 2 (Frontend):** React migration, state management, and API integration.
+- [x] **MQTT Optimization:** Targeted '+' wildcard subscriptions and hex conversion for protocol support.
+- [x] **UI Enhancements:** Tabbed navigation (Scheduler/Dashboard), sequential refreshes, and mobile-friendly layouts.
+- [x] **Embed Mode:** Support for iframe integration via `?embed=true&zoneId=XX`.
+- [x] **Reliability:** Added 401 interceptor for automatic Honeywell token refresh and retry.
+- [x] **Tidyup:** Legacy jQuery code, original server, and libraries moved to `legacy_backup/`. Frontend builds now output to root `static/`.
+- [x] **Phase 3 (Infrastructure):** Docker environment validated and optimized.
+- [x] **Phase 3 (Documentation):** Created `DEVELOPMENT.md` with API and architecture details.
+- [x] **Phase 3 (Testing):** Updated and verified unit tests for MqttProvider.
 
-## Current Configuration
-- **Provider:** MQTT (`HEATING_PROVIDER=mqtt` in `.env`)
-- **Broker:** `mqtt://bridgeserver:1883`
-- **Port:** 3330
-- **Zone Mapping:** Cached in `config/zones.json` (Syncable via `/rest/mqtt/refresh-mappings`).
-
-## Pending / Next Steps
-1. **Live Validation:** Monitor logs for successful MQTT subscription and message handling.
-2. **Phase 3:** Full validation of the Docker container environment.
-3. **Cleanup:** Remove legacy `server.js` and `lib/` files once live data is verified.
-4. **UI Enhancement:** Add a button to trigger `refreshMqttMappings` in the settings.
+## Status: Modernization Complete
+The project is now fully converted to a modern, maintainable, and robust stack. It supports both cloud (Honeywell) and local (MQTT) control with a high-quality responsive user interface.

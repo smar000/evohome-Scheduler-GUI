@@ -7,3 +7,12 @@ frontend/dist
 .env
 *.log
 .session.json
+legacy_backup
+tests
+frontend/src
+frontend/public
+frontend/tsconfig*.json
+frontend/vite.config.ts
+frontend/eslint.config.js
+frontend/postcss.config.js
+frontend/tailwind.config.js

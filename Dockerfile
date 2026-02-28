@@ -25,10 +25,10 @@ COPY package*.json ./
 RUN npm install --production
 
 # Copy compiled backend from Stage 2
-COPY --from:backend-build /app/dist ./dist
+COPY --from=backend-build /app/dist ./dist
 
-# Copy frontend build to static directory (sibling to dist)
-COPY --from:frontend-build /app/frontend/dist ./static
+# Copy frontend build from Stage 1 (Vite builds to ../static)
+COPY --from=frontend-build /app/static ./static
 
 # Copy other necessary files
 COPY .env.example ./.env

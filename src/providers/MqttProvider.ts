@@ -251,12 +251,18 @@ export class MqttProvider implements HeatingProvider {
                 const finalZoneId = zoneId || zoneLabel;
                 const friendlyName = this.zoneIdToMapping[finalZoneId]?.name || zoneLabel;
                 
+                const modeMap: Record<string, string> = {
+                    'follow_schedule': 'Following Schedule',
+                    'temporary_override': 'Temporary Override',
+                    'permanent_override': 'Permanent Override'
+                };
+
                 this.zones[finalZoneId] = {
                     zoneId: finalZoneId,
                     name: data.name || friendlyName,
                     temperature: data.temperature || 0,
                     setpoint: data.setpoint || 0,
-                    setpointMode: data.setpointMode || 'FollowSchedule',
+                    setpointMode: modeMap[data.mode] || modeMap[data.setpointMode] || data.setpointMode || data.mode || 'Following Schedule',
                     until: data.until
                 };
 
