@@ -12,7 +12,7 @@ import {
 } from './HeatingProvider';
 import { Logger } from '../utils/Logger';
 
-const ZONES_CACHE_FILE = path.join(process.cwd(), 'config', 'zones.json');
+const ZONES_CACHE_FILE = path.join(process.cwd(), 'data', 'zones.json');
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 

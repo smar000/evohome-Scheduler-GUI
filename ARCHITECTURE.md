@@ -56,7 +56,7 @@ classDiagram
 - **Authentication:** Uses OAuth 2.0 with a session file (`.session.json`) to persist tokens.
 - **Login Guard:** Implements a strict 15-minute lockout for full re-authentication attempts to avoid Honeywell's rate limiting.
 - **Data Conversion:** Translates between Honeywell's complex JSON responses and the clean `evoWeb` data models.
-- **Auto-Sync:** On successful login, it automatically syncs zone names and IDs to `config/zones.json` for use by the MQTT provider.
+- **Auto-Sync:** On successful login, it automatically syncs zone names and IDs to `data/zones.json` for use by the MQTT provider.
 
 ### 2.2 MQTT Provider (Local)
 - **Protocol:** Communicates with `evogateway` over MQTT.
@@ -68,7 +68,7 @@ classDiagram
   - **Hot Water:** Uses `enabled` key (boolean true/false).
 - **Self-Learning Mapping:**
   - Upon receiving status messages, the provider dynamically maps zone labels (from MQTT topics) to system IDs.
-  - Updates `config/zones.json` automatically when new mapping data is discovered.
+  - Updates `data/zones.json` automatically when new mapping data is discovered.
 - **Optimized Subscriptions:** Uses `+` wildcards and specific topic filters to minimize background noise while capturing all relevant status updates.
 
 ## 3. Data Models

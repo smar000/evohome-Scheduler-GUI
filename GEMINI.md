@@ -48,6 +48,6 @@ The `MqttProvider` communicates with a local `evogateway` using the following lo
   - `.../zones/+/ctl_controller/zone_mode`
   - `.../zones/+/+/zone_schedule` (Heating zones)
   - `evohome/evogateway/dhw/+/zone_schedule` (Hot Water zone)
-- **Mapping:** `config/zones.json` stores `zoneId` (decimal string), user-friendly `name`, and system `label`. The system "self-learns" and updates this mapping if it discovers new labels via MQTT.
+- **Mapping:** `data/zones.json` stores `zoneId` (decimal string), user-friendly `name`, and system `label`. The system "self-learns" and updates this mapping if it discovers new labels via MQTT.
 
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄

@@ -91,7 +91,7 @@ app.post('/rest/mqtt/refresh-mappings', async (req, res) => {
             mapping[z.zoneId] = snakeName;
         });
 
-        const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+        const zonesPath = path.join(process.cwd(), 'data', 'zones.json');
         if (!fs.existsSync(path.dirname(zonesPath))) fs.mkdirSync(path.dirname(zonesPath), { recursive: true });
         fs.writeFileSync(zonesPath, JSON.stringify(mapping, null, 2));
         
@@ -231,7 +231,7 @@ app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
                 
                 // EXTRA PROTECTION: If not found and it's a 2-digit ID, try translating from mapping cache
                 if (!zone && /^\d{2}$/.test(forItem)) {
-                    const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+                    const zonesPath = path.join(process.cwd(), 'data', 'zones.json');
                     if (fs.existsSync(zonesPath)) {
                         const mapping = JSON.parse(fs.readFileSync(zonesPath, 'utf8'));
                         const entry = mapping[forItem];

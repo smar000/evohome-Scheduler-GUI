@@ -15,4 +15,6 @@ dist/
 node_modules/
 frontend/dist/
 frontend/node_modules/
-config/config.json
+config/
+data/*
+!data/zones.json

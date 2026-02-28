@@ -81,7 +81,7 @@ export class HoneywellTccProvider implements HeatingProvider {
             };
         });
 
-        const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+        const zonesPath = path.join(process.cwd(), 'data', 'zones.json');
         const dir = path.dirname(zonesPath);
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
         
