@@ -132,6 +132,7 @@ export class MqttProvider implements HeatingProvider {
     // Subscribe to system and dhw status
     this.client.subscribe('evohome/evogateway/system');
     this.client.subscribe('evohome/evogateway/dhw');
+    this.client.subscribe('evohome/evogateway/_dhw');
     
     Logger.debug(`MQTT: Optimized subscriptions setup.`);
   }
@@ -232,7 +233,7 @@ export class MqttProvider implements HeatingProvider {
             return;
         }
 
-        if (topic === 'evohome/evogateway/dhw') {
+        if (topic === 'evohome/evogateway/dhw' || topic === 'evohome/evogateway/_dhw' || topic.endsWith('/_dhw')) {
             this.dhw = {
                 dhwId: "dhw",
                 state: data.state || "Off",
@@ -285,6 +286,7 @@ export class MqttProvider implements HeatingProvider {
         const expectedJson = topic.endsWith('/zone_schedule') || 
                              topic === 'evohome/evogateway/system' || 
                              topic === 'evohome/evogateway/dhw' ||
+                             topic === 'evohome/evogateway/_dhw' ||
                              !topic.includes('/', (this.config.zonesTopic?.length || 0) + 1);
         
         if (expectedJson) {

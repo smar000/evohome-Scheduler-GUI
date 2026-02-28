@@ -114,6 +114,7 @@ class MqttProvider {
         // Subscribe to system and dhw status
         this.client.subscribe('evohome/evogateway/system');
         this.client.subscribe('evohome/evogateway/dhw');
+        this.client.subscribe('evohome/evogateway/_dhw');
         Logger_1.Logger.debug(`MQTT: Optimized subscriptions setup.`);
     }
     handleMessage(topic, payload) {
@@ -205,7 +206,7 @@ class MqttProvider {
                 };
                 return;
             }
-            if (topic === 'evohome/evogateway/dhw') {
+            if (topic === 'evohome/evogateway/dhw' || topic === 'evohome/evogateway/_dhw' || topic.endsWith('/_dhw')) {
                 this.dhw = {
                     dhwId: "dhw",
                     state: data.state || "Off",
@@ -254,6 +255,7 @@ class MqttProvider {
             const expectedJson = topic.endsWith('/zone_schedule') ||
                 topic === 'evohome/evogateway/system' ||
                 topic === 'evohome/evogateway/dhw' ||
+                topic === 'evohome/evogateway/_dhw' ||
                 !topic.includes('/', (this.config.zonesTopic?.length || 0) + 1);
             if (expectedJson) {
                 Logger_1.Logger.error(`MQTT: Error parsing JSON on topic ${topic}`, e);
