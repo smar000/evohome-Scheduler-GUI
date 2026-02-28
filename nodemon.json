@@ -1,6 +1,6 @@
 {
   "ignore": [
-    "config/*.json",
+    "data/*.json",
     ".session.json",
     "logs/*.log",
     "tests/*",
