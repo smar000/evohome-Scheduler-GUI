@@ -70,13 +70,14 @@ export class HoneywellTccProvider implements HeatingProvider {
         const zones = await this.getZonesStatus(false, true); // Use cached status if just fetched
         if (!zones || zones.length === 0) return;
 
-        const mapping: Record<string, { name: string, label: string }> = {};
+        const mapping: Record<string, { name: string, label: string, honeywellId: string }> = {};
         zones.forEach((z, index) => {
             const snakeLabel = z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
             const userZoneId = index.toString().padStart(2, '0');
             mapping[userZoneId] = {
                 name: z.name,
-                label: snakeLabel
+                label: snakeLabel,
+                honeywellId: z.zoneId
             };
         });
 
@@ -178,6 +179,32 @@ export class HoneywellTccProvider implements HeatingProvider {
         'Content-Type': 'application/json',
       },
     });
+
+    // Add interceptor to handle 401s automatically
+    this.axiosInstance.interceptors.response.use(
+        (response) => response,
+        async (error) => {
+            const originalRequest = error.config;
+            // Prevent recursive retries
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                originalRequest._retry = true;
+                Logger.debug("Honeywell TCC: Received 401, attempting token refresh...");
+                try {
+                    await this.renewSession();
+                    // Use the current provider instance to avoid circular dependency
+                    if (this.credentials) {
+                        originalRequest.headers['Authorization'] = `bearer ${this.credentials.accessToken}`;
+                        // Use original axios call but with updated headers
+                        return axios(originalRequest);
+                    }
+                } catch (refreshError) {
+                    Logger.error("Honeywell TCC: Token refresh failed during retry.", refreshError);
+                    return Promise.reject(refreshError);
+                }
+            }
+            return Promise.reject(error);
+        }
+    );
   }
 
   private async ensureSession(): Promise<void> {

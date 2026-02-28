@@ -32,7 +32,10 @@ export const useHeatingApi = () => {
     setLoadingMessage,
     setError,
     originalSchedules,
-    setProviderInfo
+    setProviderInfo,
+    setSelectedZoneId,
+    markScheduleFailed,
+    clearFailedSchedules
   } = useHeatingStore();
 
   const ensureProviderInfo = async () => {
@@ -144,6 +147,7 @@ export const useHeatingApi = () => {
         }));
         setError(null);
     } catch (err: any) {
+        markScheduleFailed(zoneId);
         setError(err.message || `Failed to fetch schedule for zone ${zoneId}`);
     } finally {
         setLoading(false);

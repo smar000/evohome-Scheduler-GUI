@@ -130,8 +130,8 @@ type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider } = useHeatingStore();
-  const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially } = useHeatingApi();
+  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules } = useHeatingStore();
+  const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
   
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
   const [editMode, setEditMode] = useState<EditMode>('resize');
@@ -139,6 +139,42 @@ export const Scheduler: React.FC = () => {
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
   const [clipboard, setClipboard] = useState<any[] | null>(null);
   const [clipboardSource, setClipboardSource] = useState<string | null>(null);
+  const [showProviderPopup, setShowProviderPopup] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const isInitialMount = React.useRef(true);
+
+  useEffect(() => {
+    if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {
+        setSelectedZoneId(zones[0].zoneId);
+    }
+  }, [viewMode, zones, selectedZoneId, setSelectedZoneId]);
+
+  useEffect(() => {
+    if (selectedZoneId && !schedules[selectedZoneId] && !loading && !failedSchedules.has(selectedZoneId)) {
+        fetchScheduleForZone(selectedZoneId);
+    }
+  }, [selectedZoneId, schedules, loading, fetchScheduleForZone, failedSchedules]);
+
+  const { refs, floatingStyles } = useFloating({
+    open: showProviderPopup,
+    onOpenChange: setShowProviderPopup,
+    placement: 'bottom-start',
+    middleware: [offset(10), shift()],
+  });
+
+  const handleLongPressStart = () => {
+    const timer = setTimeout(() => {
+      setShowProviderPopup(true);
+    }, 600); 
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
 
   const activeZone = zones.find(z => z.zoneId === selectedZoneId);
 
@@ -350,9 +386,45 @@ export const Scheduler: React.FC = () => {
     <section className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
         <div className="flex items-center gap-3">
-          <div className={`${provider?.name === 'MQTT' ? 'bg-emerald-500' : 'bg-slate-400'} p-2 rounded-xl text-white shadow-lg ${provider?.name === 'MQTT' ? 'shadow-emerald-100' : 'shadow-slate-100'}`}>
+          <button 
+            ref={refs.setReference}
+            onMouseDown={handleLongPressStart}
+            onMouseUp={handleLongPressEnd}
+            onMouseLeave={handleLongPressEnd}
+            onTouchStart={handleLongPressStart}
+            onTouchEnd={handleLongPressEnd}
+            title="Long press to change provider"
+            className={`${provider?.name === 'MQTT' ? 'bg-emerald-500' : 'bg-slate-400'} p-2 rounded-xl text-white shadow-lg ${provider?.name === 'MQTT' ? 'shadow-emerald-100' : 'shadow-slate-100'} transition-transform active:scale-95 cursor-pointer outline-none border-none`}
+          >
             {provider?.name === 'MQTT' ? <Cpu size={24} /> : <Cloud size={24} />}
-          </div>
+          </button>
+
+          {showProviderPopup && (
+            <FloatingPortal>
+              <div 
+                ref={refs.setFloating}
+                style={floatingStyles}
+                className="bg-white border border-slate-200 p-2 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+              >
+                <div className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 mb-1 tracking-widest border-b border-slate-50">Select Provider</div>
+                <button 
+                  onClick={() => { selectProvider('honeywell'); setShowProviderPopup(false); }}
+                  className={`w-full border-none flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${provider?.name === 'Honeywell' ? 'bg-slate-50 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  <Cloud size={18} className="text-slate-400" />
+                  Cloud (Honeywell)
+                </button>
+                <button 
+                  onClick={() => { selectProvider('mqtt'); setShowProviderPopup(false); }}
+                  className={`w-full border-none flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${provider?.name === 'MQTT' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  <Cpu size={18} className="text-emerald-500" />
+                  Local (MQTT)
+                </button>
+              </div>
+            </FloatingPortal>
+          )}
+
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Schedule Manager</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">

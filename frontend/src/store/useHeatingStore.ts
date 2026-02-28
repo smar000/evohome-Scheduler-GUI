@@ -26,6 +26,7 @@ interface HeatingState {
       error: string | null;
   } | null; 
   selectedZoneId: string | null;
+  failedSchedules: Set<string>;
   
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
@@ -37,6 +38,8 @@ interface HeatingState {
   setError: (error: string | null) => void;
   setProviderInfo: (name: string, error: string | null) => void;
   setSelectedZoneId: (id: string | null) => void;
+  markScheduleFailed: (id: string) => void;
+  clearFailedSchedules: () => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -51,6 +54,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   error: null,
   provider: null,
   selectedZoneId: null,
+  failedSchedules: new Set(),
 
   setZones: (zones) => {
     set({ zones });
@@ -70,4 +74,6 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setError: (error) => set({ error }),
   setProviderInfo: (name, error) => set({ provider: { name, error } }),
   setSelectedZoneId: (selectedZoneId) => set({ selectedZoneId }),
+  markScheduleFailed: (id) => set(produce((state: HeatingState) => { state.failedSchedules.add(id); })),
+  clearFailedSchedules: () => set({ failedSchedules: new Set() }),
 }));

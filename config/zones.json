@@ -1,50 +1,62 @@
 {
   "10": {
     "name": "Kitchen UFH",
-    "label": "kitchen_ufh"
+    "label": "kitchen_ufh",
+    "honeywellId": "3632031"
   },
   "11": {
     "name": "Hallway",
-    "label": "hallway"
+    "label": "hallway",
+    "honeywellId": "3942430"
   },
   "00": {
     "name": "Living Room",
-    "label": "living_room"
+    "label": "living_room",
+    "honeywellId": "3596253"
   },
   "01": {
     "name": "Mstr Bedroom",
-    "label": "mstr_bedroom"
+    "label": "mstr_bedroom",
+    "honeywellId": "3626398"
   },
   "02": {
     "name": "Hanees Room",
-    "label": "hanees_room"
+    "label": "hanees_room",
+    "honeywellId": "3626436"
   },
   "03": {
     "name": "Office",
-    "label": "office"
+    "label": "office",
+    "honeywellId": "3626454"
   },
   "04": {
     "name": "Safi's Room",
-    "label": "safis_room"
+    "label": "safis_room",
+    "honeywellId": "3626473"
   },
   "05": {
     "name": "Um's Room",
-    "label": "umaimahs_room"
+    "label": "umaimahs_room",
+    "honeywellId": "3626570"
   },
   "06": {
     "name": "Garage",
-    "label": "garage"
+    "label": "garage",
+    "honeywellId": "3626647"
   },
   "07": {
     "name": "Dining Room",
-    "label": "dining_room"
+    "label": "dining_room",
+    "honeywellId": "3626680"
   },
   "08": {
     "name": "Landing",
-    "label": "landing"
+    "label": "landing",
+    "honeywellId": "3626694"
   },
   "09": {
     "name": "Bathroom",
-    "label": "bathroom"
+    "label": "bathroom",
+    "honeywellId": "3627058"
   }
 }

@@ -227,8 +227,30 @@ app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
                 if (status) id = status.dhwId;
             } else {
                 const zones = await provider.getZonesStatus();
-                const zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
+                let zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
+                
+                // EXTRA PROTECTION: If not found and it's a 2-digit ID, try translating from mapping cache
+                if (!zone && /^\d{2}$/.test(forItem)) {
+                    const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+                    if (fs.existsSync(zonesPath)) {
+                        const mapping = JSON.parse(fs.readFileSync(zonesPath, 'utf8'));
+                        const entry = mapping[forItem];
+                        if (entry && entry.honeywellId) {
+                            Logger.debug(`API: Translating user index ${forItem} to Honeywell ID ${entry.honeywellId}`);
+                            id = entry.honeywellId;
+                            // Verify this ID actually exists in the current provider's list
+                            zone = zones.find(z => z.zoneId === id);
+                        }
+                    }
+                }
+
                 if (zone) id = zone.zoneId;
+                else if (config.providerType === 'honeywell') {
+                    // If we are in honeywell mode and still have a 2-digit ID, it's invalid.
+                    if (/^\d{2}$/.test(id)) {
+                        throw new Error(`Invalid zone ID for Cloud mode: ${id}. Please refresh mappings.`);
+                    }
+                }
             }
         }
         

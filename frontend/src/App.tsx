@@ -8,17 +8,32 @@ function App() {
   const { fetchCurrentStatus, fetchAllSchedules, selectProvider, refreshMqttMappings } = useHeatingApi();
   const { zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
+  const isInitialized = React.useRef(false);
 
   const queryParams = new URLSearchParams(window.location.search);
   const isEmbedded = queryParams.get('embed') === 'true';
   const initialZoneId = queryParams.get('zoneId');
 
   useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     const init = async () => {
-        await fetchCurrentStatus();
-        await fetchAllSchedules();
+        // 1. Set the initial focus from URL immediately
         if (initialZoneId) {
             setSelectedZoneId(initialZoneId);
+        }
+        
+        // 2. Fetch general status
+        await fetchCurrentStatus();
+        
+        // 3. Fetch schedules - be smart to avoid double-takes
+        if (initialZoneId) {
+            // Just fetch the one we need for immediate display
+            await fetchScheduleForZone(initialZoneId);
+        } else {
+            // Fetch all for the standard multi-zone view
+            await fetchAllSchedules();
         }
     };
     init();

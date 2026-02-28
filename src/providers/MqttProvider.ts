@@ -24,8 +24,8 @@ export class MqttProvider implements HeatingProvider {
   private dhw: DhwStatus | null = null;
   private lastError: string | null = null;
   
-  // Mapping of zoneId -> { name, label }
-  private zoneIdToMapping: Record<string, { name: string, label: string }> = {};
+  // Mapping of zoneId -> { name, label, honeywellId }
+  private zoneIdToMapping: Record<string, { name: string, label: string, honeywellId: string }> = {};
   // Reverse mapping: label -> zoneId
   private labelToZoneId: Record<string, string> = {};
 
@@ -261,7 +261,11 @@ export class MqttProvider implements HeatingProvider {
                 };
 
                 if (data.zoneId && !this.zoneIdToMapping[data.zoneId]) {
-                    this.zoneIdToMapping[data.zoneId] = { name: data.name || zoneLabel, label: zoneLabel };
+                    this.zoneIdToMapping[data.zoneId] = { 
+                        name: data.name || zoneLabel, 
+                        label: zoneLabel, 
+                        honeywellId: "" 
+                    };
                     this.labelToZoneId[zoneLabel] = data.zoneId;
                     this.saveZoneMapping();
                 }
