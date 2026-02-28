@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw } from 'lucide-react';
+import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -130,7 +130,7 @@ type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId } = useHeatingStore();
+  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider } = useHeatingStore();
   const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially } = useHeatingApi();
   
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
@@ -331,13 +331,13 @@ export const Scheduler: React.FC = () => {
               </div>
           )}
         </div>
-        <div className="w-16 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+        <div className="w-16 flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
             {hasData && (
                 <>
-                    <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={14} /></button>
+                    <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-2 lg:p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
                     {clipboard && (isSource ? 
-                        <button onClick={handlePasteToAll} className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 shadow-sm"><ClipboardPaste size={14} /></button> :
-                        <button onClick={() => handlePaste(dayName, zoneId)} className="p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"><ClipboardCheck size={14} /></button>
+                        <button onClick={handlePasteToAll} className="p-2 lg:p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 shadow-sm"><ClipboardPaste size={16} className="lg:w-[14px] lg:h-[14px]" /></button> :
+                        <button onClick={() => handlePaste(dayName, zoneId)} className="p-2 lg:p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"><ClipboardCheck size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
                     )}
                 </>
             )}
@@ -350,7 +350,9 @@ export const Scheduler: React.FC = () => {
     <section className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-500 p-2 rounded-xl text-white shadow-lg shadow-indigo-200"><Activity size={24} /></div>
+          <div className={`${provider?.name === 'MQTT' ? 'bg-emerald-500' : 'bg-slate-400'} p-2 rounded-xl text-white shadow-lg ${provider?.name === 'MQTT' ? 'shadow-emerald-100' : 'shadow-slate-100'}`}>
+            {provider?.name === 'MQTT' ? <Cpu size={24} /> : <Cloud size={24} />}
+          </div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Schedule Manager</h2>
         </div>
         <div className="flex flex-wrap items-center gap-3">

@@ -6,12 +6,22 @@ import { Scheduler } from './components/Scheduler';
 
 function App() {
   const { fetchCurrentStatus, fetchAllSchedules, selectProvider, refreshMqttMappings } = useHeatingApi();
-  const { zones, dhw, system, loading, loadingMessage, error, provider } = useHeatingStore();
+  const { zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const isEmbedded = queryParams.get('embed') === 'true';
+  const initialZoneId = queryParams.get('zoneId');
+
   useEffect(() => {
-    fetchCurrentStatus();
-    fetchAllSchedules();
+    const init = async () => {
+        await fetchCurrentStatus();
+        await fetchAllSchedules();
+        if (initialZoneId) {
+            setSelectedZoneId(initialZoneId);
+        }
+    };
+    init();
   }, []);
 
   const handleManualRefresh = async () => {
@@ -26,6 +36,23 @@ function App() {
   };
 
   if (error) return <div className="p-4 bg-red-100 text-red-700 border border-red-200 m-4 rounded">Error: {error}</div>;
+
+  if (isEmbedded) {
+    return (
+        <div className={`bg-white min-h-screen ${loading ? 'cursor-wait' : ''}`}>
+            <main className="p-2">
+                <Scheduler />
+            </main>
+            {/* Minimal loader for embedded mode */}
+            {loading && (
+                <div className="fixed bottom-4 right-4 bg-slate-900/80 text-white px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-sm">
+                    <RefreshCw size={14} className="animate-spin text-indigo-400" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">{loadingMessage || 'Syncing...'}</span>
+                </div>
+            )}
+        </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
