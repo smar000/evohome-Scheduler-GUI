@@ -33,7 +33,7 @@ COPY --from=backend-build /app/dist ./dist
 COPY --from=frontend-build /app/static ./static
 
 # Copy other necessary files
-COPY config/ ./config/
+COPY data/ ./data/
 
 EXPOSE 3330
 
