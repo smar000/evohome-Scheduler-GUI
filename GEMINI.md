@@ -27,17 +27,27 @@ The project has been modernized to use **React (TypeScript)** on the frontend an
 - **Testing Suite:** Jest tests implemented and verified.
 - **Cleanup:** Legacy jQuery and server files removed.
 
+### Phase 4: Maintenance & Reliability - [COMPLETED]
+- **Hot Water Fix (MQTT):** Implemented correct `zone_idx: "HW"` and `enabled: boolean` parameter for DHW schedules.
+- **Documentation:** Comprehensive `ARCHITECTURE.md` and `DEVELOPMENT.md` created with Mermaid diagrams.
+- **Git Hygiene:** Build artifacts (`dist/`) removed from tracking and added to `.gitignore`.
+- **Node.js Compliance:** Verified and documented Node.js 20+ requirement (Docker uses Node 22).
+
 ## Technical Details: MQTT Implementation
 
 The `MqttProvider` communicates with a local `evogateway` using the following logic:
 - **Commands:** Published to `evohome/evogateway/system/_command`.
-  - `get_schedule`: Requires hex conversion of `zone_idx` (e.g. 10 -> "0A").
+  - `get_schedule`: Requires hex conversion of `zone_idx` (e.g. 10 -> "0A"). Hot Water uses `"HW"`.
   - `set_schedule`: Sends updated JSON schedule back to the controller.
+- **Switchpoints:**
+  - Heating zones use `heat_setpoint` (float).
+  - Hot Water (DHW) uses `enabled` (boolean).
 - **Subscriptions:** Optimized using `+` wildcards to reduce noise:
   - `.../zones/+/ctl_controller/setpoint`
   - `.../zones/+/ctl_controller/temperature`
-  - `.../zones/+/ctl_controller/zone_mode` (Maps to "Following Schedule", "Temporary Override", etc.)
-  - `.../zones/+/+/zone_schedule` (Handles fragmented schedule responses).
+  - `.../zones/+/ctl_controller/zone_mode`
+  - `.../zones/+/+/zone_schedule` (Heating zones)
+  - `evohome/evogateway/dhw/+/zone_schedule` (Hot Water zone)
 - **Mapping:** `config/zones.json` stores `zoneId` (decimal string), user-friendly `name`, and system `label`. The system "self-learns" and updates this mapping if it discovers new labels via MQTT.
 
 ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
