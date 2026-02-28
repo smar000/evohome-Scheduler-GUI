@@ -33,6 +33,12 @@ export class MqttProvider implements HeatingProvider {
   private pendingSchedules: Map<string, (schedule: ZoneSchedule) => void> = new Map();
 
   constructor(private config: any) {
+    this.dhw = {
+        dhwId: "dhw",
+        state: "Unknown",
+        temperature: 0,
+        setpointMode: "Unknown"
+    };
     this.loadZoneMapping();
   }
 

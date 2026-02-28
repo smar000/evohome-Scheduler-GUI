@@ -26,6 +26,12 @@ class MqttProvider {
     pendingSchedules = new Map();
     constructor(config) {
         this.config = config;
+        this.dhw = {
+            dhwId: "dhw",
+            state: "Unknown",
+            temperature: 0,
+            setpointMode: "Unknown"
+        };
         this.loadZoneMapping();
     }
     loadZoneMapping() {
