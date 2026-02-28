@@ -66,10 +66,24 @@ const kitchenSchedule: ZoneSchedule = {
     ])
 };
 
+const dhwSchedule: ZoneSchedule = {
+  name: "Hot Water",
+  schedule: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => ({
+    dayOfWeek: day,
+    switchpoints: [
+      { timeOfDay: "06:00", state: "On" },
+      { timeOfDay: "08:30", state: "Off" },
+      { timeOfDay: "17:00", state: "On" },
+      { timeOfDay: "22:00", state: "Off" },
+    ]
+  }))
+};
+
 const mockSchedules: Record<string, ZoneSchedule> = {
   "12345": livingRoomSchedule,
   "67890": bedroomSchedule,
   "11223": kitchenSchedule, 
+  "99999": dhwSchedule,
 };
 
 

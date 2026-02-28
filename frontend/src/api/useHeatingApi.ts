@@ -8,7 +8,8 @@ interface ZoneSchedule {
   schedule: {
     dayOfWeek: string;
     switchpoints: {
-      heatSetpoint: number;
+      heatSetpoint?: number;
+      state?: string;
       timeOfDay: string;
     }[];
   }[];
@@ -153,13 +154,16 @@ export const useHeatingApi = () => {
   };
 
   const fetchAllSchedulesSequentially = async () => {
-    const { zones } = useHeatingStore.getState();
+    const { zones, dhw } = useHeatingStore.getState();
     setLoading(true);
     try {
-        for (const zone of zones) {
-            setLoadingMessage(`Refreshing all: ${zone.name}...`);
-            const response = await api.get(`/getscheduleforzone/${zone.zoneId}`);
-            setZoneSchedule(zone.zoneId, response.data, true);
+        const items = [...zones];
+        if (dhw) items.push({ zoneId: dhw.dhwId, name: 'Hot Water' } as any);
+
+        for (const item of items) {
+            setLoadingMessage(`Refreshing all: ${item.name}...`);
+            const response = await api.get(`/getscheduleforzone/${item.zoneId}`);
+            setZoneSchedule(item.zoneId, response.data, true);
         }
         setError(null);
     } catch (err: any) {

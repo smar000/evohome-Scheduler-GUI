@@ -44,12 +44,13 @@ interface EditPopoverProps {
   initialTemp: number;
   startTime: string;
   endTime: string;
+  isDhw?: boolean;
   onSave: (newTemp: number, newStartTime: string, newEndTime: string) => void;
   onCancel: () => void;
   onDelete: () => void;
 }
 
-const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, onSave, onCancel, onDelete }) => {
+const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete }) => {
   const [temp, setTemp] = useState(initialTemp);
   const [start, setStart] = useState(startTime);
   const [end, setEnd] = useState(endTime);
@@ -69,11 +70,28 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">End Time</label>
           <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
           
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Target Temp</label>
-          <div className="flex items-center gap-2">
-            <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500" />
-            <span className="text-xs font-bold text-slate-400">°C</span>
-          </div>
+          <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{isDhw ? 'State' : 'Target Temp'}</label>
+          {isDhw ? (
+            <div className="flex bg-slate-700 rounded p-1">
+              <button 
+                onClick={() => setTemp(1)} 
+                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+              >
+                ON
+              </button>
+              <button 
+                onClick={() => setTemp(0)} 
+                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 0 ? 'bg-slate-600 text-white' : 'text-slate-400'}`}
+              >
+                OFF
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500" />
+              <span className="text-xs font-bold text-slate-400">°C</span>
+            </div>
+          )}
         </div>
         <div className="flex justify-between gap-2 border-t border-slate-700 pt-4">
           <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors">Delete</button>
@@ -89,35 +107,44 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
 
 // --- Logic Helpers ---
 
-const switchpointsToBlocks = (sps: { timeOfDay: string, heatSetpoint: number }[]): number[] => {
-    const blocks = new Array(TOTAL_BLOCKS).fill(20);
+const switchpointsToBlocks = (sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[], isDhw?: boolean): number[] => {
+    const blocks = new Array(TOTAL_BLOCKS).fill(isDhw ? 0 : 20);
     if (sps.length === 0) return blocks;
 
     const sorted = [...sps].sort((a,b) => a.timeOfDay.localeCompare(b.timeOfDay));
-    let currentTemp = sorted[sorted.length - 1].heatSetpoint;
+    
+    const getVal = (sp: any) => {
+        if (isDhw) return sp.state === 'On' ? 1 : 0;
+        return sp.heatSetpoint ?? 20;
+    };
+
+    let currentVal = getVal(sorted[sorted.length - 1]);
     let spIndex = 0;
 
     for (let i = 0; i < TOTAL_BLOCKS; i++) {
         const currentMins = i * TIME_RESOLUTION_MINUTES;
         if (spIndex < sorted.length && timeToMinutes(sorted[spIndex].timeOfDay) <= currentMins) {
-            currentTemp = sorted[spIndex].heatSetpoint;
+            currentVal = getVal(sorted[spIndex]);
             spIndex++;
         }
-        blocks[i] = currentTemp;
+        blocks[i] = currentVal;
     }
     return blocks;
 };
 
-const blocksToSwitchpoints = (blocks: number[]): { timeOfDay: string, heatSetpoint: number }[] => {
-    const sps: { timeOfDay: string, heatSetpoint: number }[] = [];
+const blocksToSwitchpoints = (blocks: number[], isDhw?: boolean): { timeOfDay: string, heatSetpoint?: number, state?: string }[] => {
+    const sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[] = [];
     if (blocks.length === 0) return sps;
 
-    let lastTemp = blocks[blocks.length - 1];
+    let lastVal = blocks[blocks.length - 1];
     
-    blocks.forEach((temp, i) => {
-        if (temp !== lastTemp) {
-            sps.push({ timeOfDay: minutesToTime(i * TIME_RESOLUTION_MINUTES), heatSetpoint: temp });
-            lastTemp = temp;
+    blocks.forEach((val, i) => {
+        if (val !== lastVal) {
+            const sp: any = { timeOfDay: minutesToTime(i * TIME_RESOLUTION_MINUTES) };
+            if (isDhw) sp.state = val === 1 ? 'On' : 'Off';
+            else sp.heatSetpoint = val;
+            sps.push(sp);
+            lastVal = val;
         }
     });
 
@@ -185,15 +212,18 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const activeZone = zones.find(z => z.zoneId === selectedZoneId);
+  const activeZone = selectedZoneId === dhw?.dhwId 
+    ? { name: 'Hot Water', temperature: dhw.temperature, setpoint: dhw.state === 'On' ? 1 : 0, setpointMode: dhw.setpointMode, until: dhw.until, zoneId: dhw.dhwId } as any
+    : zones.find(z => z.zoneId === selectedZoneId);
 
   const updateScheduleBlocks = (day: string, zoneId: string, transform: (blocks: number[]) => void) => {
+    const isDhw = zoneId === dhw?.dhwId;
     setSchedules(produce(schedules, draft => {
         const daySched = draft[zoneId]?.schedule.find(s => s.dayOfWeek === day);
         if (daySched) {
-            const blocks = switchpointsToBlocks(daySched.switchpoints);
+            const blocks = switchpointsToBlocks(daySched.switchpoints, isDhw);
             transform(blocks);
-            daySched.switchpoints = blocksToSwitchpoints(blocks);
+            daySched.switchpoints = blocksToSwitchpoints(blocks, isDhw) as any;
         }
     }));
   };
@@ -308,6 +338,7 @@ export const Scheduler: React.FC = () => {
   };
 
   const renderRow = (label: string, dayName: string, zoneId: string) => {
+    const isDhw = zoneId === dhw?.dhwId;
     const zoneSchedule = schedules[zoneId];
     const hasData = zoneSchedule && zoneSchedule.schedule && zoneSchedule.schedule.length > 0;
     const daySchedule = hasData ? zoneSchedule.schedule.find(s => s.dayOfWeek === dayName) : null;
@@ -317,20 +348,28 @@ export const Scheduler: React.FC = () => {
     
     if (hasData) {
         let lastMins = 0;
-        let lastTemp = sps.length > 0 ? sps[sps.length - 1].heatSetpoint : 20;
+        const getVal = (sp: any) => {
+            if (isDhw) return sp.state === 'On' ? 1 : 0;
+            return sp.heatSetpoint ?? 20;
+        };
+
+        let lastVal = sps.length > 0 ? getVal(sps[sps.length - 1]) : (isDhw ? 0 : 20);
 
         sps.forEach((sp, i) => {
         const currentMins = timeToMinutes(sp.timeOfDay);
         const width = ((currentMins - lastMins) / TOTAL_DAY_MINUTES) * 100;
         if (width > 0) {
             const rangeText = `${minutesToTime(lastMins)} - ${minutesToTime(currentMins)}`;
+            const color = isDhw ? (lastVal === 1 ? '#ea580c' : '#94a3b8') : getTempColor(lastVal);
+            const labelText = isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : `${lastVal}°`;
+
             slots.push(
-            <div key={i} style={{ width: `${width}%`, backgroundColor: getTempColor(lastTemp) }}
+            <div key={i} style={{ width: `${width}%`, backgroundColor: color }}
                 className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot"
                 onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
-                title={`${rangeText} | ${lastTemp}°C`}
-                data-start-time={minutesToTime(lastMins)} data-end-time={minutesToTime(currentMins)} data-temp={lastTemp}>
-                <span className="text-[10px]">{lastTemp}°</span>
+                title={`${rangeText} | ${isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : lastVal + '°C'}`}
+                data-start-time={minutesToTime(lastMins)} data-end-time={minutesToTime(currentMins)} data-temp={lastVal}>
+                <span className="text-[10px]">{labelText}</span>
                 {width > 8 && (
                     <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
                         {minutesToTime(lastMins)}
@@ -340,19 +379,22 @@ export const Scheduler: React.FC = () => {
             );
         }
         lastMins = currentMins;
-        lastTemp = sp.heatSetpoint;
+        lastVal = getVal(sp);
         });
 
         const finalWidth = ((TOTAL_DAY_MINUTES - lastMins) / TOTAL_DAY_MINUTES) * 100;
         if (finalWidth > 0) {
         const rangeText = `${minutesToTime(lastMins)} - 24:00`;
+        const color = isDhw ? (lastVal === 1 ? '#ea580c' : '#94a3b8') : getTempColor(lastVal);
+        const labelText = isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : `${lastVal}°`;
+
         slots.push(
-            <div key="last" style={{ width: `${finalWidth}%`, backgroundColor: getTempColor(lastTemp) }}
+            <div key="last" style={{ width: `${finalWidth}%`, backgroundColor: color }}
             className="h-full flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 select-none relative group/slot"
             onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
-            title={`${rangeText} | ${lastTemp}°C`}
-            data-start-time={minutesToTime(lastMins)} data-end-time="24:00" data-temp={lastTemp}>
-            <span className="text-[10px]">{lastTemp}°</span>
+            title={`${rangeText} | ${isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : lastVal + '°C'}`}
+            data-start-time={minutesToTime(lastMins)} data-end-time="24:00" data-temp={lastVal}>
+            <span className="text-[10px]">{labelText}</span>
             {finalWidth > 8 && (
                     <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
                         {minutesToTime(lastMins)}
@@ -463,14 +505,16 @@ export const Scheduler: React.FC = () => {
                   <span className="text-xl font-black text-slate-800 leading-none">{activeZone.temperature.toFixed(1)}°</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Target</span>
-                  <span className="text-xl font-black text-indigo-600 leading-none">{activeZone.setpoint.toFixed(1)}°</span>
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{selectedZoneId === dhw?.dhwId ? 'State' : 'Target'}</span>
+                  <span className={`text-xl font-black leading-none ${selectedZoneId === dhw?.dhwId ? (activeZone.setpoint === 1 ? 'text-orange-500' : 'text-slate-400') : 'text-indigo-600'}`}>
+                      {selectedZoneId === dhw?.dhwId ? (activeZone.setpoint === 1 ? 'ON' : 'OFF') : `${activeZone.setpoint.toFixed(1)}°`}
+                  </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Mode</span>
                   <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none mt-1.5">
                     {activeZone.setpointMode}
-                    {activeZone.setpointMode === 'Temporary Override' && activeZone.until && ` until ${new Date(activeZone.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                    {activeZone.until && ` until ${new Date(activeZone.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                   </span>
                 </div>
               </div>
@@ -511,11 +555,23 @@ export const Scheduler: React.FC = () => {
       <div className="space-y-3">
         {renderTimelineHeader()}
         {viewMode === 'zone' ? (selectedZoneId ? DAYS.map(day => renderRow(day, day, selectedZoneId)) : null) : 
-          [...zones].sort((a,b) => a.name.localeCompare(b.name)).map(zone => renderRow(zone.name, selectedDay, zone.zoneId))}
+          [
+            ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : []),
+            ...[...zones].sort((a,b) => a.name.localeCompare(b.name))
+          ].map(item => renderRow(item.name, selectedDay, item.zoneId))}
       </div>
 
       {editingSlot && (
-        <EditPopover anchor={editingSlot.element} initialTemp={parseFloat(editingSlot.element.dataset.temp!)} startTime={editingSlot.element.dataset.startTime!} endTime={editingSlot.element.dataset.endTime!} onSave={handleUpdate} onCancel={() => setEditingSlot(null)} onDelete={handleDelete} />
+        <EditPopover 
+            anchor={editingSlot.element} 
+            initialTemp={parseFloat(editingSlot.element.dataset.temp!)} 
+            startTime={editingSlot.element.dataset.startTime!} 
+            endTime={editingSlot.element.dataset.endTime!} 
+            isDhw={editingSlot.zoneId === dhw?.dhwId}
+            onSave={handleUpdate} 
+            onCancel={() => setEditingSlot(null)} 
+            onDelete={handleDelete} 
+        />
       )}
     </section>
   );

@@ -42,6 +42,7 @@ class HoneywellTccProvider {
             try {
                 await this.fetchUserInfo();
                 await this.fetchInstallationData();
+                await this.saveMqttMappings(); // Auto-save mappings on init
                 return;
             }
             catch (error) {
@@ -51,6 +52,33 @@ class HoneywellTccProvider {
         await this.ensureSession();
         await this.fetchUserInfo();
         await this.fetchInstallationData();
+        await this.saveMqttMappings(); // Auto-save mappings after fresh login
+    }
+    async saveMqttMappings() {
+        try {
+            const zones = await this.getZonesStatus(false, true); // Use cached status if just fetched
+            if (!zones || zones.length === 0)
+                return;
+            const mapping = {};
+            zones.forEach((z, index) => {
+                const snakeLabel = z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
+                const userZoneId = index.toString().padStart(2, '0');
+                mapping[userZoneId] = {
+                    name: z.name,
+                    label: snakeLabel,
+                    honeywellId: z.zoneId
+                };
+            });
+            const zonesPath = path_1.default.join(process.cwd(), 'config', 'zones.json');
+            const dir = path_1.default.dirname(zonesPath);
+            if (!fs_1.default.existsSync(dir))
+                fs_1.default.mkdirSync(dir, { recursive: true });
+            fs_1.default.writeFileSync(zonesPath, JSON.stringify(mapping, null, 2));
+            Logger_1.Logger.info(`Honeywell TCC: Automatically synced ${zones.length} zone mappings (with names and labels) for MQTT.`);
+        }
+        catch (e) {
+            Logger_1.Logger.error("Honeywell TCC: Failed to auto-sync MQTT mappings.", e);
+        }
     }
     loadSession() {
         try {
@@ -138,6 +166,29 @@ class HoneywellTccProvider {
                 'Content-Type': 'application/json',
             },
         });
+        // Add interceptor to handle 401s automatically
+        this.axiosInstance.interceptors.response.use((response) => response, async (error) => {
+            const originalRequest = error.config;
+            // Prevent recursive retries
+            if (error.response?.status === 401 && !originalRequest._retry) {
+                originalRequest._retry = true;
+                Logger_1.Logger.debug("Honeywell TCC: Received 401, attempting token refresh...");
+                try {
+                    await this.renewSession();
+                    // Use the current provider instance to avoid circular dependency
+                    if (this.credentials) {
+                        originalRequest.headers['Authorization'] = `bearer ${this.credentials.accessToken}`;
+                        // Use original axios call but with updated headers
+                        return (0, axios_1.default)(originalRequest);
+                    }
+                }
+                catch (refreshError) {
+                    Logger_1.Logger.error("Honeywell TCC: Token refresh failed during retry.", refreshError);
+                    return Promise.reject(refreshError);
+                }
+            }
+            return Promise.reject(error);
+        });
     }
     async ensureSession() {
         const now = luxon_1.DateTime.now();
@@ -188,6 +239,9 @@ class HoneywellTccProvider {
             Logger_1.Logger.debug("Honeywell TCC: Cache expired. Fetching fresh data from API...");
         }
         await this.ensureSession();
+        if (!this.axiosInstance) {
+            throw new Error("Honeywell TCC: Axios instance not initialized. Possible login failure.");
+        }
         const response = await this.axiosInstance.get(`/location/${this.locationId}/status?includeTemperatureControlSystems=True`);
         this.cachedFullStatus = response.data;
         this.lastApiFetch = now;
@@ -199,6 +253,7 @@ class HoneywellTccProvider {
         return zonesData.map((z) => ({
             zoneId: z.zoneId,
             name: z.name,
+            label: z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, ''),
             setpoint: z.heatSetpointStatus?.targetTemperature ?? 0,
             temperature: z.temperatureStatus?.temperature ?? 0,
             setpointMode: z.heatSetpointStatus?.setpointMode ?? 'Unknown',
@@ -231,21 +286,35 @@ class HoneywellTccProvider {
         }
         return allSchedules;
     }
-    async getScheduleForId(id) {
+    async getScheduleForId(id, force = false) {
         await this.ensureSession();
-        const response = await this.axiosInstance.get(`/temperatureZone/${id}/schedule`);
+        if (!this.axiosInstance) {
+            throw new Error("Honeywell TCC: Axios instance not initialized.");
+        }
+        const isDhw = id === this.dhwId;
+        const endpoint = isDhw ? `/domesticHotWater/${id}/schedule` : `/temperatureZone/${id}/schedule`;
+        const response = await this.axiosInstance.get(endpoint);
         const data = response.data;
         const dailySchedules = data.dailySchedules.map((ds) => ({
             dayOfWeek: ds.dayOfWeek,
-            switchpoints: ds.switchpoints.map((sw) => ({ heatSetpoint: sw.heatSetpoint, timeOfDay: sw.timeOfDay })),
+            switchpoints: ds.switchpoints.map((sw) => {
+                if (isDhw) {
+                    return { state: sw.state, timeOfDay: sw.timeOfDay };
+                }
+                else {
+                    return { heatSetpoint: sw.heatSetpoint, timeOfDay: sw.timeOfDay };
+                }
+            }),
         }));
-        return { name: "", schedule: dailySchedules };
+        return { name: isDhw ? "Hot Water" : "", schedule: dailySchedules };
     }
     async saveScheduleForZone(zoneId, schedule) {
         await this.ensureSession();
+        const isDhw = zoneId === this.dhwId;
+        const endpoint = isDhw ? `/domesticHotWater/${zoneId}/schedule` : `/temperatureZone/${zoneId}/schedule`;
         const body = { dailySchedules: schedule.schedule };
-        await this.axiosInstance.put(`/temperatureZone/${zoneId}/schedule`, body);
-        Logger_1.Logger.info(`Honeywell TCC: Saved schedule for zone ${zoneId}`);
+        await this.axiosInstance.put(endpoint, body);
+        Logger_1.Logger.info(`Honeywell TCC: Saved schedule for ${isDhw ? 'DHW' : 'zone'} ${zoneId}`);
         this.lastApiFetch = null;
     }
     async setZoneSetpoint(zoneId, setpoint, until) {

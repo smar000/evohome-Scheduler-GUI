@@ -9,7 +9,8 @@ export interface DailySchedule {
 }
 
 export interface Switchpoint {
-  heatSetpoint: number;
+  heatSetpoint?: number;
+  state?: string;
   timeOfDay: string;
 }
 

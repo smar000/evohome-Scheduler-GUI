@@ -207,12 +207,12 @@ export class MqttProvider implements HeatingProvider {
 
             const parts = topic.split('/');
             const zoneLabel = parts[3]; 
-            // Input zone_idx might be hex (e.g. "0A"), we map everything internally to decimal strings (e.g. "10")
-            const zoneId = data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel];
+            // Input zone_idx might be hex (e.g. "0A" or "DH"), we map everything internally to decimal strings (e.g. "10") or "dhw"
+            const zoneId = data.zone_idx === 'DH' ? 'dhw' : (data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel]);
             
             if (zoneId) {
                 const schedule = this.translateScheduleFromMqtt(data);
-                schedule.name = this.zoneIdToMapping[zoneId]?.name || zoneLabel;
+                schedule.name = zoneId === 'dhw' ? "Hot Water" : (this.zoneIdToMapping[zoneId]?.name || zoneLabel);
                 this.schedules[zoneId] = schedule;
                 
                 if (this.pendingSchedules.has(zoneId)) {
@@ -234,7 +234,7 @@ export class MqttProvider implements HeatingProvider {
 
         if (topic === 'evohome/evogateway/dhw') {
             this.dhw = {
-                dhwId: data.dhwId || "dhw",
+                dhwId: "dhw",
                 state: data.state || "Off",
                 temperature: data.temperature || 0,
                 setpointMode: data.setpointMode || "FollowSchedule",
@@ -296,10 +296,12 @@ export class MqttProvider implements HeatingProvider {
   private translateScheduleFromMqtt(data: any): ZoneSchedule {
     const dailySchedules: DailySchedule[] = data.schedule.map((ds: any) => ({
       dayOfWeek: DAYS[ds.day_of_week] || ds.day_of_week.toString(),
-      switchpoints: ds.switchpoints.map((sw: any) => ({
-        heatSetpoint: sw.heat_setpoint,
-        timeOfDay: sw.time_of_day
-      }))
+      switchpoints: ds.switchpoints.map((sw: any) => {
+          const sp: any = { timeOfDay: sw.time_of_day };
+          if (sw.state !== undefined) sp.state = sw.state;
+          if (sw.heat_setpoint !== undefined) sp.heatSetpoint = sw.heat_setpoint;
+          return sp;
+      })
     }));
     return { name: "", schedule: dailySchedules };
   }
@@ -310,10 +312,12 @@ export class MqttProvider implements HeatingProvider {
       zone_idx: zoneId,
       schedule: schedule.schedule.map(ds => ({
         day_of_week: DAYS.indexOf(ds.dayOfWeek),
-        switchpoints: ds.switchpoints.map(sw => ({
-          time_of_day: sw.timeOfDay,
-          heat_setpoint: sw.heatSetpoint
-        }))
+        switchpoints: ds.switchpoints.map(sw => {
+            const sp: any = { time_of_day: sw.timeOfDay };
+            if (sw.state !== undefined) sp.state = sw.state;
+            if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
+            return sp;
+        })
       }))
     };
   }
@@ -357,7 +361,7 @@ export class MqttProvider implements HeatingProvider {
             resolve(schedule);
         });
 
-        const hexId = parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');
+        const hexId = id === 'dhw' ? 'DH' : parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');
 
         const command = {
             command: "get_schedule",
@@ -371,8 +375,9 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
-    const command = this.translateScheduleToMqtt(zoneId, schedule);
-    Logger.info(`MQTT: Saving schedule for zone ${zoneId}`);
+    const hexId = zoneId === 'dhw' ? 'DH' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
+    const command = this.translateScheduleToMqtt(hexId, schedule);
+    Logger.info(`MQTT: Saving schedule for ${zoneId} (hex=${hexId})`);
     this.client?.publish(this.config.commandTopic, JSON.stringify(command));
   }
 

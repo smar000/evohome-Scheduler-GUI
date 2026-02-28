@@ -7,14 +7,13 @@ export declare class MqttProvider implements HeatingProvider {
     private system;
     private dhw;
     private lastError;
-    private zoneIdToName;
-    private nameToZoneId;
+    private zoneIdToMapping;
+    private labelToZoneId;
     private pendingSchedules;
     constructor(config: any);
     loadZoneMapping(): void;
     private updateReverseMapping;
     private saveZoneMapping;
-    private fetchZonesFromHoneywell;
     initialize(): Promise<void>;
     private setupSubscriptions;
     private handleMessage;

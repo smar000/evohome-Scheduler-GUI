@@ -30,8 +30,8 @@ app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // Request Logger
 app.use((req, res, next) => {
-    const queryStr = Object.keys(req.query).length ? `?${new URLSearchParams(req.query).toString()}` : '';
-    Logger_1.Logger.debug(`${req.method} ${req.url}${queryStr}`);
+    // req.url already includes the path and query string in Express
+    Logger_1.Logger.debug(`${req.method} ${req.url}`);
     next();
 });
 // CORS
@@ -101,6 +101,9 @@ app.get('/rest/test', (req, res) => {
     res.json({ status: "ok", message: "Backend is reachable" });
 });
 app.get('/rest/session', (req, res) => {
+    if (!provider) {
+        return res.json({ provider: "None", error: "Provider not initialized" });
+    }
     res.json(provider.getSessionInfo());
 });
 app.get('/rest/renewsession', async (req, res) => {
@@ -123,7 +126,7 @@ app.get('/rest/getsystemmode', async (req, res) => {
 });
 app.get('/rest/getzones/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        const { forItem } = req.params;
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
         const zones = await provider.getZonesStatus(refresh, cache);
@@ -152,7 +155,10 @@ app.get('/rest/getdhw', async (req, res) => {
 });
 app.get('/rest/getcurrentstatus/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        if (!provider) {
+            throw new Error("Heating provider not initialized.");
+        }
+        const { forItem } = req.params;
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
         if (forItem === 'dhw') {
@@ -176,41 +182,73 @@ app.get('/rest/getcurrentstatus/:forItem?', async (req, res) => {
         }
     }
     catch (error) {
+        const { forItem } = req.params;
+        Logger_1.Logger.error(`API: Error fetching status for ${forItem || 'all'}:`, error);
         res.status(500).json({ error: error.message });
     }
 });
 app.get('/rest/getallschedules', async (req, res) => {
     try {
+        if (!provider) {
+            throw new Error("Heating provider not initialized.");
+        }
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
         const schedules = await provider.getAllSchedules(refresh, cache);
         res.json(schedules);
     }
     catch (error) {
+        Logger_1.Logger.error("API: Error fetching all schedules:", error);
         res.status(500).json({ error: error.message });
     }
 });
 app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        const { forItem } = req.params;
         if (!forItem)
             return res.status(400).json({ error: "Missing zone name/ID" });
         let id = forItem;
-        if (forItem === 'dhw') {
-            const status = await provider.getHotWaterStatus();
-            if (status)
-                id = status.dhwId;
+        // Only do the name->ID lookup if NOT in MQTT mode OR if it's 'dhw'
+        if (index_1.config.providerType !== 'mqtt' || forItem === 'dhw') {
+            if (forItem === 'dhw') {
+                const status = await provider.getHotWaterStatus();
+                if (status)
+                    id = status.dhwId;
+            }
+            else {
+                const zones = await provider.getZonesStatus();
+                let zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
+                // EXTRA PROTECTION: If not found and it's a 2-digit ID, try translating from mapping cache
+                if (!zone && /^\d{2}$/.test(forItem)) {
+                    const zonesPath = path_1.default.join(process.cwd(), 'config', 'zones.json');
+                    if (fs_1.default.existsSync(zonesPath)) {
+                        const mapping = JSON.parse(fs_1.default.readFileSync(zonesPath, 'utf8'));
+                        const entry = mapping[forItem];
+                        if (entry && entry.honeywellId) {
+                            Logger_1.Logger.debug(`API: Translating user index ${forItem} to Honeywell ID ${entry.honeywellId}`);
+                            id = entry.honeywellId;
+                            // Verify this ID actually exists in the current provider's list
+                            zone = zones.find(z => z.zoneId === id);
+                        }
+                    }
+                }
+                if (zone)
+                    id = zone.zoneId;
+                else if (index_1.config.providerType === 'honeywell') {
+                    // If we are in honeywell mode and still have a 2-digit ID, it's invalid.
+                    if (/^\d{2}$/.test(id)) {
+                        throw new Error(`Invalid zone ID for Cloud mode: ${id}. Please refresh mappings.`);
+                    }
+                }
+            }
         }
-        else {
-            const zones = await provider.getZonesStatus();
-            const zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
-            if (zone)
-                id = zone.zoneId;
-        }
-        const schedule = await provider.getScheduleForId(id);
+        const refresh = req.query.refresh === 'true';
+        const schedule = await provider.getScheduleForId(id, refresh);
         res.json(schedule);
     }
     catch (error) {
+        const { forItem } = req.params;
+        Logger_1.Logger.error(`API: Error fetching schedule for ${forItem}:`, error);
         res.status(500).json({ error: error.message });
     }
 });

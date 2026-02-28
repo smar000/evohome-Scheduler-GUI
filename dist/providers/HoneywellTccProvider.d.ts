@@ -14,6 +14,7 @@ export declare class HoneywellTccProvider implements HeatingProvider {
     private lastFullLogin;
     constructor(username?: string | undefined, password?: string | undefined);
     initialize(): Promise<void>;
+    private saveMqttMappings;
     private loadSession;
     private saveSession;
     private login;
@@ -26,7 +27,7 @@ export declare class HoneywellTccProvider implements HeatingProvider {
     getSystemStatus(force?: boolean, preferCache?: boolean): Promise<SystemStatus>;
     getHotWaterStatus(force?: boolean, preferCache?: boolean): Promise<DhwStatus | null>;
     getAllSchedules(force?: boolean, preferCache?: boolean): Promise<Record<string, ZoneSchedule>>;
-    getScheduleForId(id: string): Promise<ZoneSchedule>;
+    getScheduleForId(id: string, force?: boolean): Promise<ZoneSchedule>;
     saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void>;
     setZoneSetpoint(zoneId: string, setpoint: number, until?: string): Promise<void>;
     setSystemMode(mode: string, until?: string): Promise<void>;

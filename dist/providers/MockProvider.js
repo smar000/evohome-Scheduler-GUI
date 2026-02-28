@@ -4,9 +4,9 @@ exports.MockProvider = void 0;
 const Logger_1 = require("../utils/Logger");
 // --- Sample Data ---
 const mockZones = [
-    { zoneId: "12345", name: "Living Room", temperature: 20.5, setpoint: 21.0, setpointMode: "FollowSchedule" },
-    { zoneId: "67890", name: "Bedroom", temperature: 19.0, setpoint: 18.0, setpointMode: "TemporaryOverride", until: "2026-02-27T22:00:00Z" },
-    { zoneId: "11223", name: "Kitchen", temperature: 21.2, setpoint: 21.0, setpointMode: "FollowSchedule" },
+    { zoneId: "12345", name: "Living Room", label: "living_room", temperature: 20.5, setpoint: 21.0, setpointMode: "FollowSchedule" },
+    { zoneId: "67890", name: "Bedroom", label: "bedroom", temperature: 19.0, setpoint: 18.0, setpointMode: "TemporaryOverride", until: "2026-02-27T22:00:00Z" },
+    { zoneId: "11223", name: "Kitchen", label: "kitchen", temperature: 21.2, setpoint: 21.0, setpointMode: "FollowSchedule" },
 ];
 const mockDhw = {
     dhwId: "99999",
@@ -54,10 +54,23 @@ const kitchenSchedule = {
         { time: "21:00", temp: 19 },
     ])
 };
+const dhwSchedule = {
+    name: "Hot Water",
+    schedule: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => ({
+        dayOfWeek: day,
+        switchpoints: [
+            { timeOfDay: "06:00", state: "On" },
+            { timeOfDay: "08:30", state: "Off" },
+            { timeOfDay: "17:00", state: "On" },
+            { timeOfDay: "22:00", state: "Off" },
+        ]
+    }))
+};
 const mockSchedules = {
     "12345": livingRoomSchedule,
     "67890": bedroomSchedule,
     "11223": kitchenSchedule,
+    "99999": dhwSchedule,
 };
 class MockProvider {
     constructor() {

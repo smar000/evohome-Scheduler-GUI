@@ -3,7 +3,7 @@ import { produce } from 'immer';
 import isEqual from 'lodash.isequal';
 
 // --- Types ---
-interface Switchpoint { heatSetpoint: number; timeOfDay: string; }
+interface Switchpoint { heatSetpoint?: number; state?: string; timeOfDay: string; }
 interface DailySchedule { dayOfWeek: string; switchpoints: Switchpoint[]; }
 interface ZoneSchedule { name: string; schedule: DailySchedule[]; }
 interface ZoneStatus { zoneId: string; name: string; label?: string; setpoint: number; temperature: number; setpointMode: string; until?: string; }

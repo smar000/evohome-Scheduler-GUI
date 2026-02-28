@@ -11,7 +11,7 @@ class ProviderFactory {
             case 'honeywell':
                 return new HoneywellTccProvider_1.HoneywellTccProvider(index_1.config.honeywell.username, index_1.config.honeywell.password);
             case 'mqtt':
-                return new MqttProvider_1.MqttProvider(index_1.config);
+                return new MqttProvider_1.MqttProvider(index_1.config.mqtt);
             case 'mock':
                 return new MockProvider_1.MockProvider();
             default:

@@ -318,20 +318,33 @@ export class HoneywellTccProvider implements HeatingProvider {
     if (!this.axiosInstance) {
         throw new Error("Honeywell TCC: Axios instance not initialized.");
     }
-    const response = await this.axiosInstance.get(`/temperatureZone/${id}/schedule`);
+    
+    const isDhw = id === this.dhwId;
+    const endpoint = isDhw ? `/domesticHotWater/${id}/schedule` : `/temperatureZone/${id}/schedule`;
+    
+    const response = await this.axiosInstance.get(endpoint);
     const data = response.data;
     const dailySchedules: DailySchedule[] = data.dailySchedules.map((ds: any) => ({
       dayOfWeek: ds.dayOfWeek,
-      switchpoints: ds.switchpoints.map((sw: any) => ({ heatSetpoint: sw.heatSetpoint, timeOfDay: sw.timeOfDay })),
+      switchpoints: ds.switchpoints.map((sw: any) => {
+          if (isDhw) {
+              return { state: sw.state, timeOfDay: sw.timeOfDay };
+          } else {
+              return { heatSetpoint: sw.heatSetpoint, timeOfDay: sw.timeOfDay };
+          }
+      }),
     }));
-    return { name: "", schedule: dailySchedules };
+    return { name: isDhw ? "Hot Water" : "", schedule: dailySchedules };
   }
 
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
     await this.ensureSession();
+    const isDhw = zoneId === this.dhwId;
+    const endpoint = isDhw ? `/domesticHotWater/${zoneId}/schedule` : `/temperatureZone/${zoneId}/schedule`;
+    
     const body = { dailySchedules: schedule.schedule };
-    await this.axiosInstance!.put(`/temperatureZone/${zoneId}/schedule`, body);
-    Logger.info(`Honeywell TCC: Saved schedule for zone ${zoneId}`);
+    await this.axiosInstance!.put(endpoint, body);
+    Logger.info(`Honeywell TCC: Saved schedule for ${isDhw ? 'DHW' : 'zone'} ${zoneId}`);
     this.lastApiFetch = null; 
   }
 
