@@ -10,6 +10,7 @@ old_*
 *.sh
 */config.json
 .session.json
+.env
 dist/
 node_modules/
 frontend/dist/
