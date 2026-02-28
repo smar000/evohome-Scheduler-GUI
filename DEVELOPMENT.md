@@ -1,53 +1,96 @@
-# evoWeb Development Documentation
+# evoWeb Development Guide
 
-## Architecture Overview
-The project follows a **Provider Pattern** to decouple the user interface from the underlying heating hardware. 
+This guide is for developers working on the evoWeb codebase.
 
-- **Frontend:** React (TypeScript) + Zustand for state management.
-- **Backend:** Express (TypeScript) serving as a proxy and data translator.
-- **Providers:** Implemented via the `HeatingProvider` interface.
+## Tech Stack
 
-## Provider Interface
-Located at `src/providers/HeatingProvider.ts`. Any new provider must implement this interface:
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Lucide-react (icons).
+- **Backend:** Node.js, Express, TypeScript.
+- **Protocol:** REST API between frontend and backend.
+- **Providers:** Honeywell TCC (Cloud), MQTT (Local via evogateway), Mock (Demo).
 
-```typescript
-export interface HeatingProvider {
-  initialize(): Promise<void>;
-  getZonesStatus(force?: boolean, preferCache?: boolean): Promise<ZoneStatus[]>;
-  getSystemStatus(force?: boolean, preferCache?: boolean): Promise<SystemStatus>;
-  getHotWaterStatus(force?: boolean, preferCache?: boolean): Promise<DhwStatus | null>;
-  getAllSchedules(force?: boolean, preferCache?: boolean): Promise<Record<string, ZoneSchedule>>;
-  getScheduleForId(id: string): Promise<ZoneSchedule>;
-  saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void>;
-  setZoneSetpoint(zoneId: string, setpoint: number, until?: string): Promise<void>;
-  setSystemMode(mode: string, until?: string): Promise<void>;
-  setHotWaterState(state: string, until?: string): Promise<void>;
-  renewSession(): Promise<void>;
-  getSessionInfo(): any;
-}
+## High-Level Architecture
+
+```mermaid
+graph TD
+    User((User))
+    
+    subgraph "Frontend (Browser)"
+        UI[React Components]
+        Store[Zustand Store]
+        API_Client[useHeatingApi]
+    end
+    
+    subgraph "Backend (Node.js)"
+        Express[Express Server]
+        Factory[Provider Factory]
+        Provider[Heating Provider Interface]
+    end
+    
+    subgraph "External Systems"
+        TCC[Honeywell Cloud]
+        Broker[MQTT Broker]
+        Gateway[evogateway]
+    end
+
+    User <--> UI
+    UI <--> Store
+    UI <--> API_Client
+    API_Client <-->|REST| Express
+    Express <--> Provider
+    Provider <--> Factory
+    
+    Provider <-->|HTTPS| TCC
+    Provider <-->|MQTT| Broker
+    Broker <--> Gateway
 ```
 
-## REST API Reference
+## Getting Started
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/rest/session` | Returns current provider info and connection status. |
-| `GET` | `/rest/getcurrentstatus` | Returns temperatures, targets, and modes for all zones + DHW. |
-| `GET` | `/rest/getallschedules` | Returns cached schedules for all known zones. |
-| `GET` | `/rest/getscheduleforzone/:id` | Requests a fresh schedule for a specific zone. |
-| `POST` | `/rest/saveallschedules` | Saves modified schedules back to the provider. |
-| `POST` | `/rest/selectprovider` | Switches active provider (`honeywell`, `mqtt`, `mock`). |
-| `POST` | `/rest/mqtt/refresh-mappings` | Syncs zone names/labels from Honeywell to local MQTT cache. |
+### Prerequisites
+- Node.js 20+
+- npm
 
-## MQTT Specifics
-The `MqttProvider` uses a 2-digit **hexadecimal** `zone_idx` for hardware commands but maps them to **decimal** strings internally for consistency with the Honeywell API.
+### Installation
+1. Clone the repository.
+2. Install root dependencies: `npm install`
+3. Install frontend dependencies: `cd frontend && npm install`
+4. Create a `.env` file in the root (see `.env.example`).
 
-- Topic structure: `evohome/evogateway/system/_command`
-- Hex mapping: Decimal `10` -> Hex `0A`.
+### Running in Development
+- **Backend:** `npm run dev` (starts on port 3330 by default).
+- **Frontend:** `cd frontend && npm run dev` (starts Vite on port 5173).
 
-## Docker Production Build
-To build and run the production environment:
+## Testing
+
+The project uses Jest for testing backend providers.
+
 ```bash
-docker-compose up --build
+# Run all tests
+npm test
+
+# Run a specific test
+npm test tests/MqttProvider.test.ts
 ```
-The Dockerfile uses a multi-stage build to ensure the final image contains only the compiled code and production dependencies.
+
+## Building for Production
+
+```bash
+# Build backend
+npm run build
+
+# Build frontend
+cd frontend && npm run build
+```
+
+The backend is configured to serve the built frontend from the `static/` directory in production.
+
+## Code Style & Standards
+
+- **TypeScript:** Use strict typing where possible.
+- **Provider Pattern:** All new heating system integrations must implement the `HeatingProvider` interface.
+- **State Management:** The frontend uses a custom store (Zustand-like pattern) in `useHeatingStore.ts`.
+- **CSS:** Use Tailwind utility classes. For complex components, keep styles clean and modular.
+
+## Documentation Reference
+For deep technical details on how the system works, data models, and protocol specifics, see [ARCHITECTURE.md](./ARCHITECTURE.md).
