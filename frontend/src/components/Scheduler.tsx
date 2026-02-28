@@ -140,8 +140,7 @@ export const Scheduler: React.FC = () => {
   const [clipboard, setClipboard] = useState<any[] | null>(null);
   const [clipboardSource, setClipboardSource] = useState<string | null>(null);
   const [showProviderPopup, setShowProviderPopup] = useState(false);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
-  const isInitialMount = React.useRef(true);
+  const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
 
   useEffect(() => {
     if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {

@@ -5,7 +5,7 @@ import { Thermometer, Droplets, Settings, Activity, RefreshCw, AlertCircle, Layo
 import { Scheduler } from './components/Scheduler';
 
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules, selectProvider, refreshMqttMappings } = useHeatingApi();
+  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider, refreshMqttMappings } = useHeatingApi();
   const { zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
   const isInitialized = React.useRef(false);

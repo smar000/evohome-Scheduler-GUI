@@ -1,5 +1,3 @@
-import React from 'react';
-
 function Fallback({ error, resetErrorBoundary }: { error: Error, resetErrorBoundary: () => void }) {
   return (
     <div role="alert" className="p-4 bg-red-100 text-red-700 border border-red-200 m-4 rounded">

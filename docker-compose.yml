@@ -2,14 +2,23 @@ version: '3.8'
 
 services:
   evoweb:
-    build: .
+    container_name: evoweb
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: evoweb:latest
+    extra_hosts:
+      - "bridgeserver:host-gateway"
     ports:
       - "3330:3330"
     env_file:
       - .env
     environment:
       - NODE_ENV=production
+      - PORT=3330
     volumes:
+      - ./.env:/app/.env
       - ./config:/app/config
       - ./logs:/app/logs
-    restart: always
+      - ./.session.json:/app/.session.json
+    restart: unless-stopped

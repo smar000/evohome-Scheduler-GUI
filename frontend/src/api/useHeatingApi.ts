@@ -33,9 +33,7 @@ export const useHeatingApi = () => {
     setError,
     originalSchedules,
     setProviderInfo,
-    setSelectedZoneId,
     markScheduleFailed,
-    clearFailedSchedules
   } = useHeatingStore();
 
   const ensureProviderInfo = async () => {
