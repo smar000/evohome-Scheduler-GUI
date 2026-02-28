@@ -134,6 +134,8 @@ export class MqttProvider implements HeatingProvider {
 
     // Subscribe specifically to zone schedules (level 6)
     this.client.subscribe(`${this.config.zonesTopic}/+/+/zone_schedule`);
+    // Subscribe specifically to dhw schedule
+    this.client.subscribe('evohome/evogateway/dhw/+/zone_schedule');
 
     // Subscribe to system and dhw status
     this.client.subscribe('evohome/evogateway/system');
@@ -144,7 +146,8 @@ export class MqttProvider implements HeatingProvider {
   }
 
   private handleMessage(topic: string, payload: string): void {
-    if (topic.includes('/_') || topic.endsWith('_ts') || topic.endsWith('/active')) {
+    // Only ignore timestamp and active flag topics, don't ignore /_ topics as they are used for status and dhw
+    if (topic.endsWith('_ts') || topic.endsWith('/active')) {
         return;
     }
 
@@ -214,8 +217,8 @@ export class MqttProvider implements HeatingProvider {
 
             const parts = topic.split('/');
             const zoneLabel = parts[3]; 
-            // Input zone_idx might be hex (e.g. "0A" or "DH"), we map everything internally to decimal strings (e.g. "10") or "dhw"
-            const zoneId = data.zone_idx === 'DH' ? 'dhw' : (data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel]);
+            // Input zone_idx might be hex (e.g. "0A" or "HW"), we map everything internally to decimal strings (e.g. "10") or "dhw"
+            const zoneId = (data.zone_idx === 'DH' || data.zone_idx === 'HW') ? 'dhw' : (data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel]);
             
             if (zoneId) {
                 const schedule = this.translateScheduleFromMqtt(data);
@@ -307,6 +310,8 @@ export class MqttProvider implements HeatingProvider {
       switchpoints: ds.switchpoints.map((sw: any) => {
           const sp: any = { timeOfDay: sw.time_of_day };
           if (sw.state !== undefined) sp.state = sw.state;
+          // Handle boolean enabled (DHW)
+          if (sw.enabled !== undefined) sp.state = sw.enabled ? "On" : "Off";
           if (sw.heat_setpoint !== undefined) sp.heatSetpoint = sw.heat_setpoint;
           return sp;
       })
@@ -315,6 +320,7 @@ export class MqttProvider implements HeatingProvider {
   }
 
   private translateScheduleToMqtt(zoneId: string, schedule: ZoneSchedule): any {
+    const isDhw = zoneId === 'HW' || zoneId === 'DH';
     return {
       command: "set_schedule",
       zone_idx: zoneId,
@@ -322,8 +328,17 @@ export class MqttProvider implements HeatingProvider {
         day_of_week: DAYS.indexOf(ds.dayOfWeek),
         switchpoints: ds.switchpoints.map(sw => {
             const sp: any = { time_of_day: sw.timeOfDay };
-            if (sw.state !== undefined) sp.state = sw.state;
-            if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
+            if (isDhw) {
+                // For DHW, send 'enabled' as boolean
+                if (sw.state !== undefined) {
+                    sp.enabled = (sw.state === "On" || (sw.state as any) === true);
+                } else if (sw.heatSetpoint !== undefined) {
+                    // Fallback: treat any setpoint > 0 as enabled
+                    sp.enabled = sw.heatSetpoint > 0;
+                }
+            } else {
+                if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
+            }
             return sp;
         })
       }))
@@ -369,7 +384,7 @@ export class MqttProvider implements HeatingProvider {
             resolve(schedule);
         });
 
-        const hexId = id === 'dhw' ? 'DH' : parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');
+        const hexId = id === 'dhw' ? 'HW' : parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');
 
         const command = {
             command: "get_schedule",
@@ -383,7 +398,7 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
-    const hexId = zoneId === 'dhw' ? 'DH' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
+    const hexId = zoneId === 'dhw' ? 'HW' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
     const command = this.translateScheduleToMqtt(hexId, schedule);
     Logger.info(`MQTT: Saving schedule for ${zoneId} (hex=${hexId})`);
     this.client?.publish(this.config.commandTopic, JSON.stringify(command));
