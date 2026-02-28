@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useHeatingStore } from '../store/useHeatingStore';
+import isEqual from 'lodash.isequal';
 
 // --- Types ---
 interface ZoneSchedule {
@@ -26,38 +27,53 @@ export const useHeatingApi = () => {
     setSystem, 
     setInitialSchedules, 
     setLoading, 
-    setError 
+    setError,
+    originalSchedules,
+    setProvider
   } = useHeatingStore();
 
-  const fetchCurrentStatus = async () => {
-    console.log('Fetching current status from /rest/getcurrentstatus...');
+  const ensureProviderInfo = async () => {
+    try {
+        const response = await api.get('/session');
+        const providerName = response.data.userId ? 'Honeywell' : (response.data.provider || 'Unknown');
+        setProvider(providerName);
+    } catch (e) {
+        console.error("Failed to fetch provider info");
+    }
+  }
+
+  const fetchCurrentStatus = async (force = false, preferCache = false) => {
+    let url = '/getcurrentstatus';
+    if (force) url += '?refresh=true';
+    else if (preferCache) url += '?cache=true';
+
+    await ensureProviderInfo();
     setLoading(true);
     try {
-      const response = await api.get('/getcurrentstatus');
-      console.log('Current status response received:', response.data);
+      const response = await api.get(url);
       setZones(response.data.zones || []);
       setDhw(response.data.dhw || null);
       setSystem(response.data.system || null);
       setError(null);
     } catch (err: any) {
-      console.error('Fetch status error:', err);
-      const msg = err.response?.data?.error || err.message || 'Failed to fetch status';
-      setError(msg);
+      setError(err.message || 'Failed to fetch status');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAllSchedules = async () => {
-    console.log('Fetching all schedules from /rest/getallschedules...');
+  const fetchAllSchedules = async (force = false, preferCache = false) => {
+    let url = '/getallschedules';
+    if (force) url += '?refresh=true';
+    else if (preferCache) url += '?cache=true';
+
+    await ensureProviderInfo();
     setLoading(true);
     try {
-      const response = await api.get('/getallschedules');
-      console.log('Schedules response received:', response.data);
-      setInitialSchedules(response.data); // Use the new action here
+      const response = await api.get(url);
+      setInitialSchedules(response.data);
       setError(null);
     } catch (err: any) {
-      console.error('Fetch schedules error:', err);
       setError(err.message || 'Failed to fetch schedules');
     } finally {
       setLoading(false);
@@ -67,10 +83,24 @@ export const useHeatingApi = () => {
   const saveAllSchedules = async (schedules: Record<string, ZoneSchedule>) => {
     setLoading(true);
     try {
-      await api.post('/saveallschedules', schedules);
-      await fetchAllSchedules(); // Refetch to get the new "original" state
+      const changedSchedules: Record<string, ZoneSchedule> = {};
+      let changeCount = 0;
+
+      for (const zoneId in schedules) {
+          if (!isEqual(schedules[zoneId], originalSchedules[zoneId])) {
+              changedSchedules[zoneId] = schedules[zoneId];
+              changeCount++;
+          }
+      }
+
+      if (changeCount === 0) {
+          setLoading(false);
+          return;
+      }
+
+      await api.post('/saveallschedules', changedSchedules);
+      await fetchAllSchedules(true); 
     } catch (err: any) {
-      console.error('Save schedules error:', err);
       setError(err.message || 'Failed to save schedules');
     } finally {
       setLoading(false);

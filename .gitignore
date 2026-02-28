@@ -9,3 +9,4 @@ old_*
 .vscode*
 *.sh
 */config.json
+.session.json

@@ -42,20 +42,20 @@ interface HeatingState {
   dhw: DhwStatus | null;
   system: SystemStatus | null;
   schedules: Record<string, ZoneSchedule>;
-  originalSchedules: Record<string, ZoneSchedule>; // Store the pristine version
-  isDirty: boolean; // Is the current schedule modified?
+  originalSchedules: Record<string, ZoneSchedule>;
+  isDirty: boolean;
   loading: boolean;
   error: string | null;
+  provider: string | null; // NEW: Track data source
   
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
   setSystem: (system: SystemStatus | null) => void;
-  // This will now set both the working copy and the original
   setInitialSchedules: (schedules: Record<string, ZoneSchedule>) => void;
-  // This will only update the working copy
   setSchedules: (schedules: Record<string, ZoneSchedule>) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setProvider: (provider: string | null) => void; // NEW
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -67,6 +67,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   isDirty: false,
   loading: false,
   error: null,
+  provider: null,
 
   setZones: (zones) => set({ zones }),
   setDhw: (dhw) => set({ dhw }),
@@ -88,4 +89,5 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
 
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setProvider: (provider) => set({ provider }),
 }));
