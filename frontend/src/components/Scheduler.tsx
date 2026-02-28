@@ -79,7 +79,7 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
           <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors">Delete</button>
           <div className="flex gap-2">
             <button onClick={onCancel} className="px-3 py-1 bg-slate-700 rounded text-xs hover:bg-slate-600 transition-colors">Cancel</button>
-            <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-indigo-600 rounded text-xs font-bold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-900/20">Apply</button>
+            <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-xs font-bold hover:bg-slate-600 transition-colors">Apply</button>
           </div>
         </div>
       </div>
@@ -141,6 +141,16 @@ export const Scheduler: React.FC = () => {
   const [clipboardSource, setClipboardSource] = useState<string | null>(null);
   const [showProviderPopup, setShowProviderPopup] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
+
+  const handleZoneRefresh = async (zoneId: string) => {
+    const now = Date.now();
+    const lastTime = lastRefreshTime[zoneId] || 0;
+    const isForce = (now - lastTime) < 20000;
+    
+    await fetchScheduleForZone(zoneId, false, isForce);
+    setLastRefreshTime(prev => ({ ...prev, [zoneId]: now }));
+  };
 
   useEffect(() => {
     if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {
@@ -150,7 +160,7 @@ export const Scheduler: React.FC = () => {
 
   useEffect(() => {
     if (selectedZoneId && !schedules[selectedZoneId] && !loading && !failedSchedules.has(selectedZoneId)) {
-        fetchScheduleForZone(selectedZoneId);
+        fetchScheduleForZone(selectedZoneId, true);
     }
   }, [selectedZoneId, schedules, loading, fetchScheduleForZone, failedSchedules]);
 
@@ -435,8 +445,8 @@ export const Scheduler: React.FC = () => {
             <button onClick={() => setEditMode('resize')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Move size={16} className="inline mr-2"/>Edit Slots</button>
             <button onClick={() => setEditMode('split')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Scissors size={16} className="inline mr-2"/>Split Slots</button>
           </div>
-          <button onClick={() => fetchAllSchedules(false, true)} disabled={!isDirty} className="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-400 hover:bg-slate-200 disabled:opacity-50 transition-all"><X size={18} className="inline mr-2"/>Cancel</button>
-          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:opacity-50 transition-all"><Save size={18} className="inline mr-2"/>Save</button>
+          <button onClick={() => fetchAllSchedules(false, true)} disabled={!isDirty} className={`px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-400 transition-all ${isDirty ? 'hover:bg-slate-200' : 'cursor-not-allowed'}`}><X size={18} className="inline mr-2"/>Cancel</button>
+          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}><Save size={18} className="inline mr-2"/>Save</button>
         </div>
       </div>
       <div className="mb-8 flex flex-col md:flex-row items-end gap-4">
@@ -476,10 +486,10 @@ export const Scheduler: React.FC = () => {
         <div className="flex gap-2">
           {viewMode === 'zone' && selectedZoneId && (
             <button 
-              onClick={() => fetchScheduleForZone(selectedZoneId)}
+              onClick={() => handleZoneRefresh(selectedZoneId)}
               disabled={loading}
-              title="Refresh Current Zone"
-              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border-2 border-indigo-100 rounded-xl text-sm font-bold text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 transition-all"
+              title="Refresh Current Zone (Click twice within 20s to force refresh)"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-500 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50 transition-all"
             >
               <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
               Refresh Zone

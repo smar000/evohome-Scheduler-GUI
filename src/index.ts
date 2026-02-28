@@ -30,8 +30,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request Logger
 app.use((req, res, next) => {
-    const queryStr = Object.keys(req.query).length ? `?${new URLSearchParams(req.query as any).toString()}` : '';
-    Logger.debug(`${req.method} ${req.url}${queryStr}`);
+    // req.url already includes the path and query string in Express
+    Logger.debug(`${req.method} ${req.url}`);
     next();
 });
 
@@ -254,7 +254,8 @@ app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
             }
         }
         
-        const schedule = await provider.getScheduleForId(id);
+        const refresh = req.query.refresh === 'true';
+        const schedule = await provider.getScheduleForId(id, refresh);
         res.json(schedule);
     } catch (error: any) {
         const { forItem } = req.params as any;

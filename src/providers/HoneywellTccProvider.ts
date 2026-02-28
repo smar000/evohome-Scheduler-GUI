@@ -278,6 +278,7 @@ export class HoneywellTccProvider implements HeatingProvider {
     return zonesData.map((z: any) => ({
       zoneId: z.zoneId,
       name: z.name,
+      label: z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, ''),
       setpoint: z.heatSetpointStatus?.targetTemperature ?? 0,
       temperature: z.temperatureStatus?.temperature ?? 0,
       setpointMode: z.heatSetpointStatus?.setpointMode ?? 'Unknown',
@@ -312,7 +313,7 @@ export class HoneywellTccProvider implements HeatingProvider {
     return allSchedules;
   }
 
-  async getScheduleForId(id: string): Promise<ZoneSchedule> {
+  async getScheduleForId(id: string, force = false): Promise<ZoneSchedule> {
     await this.ensureSession();
     if (!this.axiosInstance) {
         throw new Error("Honeywell TCC: Axios instance not initialized.");

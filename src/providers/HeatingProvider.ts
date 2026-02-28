@@ -16,6 +16,7 @@ export interface Switchpoint {
 export interface ZoneStatus {
   zoneId: string;
   name: string;
+  label?: string;
   setpoint: number;
   temperature: number;
   setpointMode: string;
@@ -65,7 +66,7 @@ export interface HeatingProvider {
   /**
    * Get the schedule for a single zone or DHW.
    */
-  getScheduleForId(id: string): Promise<ZoneSchedule>;
+  getScheduleForId(id: string, force?: boolean): Promise<ZoneSchedule>;
 
   /**
    * Save a single zone schedule.

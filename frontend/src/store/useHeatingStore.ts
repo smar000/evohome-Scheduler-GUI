@@ -6,7 +6,7 @@ import isEqual from 'lodash.isequal';
 interface Switchpoint { heatSetpoint: number; timeOfDay: string; }
 interface DailySchedule { dayOfWeek: string; switchpoints: Switchpoint[]; }
 interface ZoneSchedule { name: string; schedule: DailySchedule[]; }
-interface ZoneStatus { zoneId: string; name: string; setpoint: number; temperature: number; setpointMode: string; until?: string; }
+interface ZoneStatus { zoneId: string; name: string; label?: string; setpoint: number; temperature: number; setpointMode: string; until?: string; }
 interface DhwStatus { dhwId: string; state: string; temperature: number; setpointMode: string; until?: string; }
 interface SystemStatus { systemMode: string; timeUntil?: string; permanent: boolean; }
 // -------------
@@ -33,6 +33,7 @@ interface HeatingState {
   setSystem: (system: SystemStatus | null) => void;
   setInitialSchedules: (schedules: Record<string, ZoneSchedule>) => void;
   setSchedules: (schedules: Record<string, ZoneSchedule>) => void;
+  setZoneSchedule: (zoneId: string, schedule: ZoneSchedule, isInitial?: boolean) => void;
   setLoading: (loading: boolean) => void;
   setLoadingMessage: (message: string | null) => void;
   setError: (error: string | null) => void;
@@ -58,9 +59,6 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
 
   setZones: (zones) => {
     set({ zones });
-    if (!get().selectedZoneId && zones.length > 0) {
-        set({ selectedZoneId: zones[0].zoneId });
-    }
   },
   setDhw: (dhw) => set({ dhw }),
   setSystem: (system) => set({ system }),
@@ -68,6 +66,19 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setSchedules: (schedules) => {
     const original = get().originalSchedules;
     set({ schedules, isDirty: !isEqual(original, schedules) });
+  },
+  setZoneSchedule: (zoneId: string, schedule: ZoneSchedule, isInitial = false) => {
+    const schedules = produce(get().schedules, draft => {
+        draft[zoneId] = schedule;
+    });
+    if (isInitial) {
+        const originalSchedules = produce(get().originalSchedules, draft => {
+            draft[zoneId] = schedule;
+        });
+        set({ schedules, originalSchedules, isDirty: !isEqual(originalSchedules, schedules) });
+    } else {
+        set({ schedules, isDirty: !isEqual(get().originalSchedules, schedules) });
+    }
   },
   setLoading: (loading) => set({ loading }),
   setLoadingMessage: (loadingMessage) => set({ loadingMessage }),

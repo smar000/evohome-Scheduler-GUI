@@ -9,9 +9,9 @@ import { Logger } from '../utils/Logger';
 
 // --- Sample Data ---
 const mockZones: ZoneStatus[] = [
-  { zoneId: "12345", name: "Living Room", temperature: 20.5, setpoint: 21.0, setpointMode: "FollowSchedule" },
-  { zoneId: "67890", name: "Bedroom", temperature: 19.0, setpoint: 18.0, setpointMode: "TemporaryOverride", until: "2026-02-27T22:00:00Z" },
-  { zoneId: "11223", name: "Kitchen", temperature: 21.2, setpoint: 21.0, setpointMode: "FollowSchedule" },
+  { zoneId: "12345", name: "Living Room", label: "living_room", temperature: 20.5, setpoint: 21.0, setpointMode: "FollowSchedule" },
+  { zoneId: "67890", name: "Bedroom", label: "bedroom", temperature: 19.0, setpoint: 18.0, setpointMode: "TemporaryOverride", until: "2026-02-27T22:00:00Z" },
+  { zoneId: "11223", name: "Kitchen", label: "kitchen", temperature: 21.2, setpoint: 21.0, setpointMode: "FollowSchedule" },
 ];
 
 const mockDhw: DhwStatus = {

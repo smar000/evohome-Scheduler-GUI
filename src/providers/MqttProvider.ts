@@ -48,6 +48,7 @@ export class MqttProvider implements HeatingProvider {
                 this.zones[id] = {
                     zoneId: id,
                     name: mapping.name,
+                    label: mapping.label,
                     temperature: 0,
                     setpoint: 0,
                     setpointMode: 'Unknown'
@@ -247,7 +248,8 @@ export class MqttProvider implements HeatingProvider {
             const subPath = topic.substring(zonesTopicRoot.length + 1);
             if (subPath && !subPath.includes('/')) {
                 const zoneLabel = subPath;
-                const zoneId = data.zoneId ? (data.zoneId.length > 2 ? this.labelToZoneId[zoneLabel] : data.zoneId) : this.labelToZoneId[zoneLabel];
+                const rawZoneId = data.zoneId ? (data.zoneId.length > 2 ? this.labelToZoneId[zoneLabel] : data.zoneId) : this.labelToZoneId[zoneLabel];
+                const zoneId = (rawZoneId && /^\d+$/.test(rawZoneId)) ? rawZoneId.padStart(2, '0') : rawZoneId;
                 const finalZoneId = zoneId || zoneLabel;
                 const friendlyName = this.zoneIdToMapping[finalZoneId]?.name || zoneLabel;
                 
@@ -260,19 +262,20 @@ export class MqttProvider implements HeatingProvider {
                 this.zones[finalZoneId] = {
                     zoneId: finalZoneId,
                     name: data.name || friendlyName,
+                    label: this.zoneIdToMapping[finalZoneId]?.label || zoneLabel,
                     temperature: data.temperature || 0,
                     setpoint: data.setpoint || 0,
                     setpointMode: modeMap[data.mode] || modeMap[data.setpointMode] || data.setpointMode || data.mode || 'Following Schedule',
                     until: data.until
                 };
 
-                if (data.zoneId && !this.zoneIdToMapping[data.zoneId]) {
-                    this.zoneIdToMapping[data.zoneId] = { 
+                if (rawZoneId && !this.zoneIdToMapping[zoneId]) {
+                    this.zoneIdToMapping[zoneId] = { 
                         name: data.name || zoneLabel, 
                         label: zoneLabel, 
                         honeywellId: "" 
                     };
-                    this.labelToZoneId[zoneLabel] = data.zoneId;
+                    this.labelToZoneId[zoneLabel] = zoneId;
                     this.saveZoneMapping();
                 }
             }
@@ -332,6 +335,12 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async getScheduleForId(id: string, force = false): Promise<ZoneSchedule> {
+    // If we have it in cache and not forcing refresh, return immediately
+    if (!force && this.schedules[id]) {
+        Logger.debug(`MQTT: Returning cached schedule for zone ${id}`);
+        return this.schedules[id];
+    }
+
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             this.pendingSchedules.delete(id);

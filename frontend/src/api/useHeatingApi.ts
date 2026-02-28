@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { useHeatingStore } from '../store/useHeatingStore';
 import isEqual from 'lodash.isequal';
-import { produce } from 'immer';
 
 // --- Types ---
 interface ZoneSchedule {
@@ -27,7 +26,7 @@ export const useHeatingApi = () => {
     setDhw, 
     setSystem, 
     setInitialSchedules, 
-    setSchedules,
+    setZoneSchedule,
     setLoading, 
     setLoadingMessage,
     setError,
@@ -134,15 +133,15 @@ export const useHeatingApi = () => {
     }
   };
 
-  const fetchScheduleForZone = async (zoneId: string) => {
+  const fetchScheduleForZone = async (zoneId: string, isInitial = false, force = false) => {
     setLoading(true);
     const zone = useHeatingStore.getState().zones.find(z => z.zoneId === zoneId);
     setLoadingMessage(`Fetching schedule: ${zone?.name || zoneId}...`);
     try {
-        const response = await api.get(`/getscheduleforzone/${zoneId}`);
-        setSchedules(produce(useHeatingStore.getState().schedules, draft => {
-            draft[zoneId] = response.data;
-        }));
+        let url = `/getscheduleforzone/${zoneId}`;
+        if (force) url += '?refresh=true';
+        const response = await api.get(url);
+        setZoneSchedule(zoneId, response.data, isInitial);
         setError(null);
     } catch (err: any) {
         markScheduleFailed(zoneId);
@@ -160,9 +159,7 @@ export const useHeatingApi = () => {
         for (const zone of zones) {
             setLoadingMessage(`Refreshing all: ${zone.name}...`);
             const response = await api.get(`/getscheduleforzone/${zone.zoneId}`);
-            setSchedules(produce(useHeatingStore.getState().schedules, draft => {
-                draft[zone.zoneId] = response.data;
-            }));
+            setZoneSchedule(zone.zoneId, response.data, true);
         }
         setError(null);
     } catch (err: any) {

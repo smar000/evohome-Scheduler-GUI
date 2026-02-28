@@ -12,32 +12,58 @@ function App() {
 
   const queryParams = new URLSearchParams(window.location.search);
   const isEmbedded = queryParams.get('embed') === 'true';
-  const initialZoneId = queryParams.get('zoneId');
+  const initialZoneId = queryParams.get('zoneId') || queryParams.get('zone_id');
+  const initialZoneLabel = queryParams.get('zone_label') || queryParams.get('zoneLabel');
+  const urlParamProcessed = React.useRef(false);
 
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
 
     const init = async () => {
-        // 1. Set the initial focus from URL immediately
-        if (initialZoneId) {
-            setSelectedZoneId(initialZoneId);
-        }
-        
-        // 2. Fetch general status
+        // 1. Fetch general status
         await fetchCurrentStatus();
         
-        // 3. Fetch schedules - be smart to avoid double-takes
-        if (initialZoneId) {
-            // Just fetch the one we need for immediate display
-            await fetchScheduleForZone(initialZoneId);
-        } else {
-            // Fetch all for the standard multi-zone view
+        // 2. Fetch all schedules if not embedded (embedded will fetch specifically)
+        if (!isEmbedded) {
             await fetchAllSchedules();
         }
     };
     init();
   }, []);
+
+  // Handle URL parameters for initial zone selection once zones are loaded
+  useEffect(() => {
+    if (zones.length > 0 && !urlParamProcessed.current) {
+        const targetId = initialZoneId || initialZoneLabel;
+        
+        if (targetId) {
+            const normalize = (s: string) => s.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
+            const search = normalize(targetId);
+            
+            const found = zones.find(z => 
+                (z.label && normalize(z.label) === search) || 
+                (z.name && normalize(z.name) === search) || 
+                z.zoneId === targetId ||
+                z.zoneId === search
+            );
+
+            if (found) {
+                urlParamProcessed.current = true;
+                setSelectedZoneId(found.zoneId);
+                fetchScheduleForZone(found.zoneId, true);
+                return;
+            }
+        }
+
+        // Fallback: If no match or no param, select first zone if nothing is selected
+        if (!useHeatingStore.getState().selectedZoneId) {
+            setSelectedZoneId(zones[0].zoneId);
+            // fetchScheduleForZone will be triggered by Scheduler.tsx's effect
+        }
+        urlParamProcessed.current = true; 
+    }
+  }, [zones, initialZoneId, initialZoneLabel]);
 
   const handleManualRefresh = async () => {
     await fetchCurrentStatus(true);
@@ -107,7 +133,7 @@ function App() {
                 }
               }}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 border border-indigo-700 rounded-xl shadow-sm text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-50 transition-all"
             >
               <Activity size={18} />
               Sync Zones
