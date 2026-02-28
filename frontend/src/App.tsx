@@ -98,16 +98,13 @@ function App() {
   return (
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
       <header className="mb-6 flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-6 gap-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
-            <p className="text-slate-500 mt-1 font-medium">Smart Heating Control</p>
-          </div>
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
           
           <select 
             value={provider?.name === 'Honeywell' ? 'honeywell' : (provider?.name === 'MQTT' ? 'mqtt' : 'mock')}
             onChange={(e) => selectProvider(e.target.value as any)}
-            className="bg-slate-100 border-none rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wider text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+            className="bg-slate-100 border-none rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wider text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer w-fit"
           >
             <option value="honeywell">Cloud (Honeywell)</option>
             <option value="mqtt">Local (MQTT)</option>
