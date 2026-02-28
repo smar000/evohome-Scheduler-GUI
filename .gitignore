@@ -12,6 +12,7 @@ old_*
 .session.json
 .env
 dist/
+static/
 node_modules/
 frontend/dist/
 frontend/node_modules/
