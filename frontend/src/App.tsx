@@ -195,9 +195,15 @@ function App() {
                 {dhw && (
                   <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500 flex flex-col justify-between hover:shadow-md transition-all">
                     <div className="flex justify-between items-start mb-4">
-                      <div className="flex items-center gap-2">
-                        <Droplets size={20} className="text-blue-500" />
-                        <h3 className="font-bold text-slate-800 text-lg">Hot Water</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Droplets size={20} className="text-blue-500" />
+                          <h3 className="font-bold text-slate-800 text-lg">Hot Water</h3>
+                        </div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          {dhw.setpointMode}
+                          {dhw.setpointMode === 'Temporary Override' && dhw.until && ` until ${new Date(dhw.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                        </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${dhw.state === 'On' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                         {dhw.state}
