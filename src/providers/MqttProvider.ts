@@ -120,6 +120,11 @@ export class MqttProvider implements HeatingProvider {
     // Subscribe specifically to zone status (level 4)
     this.client.subscribe(`${this.config.zonesTopic}/+`);
 
+    // Subscribe to detailed zone status (level 6)
+    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/setpoint`);
+    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/temperature`);
+    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/zone_mode`);
+
     // Subscribe specifically to zone schedules (level 6)
     this.client.subscribe(`${this.config.zonesTopic}/+/+/zone_schedule`);
 
@@ -136,8 +141,58 @@ export class MqttProvider implements HeatingProvider {
     }
 
     try {
+        // 2. Handle last command status (might not be JSON)
         if (topic === this.config.statusTopic) {
             Logger.debug(`MQTT: Last command status: ${payload}`);
+            return;
+        }
+
+        // --- Handle values (JSON based on logs) ---
+        if (topic.endsWith('/setpoint') || topic.endsWith('/temperature') || topic.endsWith('/zone_mode')) {
+            const parts = topic.split('/');
+            const zoneLabel = parts[3];
+            
+            try {
+                const valData = JSON.parse(payload);
+                // Use zone_idx if present to find the internal ID (decimal)
+                const zoneId = valData.zone_idx ? parseInt(valData.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel];
+                
+                if (zoneId && this.zones[zoneId]) {
+                    if (topic.endsWith('/setpoint')) {
+                        this.zones[zoneId].setpoint = valData.setpoint;
+                    } else if (topic.endsWith('/temperature')) {
+                        this.zones[zoneId].temperature = valData.temperature;
+                    } else if (topic.endsWith('/zone_mode')) {
+                        // Map internal mode names to friendly labels
+                        Logger.debug(`MQTT: Raw zone_mode for ${zoneLabel}: ${JSON.stringify(valData)}`);
+                        const modeMap: Record<string, string> = {
+                            'follow_schedule': 'Following Schedule',
+                            'temporary_override': 'Temporary Override',
+                            'permanent_override': 'Permanent Override'
+                        };
+                        this.zones[zoneId].setpointMode = modeMap[valData.mode] || valData.mode || 'Unknown';
+                        this.zones[zoneId].until = valData.until;
+                        Logger.debug(`MQTT: Updated ${zoneLabel} mode to ${this.zones[zoneId].setpointMode}`);
+                    }
+                    
+                    // If we found a mismatch (different label for same ID), update the mapping
+                    if (!this.labelToZoneId[zoneLabel]) {
+                        Logger.info(`MQTT: Mapping discovered label ${zoneLabel} to zone ID ${zoneId}`);
+                        this.labelToZoneId[zoneLabel] = zoneId;
+                        if (this.zoneIdToMapping[zoneId]) {
+                            this.zoneIdToMapping[zoneId].label = zoneLabel;
+                            this.saveZoneMapping();
+                        }
+                    }
+                }
+            } catch (e) {
+                const zoneId = this.labelToZoneId[zoneLabel];
+                const val = parseFloat(payload);
+                if (!isNaN(val) && zoneId && this.zones[zoneId]) {
+                    if (topic.endsWith('/setpoint')) this.zones[zoneId].setpoint = val;
+                    else if (topic.endsWith('/temperature')) this.zones[zoneId].temperature = val;
+                }
+            }
             return;
         }
 

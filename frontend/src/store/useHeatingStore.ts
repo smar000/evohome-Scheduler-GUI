@@ -25,6 +25,7 @@ interface HeatingState {
       name: string;
       error: string | null;
   } | null; 
+  selectedZoneId: string | null;
   
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
@@ -35,6 +36,7 @@ interface HeatingState {
   setLoadingMessage: (message: string | null) => void;
   setError: (error: string | null) => void;
   setProviderInfo: (name: string, error: string | null) => void;
+  setSelectedZoneId: (id: string | null) => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -48,8 +50,14 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   loadingMessage: null,
   error: null,
   provider: null,
+  selectedZoneId: null,
 
-  setZones: (zones) => set({ zones }),
+  setZones: (zones) => {
+    set({ zones });
+    if (!get().selectedZoneId && zones.length > 0) {
+        set({ selectedZoneId: zones[0].zoneId });
+    }
+  },
   setDhw: (dhw) => set({ dhw }),
   setSystem: (system) => set({ system }),
   setInitialSchedules: (schedules) => set({ schedules, originalSchedules: schedules, isDirty: false }),
@@ -61,4 +69,5 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setLoadingMessage: (loadingMessage) => set({ loadingMessage }),
   setError: (error) => set({ error }),
   setProviderInfo: (name, error) => set({ provider: { name, error } }),
+  setSelectedZoneId: (selectedZoneId) => set({ selectedZoneId }),
 }));

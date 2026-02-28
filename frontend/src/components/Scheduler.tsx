@@ -130,22 +130,17 @@ type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, setSchedules, isDirty, loading } = useHeatingStore();
+  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId } = useHeatingStore();
   const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially } = useHeatingApi();
   
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
   const [editMode, setEditMode] = useState<EditMode>('resize');
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<string>(DAYS[0]);
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
   const [clipboard, setClipboard] = useState<any[] | null>(null);
   const [clipboardSource, setClipboardSource] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {
-      setSelectedZoneId(zones[0].zoneId);
-    }
-  }, [zones, selectedZoneId, viewMode]);
+  const activeZone = zones.find(z => z.zoneId === selectedZoneId);
 
   const updateScheduleBlocks = (day: string, zoneId: string, transform: (blocks: number[]) => void) => {
     setSchedules(produce(schedules, draft => {
@@ -373,8 +368,30 @@ export const Scheduler: React.FC = () => {
       </div>
       <div className="mb-8 flex flex-col md:flex-row items-end gap-4">
         {viewMode === 'zone' ? (
-          <div className="flex-1 max-w-xs">
-            <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
+          <div className="flex-1 flex items-end gap-6">
+            <div className="max-w-xs w-full">
+              <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
+            </div>
+            
+            {activeZone && (
+              <div className="hidden lg:flex items-center gap-6 mb-1 text-slate-600 border-l-2 border-slate-100 pl-6 h-10">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Current</span>
+                  <span className="text-xl font-black text-slate-800 leading-none">{activeZone.temperature.toFixed(1)}°</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Target</span>
+                  <span className="text-xl font-black text-indigo-600 leading-none">{activeZone.setpoint.toFixed(1)}°</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Mode</span>
+                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none mt-1.5">
+                    {activeZone.setpointMode}
+                    {activeZone.setpointMode === 'Temporary Override' && activeZone.until && ` until ${new Date(activeZone.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex-1 max-w-xs">
