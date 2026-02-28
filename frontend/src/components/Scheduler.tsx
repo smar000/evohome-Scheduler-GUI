@@ -157,7 +157,7 @@ type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules } = useHeatingStore();
+  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules } = useHeatingStore();
   const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
   
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
