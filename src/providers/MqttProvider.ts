@@ -137,6 +137,10 @@ export class MqttProvider implements HeatingProvider {
     // Subscribe specifically to dhw schedule
     this.client.subscribe('evohome/evogateway/dhw/+/zone_schedule');
 
+    // Subscribe to specific DHW status topics
+    this.client.subscribe('evohome/evogateway/zones/_dhw/ctl_controller/dhw_mode');
+    this.client.subscribe('evohome/evogateway/zones/_dhw/dhw_wireless_sender/dhw_temp');
+
     // Subscribe to system and dhw status
     this.client.subscribe('evohome/evogateway/system');
     this.client.subscribe('evohome/evogateway/dhw');
@@ -159,12 +163,33 @@ export class MqttProvider implements HeatingProvider {
         }
 
         // --- Handle values (JSON based on logs) ---
-        if (topic.endsWith('/setpoint') || topic.endsWith('/temperature') || topic.endsWith('/zone_mode')) {
+        if (topic.endsWith('/setpoint') || topic.endsWith('/temperature') || topic.endsWith('/zone_mode') || 
+            topic.endsWith('/dhw_mode') || topic.endsWith('/dhw_temp')) {
             const parts = topic.split('/');
             const zoneLabel = parts[3];
             
             try {
                 const valData = JSON.parse(payload);
+
+                if (topic.endsWith('/dhw_mode') || topic.endsWith('/dhw_temp')) {
+                    if (!this.dhw) this.dhw = { dhwId: "dhw", state: "Off", temperature: 0, setpointMode: "Following Schedule" };
+                    
+                    if (topic.endsWith('/dhw_mode')) {
+                        const modeMap: Record<string, string> = {
+                            'follow_schedule': 'Following Schedule',
+                            'temporary_override': 'Temporary Override',
+                            'permanent_override': 'Permanent Override'
+                        };
+                        this.dhw.setpointMode = modeMap[valData.mode] || valData.mode || 'Following Schedule';
+                        this.dhw.until = valData.until;
+                        if (valData.active !== undefined) this.dhw.state = valData.active ? "On" : "Off";
+                    } else if (topic.endsWith('/dhw_temp')) {
+                        const temp = typeof valData === 'number' ? valData : valData.temperature;
+                        if (temp !== undefined) this.dhw.temperature = temp;
+                    }
+                    return;
+                }
+
                 // Use zone_idx if present to find the internal ID (decimal)
                 const zoneId = valData.zone_idx ? parseInt(valData.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel];
                 
@@ -199,9 +224,14 @@ export class MqttProvider implements HeatingProvider {
             } catch (e) {
                 const zoneId = this.labelToZoneId[zoneLabel];
                 const val = parseFloat(payload);
-                if (!isNaN(val) && zoneId && this.zones[zoneId]) {
-                    if (topic.endsWith('/setpoint')) this.zones[zoneId].setpoint = val;
-                    else if (topic.endsWith('/temperature')) this.zones[zoneId].temperature = val;
+                if (!isNaN(val)) {
+                    if (topic.endsWith('/dhw_temp')) {
+                        if (!this.dhw) this.dhw = { dhwId: "dhw", state: "Off", temperature: 0, setpointMode: "Following Schedule" };
+                        this.dhw.temperature = val;
+                    } else if (zoneId && this.zones[zoneId]) {
+                        if (topic.endsWith('/setpoint')) this.zones[zoneId].setpoint = val;
+                        else if (topic.endsWith('/temperature')) this.zones[zoneId].temperature = val;
+                    }
                 }
             }
             return;
@@ -242,14 +272,33 @@ export class MqttProvider implements HeatingProvider {
             return;
         }
 
-        if (topic === 'evohome/evogateway/dhw' || topic === 'evohome/evogateway/_dhw' || topic.endsWith('/_dhw')) {
-            this.dhw = {
-                dhwId: "dhw",
-                state: data.state || "Off",
-                temperature: data.temperature || 0,
-                setpointMode: data.setpointMode || "FollowSchedule",
-                until: data.until
-            };
+        // Handle DHW status
+        if (topic.includes('/_dhw') || topic === 'evohome/evogateway/dhw' || topic === 'evohome/evogateway/_dhw') {
+            if (!this.dhw) {
+                this.dhw = { dhwId: "dhw", state: "Off", temperature: 0, setpointMode: "Following Schedule" };
+            }
+
+            if (topic.endsWith('/dhw_mode')) {
+                const modeMap: Record<string, string> = {
+                    'follow_schedule': 'Following Schedule',
+                    'temporary_override': 'Temporary Override',
+                    'permanent_override': 'Permanent Override'
+                };
+                this.dhw.setpointMode = modeMap[data.mode] || data.mode || 'Following Schedule';
+                this.dhw.until = data.until;
+                // If it's active, it's "On", otherwise we can't be sure but usually we'd rely on schedule
+                if (data.active !== undefined) this.dhw.state = data.active ? "On" : "Off";
+            } else if (topic.endsWith('/dhw_temp')) {
+                // If payload is just a number (some gateways do this) or JSON
+                const temp = typeof data === 'number' ? data : data.temperature;
+                if (temp !== undefined) this.dhw.temperature = temp;
+            } else {
+                // Legacy/General DHW status message
+                if (data.state !== undefined) this.dhw.state = data.state;
+                if (data.temperature !== undefined) this.dhw.temperature = data.temperature;
+                if (data.setpointMode !== undefined) this.dhw.setpointMode = data.setpointMode;
+                if (data.until !== undefined) this.dhw.until = data.until;
+            }
             return;
         }
 
