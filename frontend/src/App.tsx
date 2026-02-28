@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useHeatingApi } from './api/useHeatingApi';
 import { useHeatingStore } from './store/useHeatingStore';
-import { Thermometer, Droplets, Settings, Activity, RefreshCw, Database } from 'lucide-react';
+import { Thermometer, Droplets, Settings, Activity, RefreshCw, AlertCircle } from 'lucide-react';
 import { Scheduler } from './components/Scheduler';
 
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules } = useHeatingApi();
-  const { zones, dhw, system, loading, error, provider } = useHeatingStore();
+  const { fetchCurrentStatus, fetchAllSchedules, selectProvider, refreshMqttMappings } = useHeatingApi();
+  const { zones, dhw, system, loading, loadingMessage, error, provider } = useHeatingStore();
 
   useEffect(() => {
     fetchCurrentStatus();
@@ -14,9 +14,14 @@ function App() {
   }, []);
 
   const handleManualRefresh = async () => {
-    console.log('MANUAL REFRESH BUTTON CLICKED. Forcing data fetch...');
     await fetchCurrentStatus(true);
     await fetchAllSchedules(true);
+  };
+
+  const getTitle = () => {
+    if (provider?.name === 'Honeywell') return 'evoWeb Cloud';
+    if (provider?.name === 'MQTT') return 'evoWeb Local';
+    return 'evoWeb Modern';
   };
 
   if (error) return <div className="p-4 bg-red-100 text-red-700 border border-red-200 m-4 rounded">Error: {error}</div>;
@@ -24,9 +29,21 @@ function App() {
   return (
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 pb-6 gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">evoWeb Modern</h1>
-          <p className="text-slate-500 mt-1 font-medium">Smart Heating Control</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
+            <p className="text-slate-500 mt-1 font-medium">Smart Heating Control</p>
+          </div>
+          
+          <select 
+            value={provider?.name === 'Honeywell' ? 'honeywell' : (provider?.name === 'MQTT' ? 'mqtt' : 'mock')}
+            onChange={(e) => selectProvider(e.target.value as any)}
+            className="bg-slate-100 border-none rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wider text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+          >
+            <option value="honeywell">Cloud (Honeywell)</option>
+            <option value="mqtt">Local (MQTT)</option>
+            <option value="mock">Demo (Mock)</option>
+          </select>
         </div>
         
         <div className="flex items-center gap-4">
@@ -38,6 +55,21 @@ function App() {
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             Refresh Data
           </button>
+
+          {provider?.name === 'MQTT' && (
+            <button 
+              onClick={() => {
+                if (window.confirm("This will attempt to sync zone names from Honeywell Cloud. If you get a 401 error, please switch to Cloud mode first to re-authenticate, then try again. Continue?")) {
+                  refreshMqttMappings();
+                }
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 border border-indigo-700 rounded-xl shadow-sm text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50 transition-all"
+            >
+              <Activity size={18} />
+              Sync Zones
+            </button>
+          )}
 
           {system && (
             <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
@@ -122,12 +154,23 @@ function App() {
         </main>
       )}
 
-      {/* FIXED STATUS BAR */}
-      <footer className={`fixed bottom-0 left-0 right-0 p-3 bg-slate-900 text-white flex items-center justify-center gap-3 transition-transform duration-500 ${loading ? 'translate-y-0' : 'translate-y-full'}`}>
-        <RefreshCw size={16} className="animate-spin text-indigo-400" />
-        <span className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-            Retrieving data from <span className="text-indigo-400 font-black">{provider || 'Loading...'}</span>...
-        </span>
+      {/* FIXED STATUS BAR WITH ERROR SUPPORT */}
+      <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 ${loading || provider?.error ? 'translate-y-0' : 'translate-y-full'} ${provider?.error ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
+        {provider?.error ? (
+            <div className="flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-200" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                    {provider.name} Connection Error: <span className="text-red-100 font-black ml-1">{provider.error}</span>
+                </span>
+            </div>
+        ) : (
+            <div className="flex items-center gap-2">
+                <RefreshCw size={16} className="animate-spin text-indigo-400" />
+                <span className="text-xs font-bold uppercase tracking-widest">
+                    {loadingMessage ? loadingMessage : `Retrieving data from ${provider?.name || 'Loading...'}...`}
+                </span>
+            </div>
+        )}
       </footer>
     </div>
   );

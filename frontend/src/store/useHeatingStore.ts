@@ -3,38 +3,12 @@ import { produce } from 'immer';
 import isEqual from 'lodash.isequal';
 
 // --- Types ---
-interface Switchpoint {
-  heatSetpoint: number;
-  timeOfDay: string;
-}
-interface DailySchedule {
-  dayOfWeek: string;
-  switchpoints: Switchpoint[];
-}
-interface ZoneSchedule {
-  name: string;
-  schedule: DailySchedule[];
-}
-interface ZoneStatus {
-  zoneId: string;
-  name: string;
-  setpoint: number;
-  temperature: number;
-  setpointMode: string;
-  until?: string;
-}
-interface DhwStatus {
-  dhwId: string;
-  state: string;
-  temperature: number;
-  setpointMode: string;
-  until?: string;
-}
-interface SystemStatus {
-  systemMode: string;
-  timeUntil?: string;
-  permanent: boolean;
-}
+interface Switchpoint { heatSetpoint: number; timeOfDay: string; }
+interface DailySchedule { dayOfWeek: string; switchpoints: Switchpoint[]; }
+interface ZoneSchedule { name: string; schedule: DailySchedule[]; }
+interface ZoneStatus { zoneId: string; name: string; setpoint: number; temperature: number; setpointMode: string; until?: string; }
+interface DhwStatus { dhwId: string; state: string; temperature: number; setpointMode: string; until?: string; }
+interface SystemStatus { systemMode: string; timeUntil?: string; permanent: boolean; }
 // -------------
 
 interface HeatingState {
@@ -45,8 +19,12 @@ interface HeatingState {
   originalSchedules: Record<string, ZoneSchedule>;
   isDirty: boolean;
   loading: boolean;
+  loadingMessage: string | null;
   error: string | null;
-  provider: string | null; // NEW: Track data source
+  provider: {
+      name: string;
+      error: string | null;
+  } | null; 
   
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
@@ -54,8 +32,9 @@ interface HeatingState {
   setInitialSchedules: (schedules: Record<string, ZoneSchedule>) => void;
   setSchedules: (schedules: Record<string, ZoneSchedule>) => void;
   setLoading: (loading: boolean) => void;
+  setLoadingMessage: (message: string | null) => void;
   setError: (error: string | null) => void;
-  setProvider: (provider: string | null) => void; // NEW
+  setProviderInfo: (name: string, error: string | null) => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -66,28 +45,20 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   originalSchedules: {},
   isDirty: false,
   loading: false,
+  loadingMessage: null,
   error: null,
   provider: null,
 
   setZones: (zones) => set({ zones }),
   setDhw: (dhw) => set({ dhw }),
   setSystem: (system) => set({ system }),
-  
-  setInitialSchedules: (schedules) => set({ 
-    schedules, 
-    originalSchedules: schedules, 
-    isDirty: false 
-  }),
-
+  setInitialSchedules: (schedules) => set({ schedules, originalSchedules: schedules, isDirty: false }),
   setSchedules: (schedules) => {
     const original = get().originalSchedules;
-    set({
-      schedules,
-      isDirty: !isEqual(original, schedules),
-    });
+    set({ schedules, isDirty: !isEqual(original, schedules) });
   },
-
   setLoading: (loading) => set({ loading }),
+  setLoadingMessage: (loadingMessage) => set({ loadingMessage }),
   setError: (error) => set({ error }),
-  setProvider: (provider) => set({ provider }),
+  setProviderInfo: (name, error) => set({ provider: { name, error } }),
 }));

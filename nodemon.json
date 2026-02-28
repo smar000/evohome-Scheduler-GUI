@@ -1,0 +1,10 @@
+{
+  "ignore": [
+    "config/*.json",
+    ".session.json",
+    "logs/*.log",
+    "tests/*",
+    "frontend/*"
+  ],
+  "ext": "ts,js,json"
+}

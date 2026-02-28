@@ -52,6 +52,7 @@ export class HoneywellTccProvider implements HeatingProvider {
         try {
             await this.fetchUserInfo();
             await this.fetchInstallationData();
+            await this.saveMqttMappings(); // Auto-save mappings on init
             return;
         } catch (error) {
             Logger.debug("Honeywell TCC: Existing session invalid or expired. Attempting refresh/login.");
@@ -61,6 +62,33 @@ export class HoneywellTccProvider implements HeatingProvider {
     await this.ensureSession();
     await this.fetchUserInfo();
     await this.fetchInstallationData();
+    await this.saveMqttMappings(); // Auto-save mappings after fresh login
+  }
+
+  private async saveMqttMappings(): Promise<void> {
+    try {
+        const zones = await this.getZonesStatus(false, true); // Use cached status if just fetched
+        if (!zones || zones.length === 0) return;
+
+        const mapping: Record<string, { name: string, label: string }> = {};
+        zones.forEach((z, index) => {
+            const snakeLabel = z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
+            const userZoneId = index.toString().padStart(2, '0');
+            mapping[userZoneId] = {
+                name: z.name,
+                label: snakeLabel
+            };
+        });
+
+        const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+        const dir = path.dirname(zonesPath);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        
+        fs.writeFileSync(zonesPath, JSON.stringify(mapping, null, 2));
+        Logger.info(`Honeywell TCC: Automatically synced ${zones.length} zone mappings (with names and labels) for MQTT.`);
+    } catch (e) {
+        Logger.error("Honeywell TCC: Failed to auto-sync MQTT mappings.", e);
+    }
   }
 
   private loadSession(): boolean {
@@ -204,7 +232,12 @@ export class HoneywellTccProvider implements HeatingProvider {
     }
 
     await this.ensureSession();
-    const response = await this.axiosInstance!.get(`/location/${this.locationId}/status?includeTemperatureControlSystems=True`);
+    
+    if (!this.axiosInstance) {
+        throw new Error("Honeywell TCC: Axios instance not initialized. Possible login failure.");
+    }
+
+    const response = await this.axiosInstance.get(`/location/${this.locationId}/status?includeTemperatureControlSystems=True`);
     
     this.cachedFullStatus = response.data;
     this.lastApiFetch = now;
@@ -254,7 +287,10 @@ export class HoneywellTccProvider implements HeatingProvider {
 
   async getScheduleForId(id: string): Promise<ZoneSchedule> {
     await this.ensureSession();
-    const response = await this.axiosInstance!.get(`/temperatureZone/${id}/schedule`);
+    if (!this.axiosInstance) {
+        throw new Error("Honeywell TCC: Axios instance not initialized.");
+    }
+    const response = await this.axiosInstance.get(`/temperatureZone/${id}/schedule`);
     const data = response.data;
     const dailySchedules: DailySchedule[] = data.dailySchedules.map((ds: any) => ({
       dayOfWeek: ds.dayOfWeek,

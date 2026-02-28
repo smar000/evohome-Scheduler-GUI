@@ -2,8 +2,22 @@ import { HeatingProvider, ZoneStatus, ZoneSchedule, SystemStatus, DhwStatus } fr
 export declare class MqttProvider implements HeatingProvider {
     private config;
     private client;
+    private zones;
+    private schedules;
+    private system;
+    private dhw;
+    private lastError;
+    private zoneIdToName;
+    private nameToZoneId;
+    private pendingSchedules;
     constructor(config: any);
+    loadZoneMapping(): void;
+    private saveZoneMapping;
     initialize(): Promise<void>;
+    private setupSubscriptions;
+    private handleMessage;
+    private translateScheduleFromMqtt;
+    private translateScheduleToMqtt;
     getZonesStatus(): Promise<ZoneStatus[]>;
     getSystemStatus(): Promise<SystemStatus>;
     getHotWaterStatus(): Promise<DhwStatus | null>;

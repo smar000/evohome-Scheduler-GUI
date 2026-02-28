@@ -1,19 +1,28 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { config } from './config/index';
 import { Logger } from './utils/Logger';
 import { ProviderFactory } from './providers/ProviderFactory';
 import { HeatingProvider } from './providers/HeatingProvider';
+import { HoneywellTccProvider } from './providers/HoneywellTccProvider';
 
 const app = express();
 let provider: HeatingProvider;
 
-try {
-    provider = ProviderFactory.create();
-} catch (error) {
-    Logger.error("CRITICAL: Failed to instantiate provider on startup.", error);
-    process.exit(1);
+// Function to (re)initialize provider
+async function initProvider() {
+    try {
+        provider = ProviderFactory.create();
+        Logger.info(`Initializing heating provider (${config.providerType}) in background...`);
+        await provider.initialize();
+        Logger.info("Heating provider initialized successfully.");
+    } catch (error) {
+        Logger.error("Failed to initialize heating provider.", error);
+    }
 }
+
+initProvider();
 
 // Middleware
 app.use(express.json());
@@ -38,21 +47,84 @@ app.use(express.static(path.join(__dirname, '../static')));
 
 // --- REST API Routes ---
 
+// Switch Provider
+app.post('/rest/selectprovider', async (req, res) => {
+    try {
+        const { type } = req.body;
+        if (type !== 'honeywell' && type !== 'mqtt' && type !== 'mock') {
+            return res.status(400).json({ error: "Invalid provider type" });
+        }
+
+        Logger.info(`API: Switching provider to ${type}...`);
+        
+        // 1. Update the .env file
+        const envPath = path.join(process.cwd(), '.env');
+        let envContent = fs.readFileSync(envPath, 'utf8');
+        envContent = envContent.replace(/HEATING_PROVIDER=\w+/g, `HEATING_PROVIDER=${type}`);
+        fs.writeFileSync(envPath, envContent);
+
+        // 2. Update the in-memory config
+        config.providerType = type;
+
+        // 3. Re-initialize provider
+        await initProvider();
+
+        res.json({ status: "Ok", provider: type });
+    } catch (error: any) {
+        Logger.error("API: Failed to switch provider.", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Refresh MQTT Zone Mappings from Honeywell
+app.post('/rest/mqtt/refresh-mappings', async (req, res) => {
+    try {
+        Logger.info("API: Refreshing MQTT zone mappings from Honeywell...");
+        const honeywell = new HoneywellTccProvider(config.honeywell.username, config.honeywell.password);
+        await honeywell.initialize();
+        const zones = await honeywell.getZonesStatus();
+        
+        const mapping: Record<string, string> = {};
+        zones.forEach(z => {
+            // Convert name to snake_case for MQTT topics
+            const snakeName = z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
+            mapping[z.zoneId] = snakeName;
+        });
+
+        const zonesPath = path.join(process.cwd(), 'config', 'zones.json');
+        if (!fs.existsSync(path.dirname(zonesPath))) fs.mkdirSync(path.dirname(zonesPath), { recursive: true });
+        fs.writeFileSync(zonesPath, JSON.stringify(mapping, null, 2));
+        
+        Logger.info(`API: Saved ${zones.length} zone mappings to ${zonesPath}`);
+        
+        // If current provider is MQTT, tell it to reload
+        if (config.providerType === 'mqtt' && provider) {
+            (provider as any).loadZoneMapping?.();
+        }
+
+        res.json({ status: "Ok", mappings: mapping });
+    } catch (error: any) {
+        Logger.error("API: Failed to refresh zone mappings.", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.get('/rest/test', (req, res) => {
     Logger.info("Test endpoint hit");
     res.json({ status: "ok", message: "Backend is reachable" });
 });
 
 app.get('/rest/session', (req, res) => {
+    if (!provider) {
+        return res.json({ provider: "None", error: "Provider not initialized" });
+    }
     res.json(provider.getSessionInfo());
-    Logger.debug("API: /rest/session request finished.");
 });
 
 app.get('/rest/renewsession', async (req, res) => {
     try {
         await provider.renewSession();
         res.json(provider.getSessionInfo());
-        Logger.debug("API: /rest/renewsession request finished.");
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -62,7 +134,6 @@ app.get('/rest/getsystemmode', async (req, res) => {
     try {
         const status = await provider.getSystemStatus();
         res.json(status);
-        Logger.debug("API: /rest/getsystemmode request finished.");
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -70,7 +141,7 @@ app.get('/rest/getsystemmode', async (req, res) => {
 
 app.get('/rest/getzones/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        const { forItem } = req.params as any;
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
         const zones = await (provider as any).getZonesStatus(refresh, cache);
@@ -80,7 +151,6 @@ app.get('/rest/getzones/:forItem?', async (req, res) => {
         } else {
             res.json(zones);
         }
-        Logger.debug(`API: /rest/getzones finished. Refresh=${refresh}, Cache=${cache}`);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -92,7 +162,6 @@ app.get('/rest/getdhw', async (req, res) => {
         const cache = req.query.cache === 'true';
         const status = await (provider as any).getHotWaterStatus(refresh, cache);
         res.json(status);
-        Logger.debug(`API: /rest/getdhw finished. Refresh=${refresh}, Cache=${cache}`);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
@@ -100,7 +169,10 @@ app.get('/rest/getdhw', async (req, res) => {
 
 app.get('/rest/getcurrentstatus/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        if (!provider) {
+            throw new Error("Heating provider not initialized.");
+        }
+        const { forItem } = req.params as any;
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
 
@@ -120,40 +192,51 @@ app.get('/rest/getcurrentstatus/:forItem?', async (req, res) => {
             const system = await (provider as any).getSystemStatus(false, cache); 
             res.json({ zones, dhw, system });
         }
-        Logger.debug(`API: /rest/getcurrentstatus finished. Refresh=${refresh}, Cache=${cache}`);
     } catch (error: any) {
+        const { forItem } = req.params as any;
+        Logger.error(`API: Error fetching status for ${forItem || 'all'}:`, error);
         res.status(500).json({ error: error.message });
     }
 });
 
 app.get('/rest/getallschedules', async (req, res) => {
     try {
+        if (!provider) {
+            throw new Error("Heating provider not initialized.");
+        }
         const refresh = req.query.refresh === 'true';
         const cache = req.query.cache === 'true';
         const schedules = await (provider as any).getAllSchedules(refresh, cache);
         res.json(schedules);
-        Logger.debug(`API: /rest/getallschedules finished. Refresh=${refresh}, Cache=${cache}`);
     } catch (error: any) {
+        Logger.error("API: Error fetching all schedules:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
 app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
     try {
-        const forItem = req.params['forItem?'];
+        const { forItem } = req.params as any;
         if (!forItem) return res.status(400).json({ error: "Missing zone name/ID" });
+        
         let id = forItem;
-        if (forItem === 'dhw') {
-            const status = await provider.getHotWaterStatus();
-            if (status) id = status.dhwId;
-        } else {
-            const zones = await provider.getZonesStatus();
-            const zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
-            if (zone) id = zone.zoneId;
+        // Only do the name->ID lookup if NOT in MQTT mode OR if it's 'dhw'
+        if (config.providerType !== 'mqtt' || forItem === 'dhw') {
+            if (forItem === 'dhw') {
+                const status = await provider.getHotWaterStatus();
+                if (status) id = status.dhwId;
+            } else {
+                const zones = await provider.getZonesStatus();
+                const zone = zones.find(z => z.name === forItem || z.zoneId === forItem);
+                if (zone) id = zone.zoneId;
+            }
         }
+        
         const schedule = await provider.getScheduleForId(id);
         res.json(schedule);
     } catch (error: any) {
+        const { forItem } = req.params as any;
+        Logger.error(`API: Error fetching schedule for ${forItem}:`, error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -245,17 +328,6 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     res.status(500).send(`Something went wrong: ${err.message}`);
 });
 
-async function startServer() {
-    app.listen(config.port, '0.0.0.0', () => {
-        Logger.info(`Modernized Backend listening at http://localhost:${config.port}`);
-    });
-    try {
-        Logger.info("Initializing heating provider in background...");
-        await provider.initialize();
-        Logger.info("Heating provider initialized successfully.");
-    } catch (error) {
-        Logger.error("Failed to initialize heating provider.", error);
-    }
-}
-
-startServer();
+const server = app.listen(config.port, '0.0.0.0', () => {
+    Logger.info(`Modernized Backend listening at http://localhost:${config.port}`);
+});

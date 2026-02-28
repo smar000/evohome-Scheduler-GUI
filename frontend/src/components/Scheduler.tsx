@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock } from 'lucide-react';
+import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -130,8 +130,8 @@ type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, setSchedules, isDirty } = useHeatingStore();
-  const { fetchAllSchedules, saveAllSchedules } = useHeatingApi();
+  const { schedules, zones, setSchedules, isDirty, loading } = useHeatingStore();
+  const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially } = useHeatingApi();
   
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
   const [editMode, setEditMode] = useState<EditMode>('resize');
@@ -268,53 +268,59 @@ export const Scheduler: React.FC = () => {
   };
 
   const renderRow = (label: string, dayName: string, zoneId: string) => {
-    const daySchedule = schedules[zoneId]?.schedule.find(s => s.dayOfWeek === dayName);
+    const zoneSchedule = schedules[zoneId];
+    const hasData = zoneSchedule && zoneSchedule.schedule && zoneSchedule.schedule.length > 0;
+    const daySchedule = hasData ? zoneSchedule.schedule.find(s => s.dayOfWeek === dayName) : null;
+    
     const sps = daySchedule ? [...daySchedule.switchpoints].sort((a, b) => a.timeOfDay.localeCompare(b.timeOfDay)) : [];
     const slots: React.ReactNode[] = [];
-    let lastMins = 0;
-    let lastTemp = sps.length > 0 ? sps[sps.length - 1].heatSetpoint : 20;
+    
+    if (hasData) {
+        let lastMins = 0;
+        let lastTemp = sps.length > 0 ? sps[sps.length - 1].heatSetpoint : 20;
 
-    sps.forEach((sp, i) => {
-      const currentMins = timeToMinutes(sp.timeOfDay);
-      const width = ((currentMins - lastMins) / TOTAL_DAY_MINUTES) * 100;
-      if (width > 0) {
-        const rangeText = `${minutesToTime(lastMins)} - ${minutesToTime(currentMins)}`;
+        sps.forEach((sp, i) => {
+        const currentMins = timeToMinutes(sp.timeOfDay);
+        const width = ((currentMins - lastMins) / TOTAL_DAY_MINUTES) * 100;
+        if (width > 0) {
+            const rangeText = `${minutesToTime(lastMins)} - ${minutesToTime(currentMins)}`;
+            slots.push(
+            <div key={i} style={{ width: `${width}%`, backgroundColor: getTempColor(lastTemp) }}
+                className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot"
+                onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
+                title={`${rangeText} | ${lastTemp}°C`}
+                data-start-time={minutesToTime(lastMins)} data-end-time={minutesToTime(currentMins)} data-temp={lastTemp}>
+                <span className="text-[10px]">{lastTemp}°</span>
+                {width > 8 && (
+                    <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
+                        {minutesToTime(lastMins)}
+                    </span>
+                )}
+            </div>
+            );
+        }
+        lastMins = currentMins;
+        lastTemp = sp.heatSetpoint;
+        });
+
+        const finalWidth = ((TOTAL_DAY_MINUTES - lastMins) / TOTAL_DAY_MINUTES) * 100;
+        if (finalWidth > 0) {
+        const rangeText = `${minutesToTime(lastMins)} - 24:00`;
         slots.push(
-          <div key={i} style={{ width: `${width}%`, backgroundColor: getTempColor(lastTemp) }}
-            className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot"
+            <div key="last" style={{ width: `${finalWidth}%`, backgroundColor: getTempColor(lastTemp) }}
+            className="h-full flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 select-none relative group/slot"
             onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
             title={`${rangeText} | ${lastTemp}°C`}
-            data-start-time={minutesToTime(lastMins)} data-end-time={minutesToTime(currentMins)} data-temp={lastTemp}>
+            data-start-time={minutesToTime(lastMins)} data-end-time="24:00" data-temp={lastTemp}>
             <span className="text-[10px]">{lastTemp}°</span>
-            {width > 8 && (
-                <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
-                    {minutesToTime(lastMins)}
-                </span>
-            )}
-          </div>
+            {finalWidth > 8 && (
+                    <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
+                        {minutesToTime(lastMins)}
+                    </span>
+                )}
+            </div>
         );
-      }
-      lastMins = currentMins;
-      lastTemp = sp.heatSetpoint;
-    });
-
-    const finalWidth = ((TOTAL_DAY_MINUTES - lastMins) / TOTAL_DAY_MINUTES) * 100;
-    if (finalWidth > 0) {
-      const rangeText = `${minutesToTime(lastMins)} - 24:00`;
-      slots.push(
-        <div key="last" style={{ width: `${finalWidth}%`, backgroundColor: getTempColor(lastTemp) }}
-          className="h-full flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 select-none relative group/slot"
-          onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
-          title={`${rangeText} | ${lastTemp}°C`}
-          data-start-time={minutesToTime(lastMins)} data-end-time="24:00" data-temp={lastTemp}>
-          <span className="text-[10px]">{lastTemp}°</span>
-          {finalWidth > 8 && (
-                <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
-                    {minutesToTime(lastMins)}
-                </span>
-            )}
-        </div>
-      );
+        }
     }
 
     const isSource = clipboardSource === label;
@@ -322,14 +328,23 @@ export const Scheduler: React.FC = () => {
     return (
       <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-2">
         <div className="w-24 pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
-        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100">
-          {slots.length > 0 ? slots : <div className="w-full bg-slate-50" />}
+        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 items-center justify-center relative">
+          {hasData ? slots : (
+              <div className="flex items-center gap-2 text-slate-300">
+                  <Clock size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">No Schedule Data</span>
+              </div>
+          )}
         </div>
         <div className="w-16 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-            <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={14} /></button>
-            {clipboard && (isSource ? 
-                <button onClick={handlePasteToAll} className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 shadow-sm"><ClipboardPaste size={14} /></button> :
-                <button onClick={() => handlePaste(dayName, zoneId)} className="p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"><ClipboardCheck size={14} /></button>
+            {hasData && (
+                <>
+                    <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={14} /></button>
+                    {clipboard && (isSource ? 
+                        <button onClick={handlePasteToAll} className="p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 shadow-sm"><ClipboardPaste size={14} /></button> :
+                        <button onClick={() => handlePaste(dayName, zoneId)} className="p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"><ClipboardCheck size={14} /></button>
+                    )}
+                </>
             )}
         </div>
       </div>
@@ -356,15 +371,47 @@ export const Scheduler: React.FC = () => {
           <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className="px-5 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 disabled:opacity-50 transition-all"><Save size={18} className="inline mr-2"/>Save</button>
         </div>
       </div>
-      <div className="mb-8">
-        {viewMode === 'zone' ? <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} /> :
-          <div className="max-w-xs"><select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all">{DAYS.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
-        }
+      <div className="mb-8 flex flex-col md:flex-row items-end gap-4">
+        {viewMode === 'zone' ? (
+          <div className="flex-1 max-w-xs">
+            <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
+          </div>
+        ) : (
+          <div className="flex-1 max-w-xs">
+            <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Select Day</label>
+            <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all">{DAYS.map(d => <option key={d} value={d}>{d}</option>)}</select>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          {viewMode === 'zone' && selectedZoneId && (
+            <button 
+              onClick={() => fetchScheduleForZone(selectedZoneId)}
+              disabled={loading}
+              title="Refresh Current Zone"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-50 border-2 border-indigo-100 rounded-xl text-sm font-bold text-indigo-600 hover:bg-indigo-100 disabled:opacity-50 transition-all"
+            >
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh Zone
+            </button>
+          )}
+          
+          <button 
+            onClick={fetchAllSchedulesSequentially}
+            disabled={loading}
+            title="Refresh All Schedules One by One"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50 transition-all"
+          >
+            <Activity size={16} className={loading ? "animate-pulse" : ""} />
+            Refresh All
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
         {renderTimelineHeader()}
-        {viewMode === 'zone' ? (selectedZoneId ? DAYS.map(day => renderRow(day, day, selectedZoneId)) : null) : zones.map(zone => renderRow(zone.name, selectedDay, zone.zoneId))}
+        {viewMode === 'zone' ? (selectedZoneId ? DAYS.map(day => renderRow(day, day, selectedZoneId)) : null) : 
+          [...zones].sort((a,b) => a.name.localeCompare(b.name)).map(zone => renderRow(zone.name, selectedDay, zone.zoneId))}
       </div>
 
       {editingSlot && (

@@ -51,19 +51,19 @@ app.use(express.static(path.join(__dirname, 'static'))); // Serve static files
 app.use('/rest',getSession);    //All rest commands require valid evohome session
 
 app.get('/rest/session', async function (req, res, next) { // Get Session
-    log.debug("/session: request received");    
+    log.debug("/session: request received");
     if (session) {
         res.json(session);
     }
     else {
         log.debug("/session: session is undefined....");
         res.json({error:"Session is undefined"});
-    }   
+    }
 });
 
 app.get('/rest/renewsession', async function (req, res, next) { // Renew current session
-    log.debug("/renewsession: request received");    
-    if (session && session.credentials) log.silly(`/renewsession: current session credentials:  ${JSON.stringify(session.credentials)}`);    
+    log.debug("/renewsession: request received");
+    if (session && session.credentials) log.silly(`/renewsession: current session credentials:  ${JSON.stringify(session.credentials)}`);
     var credentials = await doSessionRenewal(session.credentials);
     if (credentials) {
         log.debug(`/renewsession: new credentials:  ${JSON.stringify(credentials)}`);
@@ -73,35 +73,35 @@ app.get('/rest/renewsession', async function (req, res, next) { // Renew current
 });
 
 app.get('/rest/getsystemmode', async function (req, res, next) { // Get system mode
-    log.debug("/getsystemmode: request received");    
+    log.debug("/getsystemmode: request received");
     var json = await session.getCurrentStatus(session.locations[locationIndex].locationID);
     res.json(session.locations[locationIndex].systemModeStatus); //Note capital ID...
 });
 
 app.get('/rest/getzones/:forItem?', async function (req, res, next) { // Get Zones
     var forItem = req.params.forItem;
-    log.debug(`/getzones: request received (forItem = ${JSON.stringify(forItem)}`);    
-    // if (session && session.locations.length >0) log.debug(`/getzones: Zones found: ${_.size(session.locations[locationIndex].zones)}`);        
+    log.debug(`/getzones: request received (forItem = ${JSON.stringify(forItem)}`);
+    // if (session && session.locations.length >0) log.debug(`/getzones: Zones found: ${_.size(session.locations[locationIndex].zones)}`);
     if (session && session.locations[locationIndex])
         if (forItem)
             res.json(session.getZoneForName(forItem, locationIndex));
         else
             res.json(session.locations[locationIndex].zones);
-    else   
+    else
         res.status(500).json({"error":"Session could not be found"})
 });
 
 app.get('/rest/getdhw', async function (req, res, next) { // Get dhw if it exits
-    log.debug("/getdhw: request received");    
+    log.debug("/getdhw: request received");
     res.json(session.locations[locationIndex].dhw);
 });
 
 
 app.get('/rest/getcurrentstatus/:forItem?', async function (req, res, next) { // Get Zones
-    log.debug(`/getcurrentstatus: request received. Parameters: ${JSON.stringify(req.params)}`);   
+    log.debug(`/getcurrentstatus: request received. Parameters: ${JSON.stringify(req.params)}`);
     var secondsAgo;
     var forItem = req.params.forItem;
-    if (lastDataUpdate) secondsAgo = (moment().unix() - lastDataUpdate); else secondsAgo = 181; 
+    if (lastDataUpdate) secondsAgo = (moment().unix() - lastDataUpdate); else secondsAgo = 181;
     if (req.query.refresh || secondsAgo > 180){ //we reuse the same data if less than 3 minutes ago; saves hammering the evohome server
         var json = await session.getCurrentStatus(session.locations[locationIndex].locationID);
         lastDataUpdate = moment().unix();
@@ -121,25 +121,25 @@ app.get('/rest/getcurrentstatus/:forItem?', async function (req, res, next) { //
     }
 });
 
-app.get('/rest/getallschedules', async function (req, res, next) { // Get Schedules for all zones 
+app.get('/rest/getallschedules', async function (req, res, next) { // Get Schedules for all zones
     log.info(`/getschedules: request params:  ${JSON.stringify (req.query)}`);
     if (_.size(session.schedules) < _.size(session.locations[locationIndex].zones) || req.query.refresh){
         log.debug("/getschedules: Refreshing all schedules from server...")
-        await session.getAllSchedules();    
-    }  else
+        await session.getAllSchedules();
+    } else
         log.debug("/getschedules: Sending previously downloaded schedules...");
     log.debug(`/getSchedules: Schedules found for ${_.size(session.schedules)} zones`);
     res.json(session.schedules);
 });
 
 app.get('/rest/getscheduleforzone/:forItem?', async function (req, res, next) { //Get Schedule for single zone
-    log.debug("/getscheduleforzone: request received for zone " + req.params.forItem);    
+    log.debug("/getscheduleforzone: request received for zone " + req.params.forItem);
     var forItem = req.params.forItem;
     if (forItem){ //Filter by forItem - this should be zone name or dhw
         log.silly(`/getscheduleforzone: filtering for '${forItem}'`);
         res.json(await session.getScheduleForZoneName(forItem));
-    } else 
-        resp.status(500).json({"error":"Zone name is missing"})    
+    } else
+        resp.status(500).json({"error":"Zone name is missing"})
 });
 
 app.post('/rest/savezoneschedule', function (req, res, next) { // Post Single Zone Schedule
@@ -157,13 +157,13 @@ app.post('/rest/saveallschedules', async function (req, res, next) { // Save Sch
     for (let zone of session.locations[locationIndex].zones) {
         var zoneId = zone.zoneId;
         log.debug("/saveallschedules: Saving schedule for zone: " + zone.name + " (" + zoneId + ")");
-        var zoneSchedule = {name: zone.name, schedule: req.body[zoneId].schedule}; 
+        var zoneSchedule = {name: zone.name, schedule: req.body[zoneId].schedule};
         session.schedules[zoneId] = zoneSchedule;
         responses.push (await session.saveScheduleForZone(zone));
-        log.debug("/saveallschedules: returned from saveScheduleForzone ('" + zone.name + ")'");    
+        log.debug("/saveallschedules: returned from saveScheduleForzone ('" + zone.name + ")'");
         log.silly(`/saveallschedules: ${zone}: ${JSON.stringify(zoneSchedule)}`);
     }
-    
+
     res.send(responses);
     // res.sendStatus(200);
     log.debug("/saveallschedules: returned from saving all zones' schedules");
@@ -228,7 +228,7 @@ app.post('/rest/cancelzoneoverride', async function (req, res, next) { // Cancel
 
 app.get('/rest/setloglevel', function (req, res, next) {
     log.info(`/setloglevel: received ${JSON.stringify (req.query)}`);
-    if (req.query.level) {        
+    if (req.query.level) {
         log.level = req.query.level;
         log.info(`/setloglevel: log levels set to ${JSON.stringify(log.level)}]`)
         res.json({loglevel : req.query.level});
@@ -236,11 +236,11 @@ app.get('/rest/setloglevel', function (req, res, next) {
         log.info("/setloglevel: Ignoring log level change as level parameter missing")
         res.status(404).send("Log level not specified")
     }
-    
+
 });
 
 app.get('/rest/*', function(req, res){
-    var msg = "Valid endpoints: <ul>"  
+    var msg = "Valid endpoints: <ul>"
     for (var i = 0; i < app._router.stack.length; i++) {
         var ep = app._router.stack[i];
         if (ep.name == "bound dispatch") {
@@ -251,7 +251,7 @@ app.get('/rest/*', function(req, res){
     msg = msg + "</ul>"
     res.status(404).send(msg);
   });
-  
+
 
 
   app.get('*', function(req, res){ // Catch all....
@@ -266,7 +266,7 @@ async function getSession(req,res,next) {
             log.error("getSession: : Invalid userid or password")
             res.status(401).json({Error: "Invalid userId or password. Please check the config file."});
             next('router');
-        }       
+        }
         // log.silly("Checking for valid session.... Session type is " + typeof session);
         if (typeof session !== "undefined")
             log.silly(`getSession: Session - isValid: ${session.isValid()}, Start: ${session.start().format("YYYY-MM-DD HH:mm:ss")}, Expiry: ${session.expiry().format("YYYY-MM-DD HH:mm:ss")}`);
@@ -278,7 +278,7 @@ async function getSession(req,res,next) {
             log.info("getSession: Existing valid session not found. Creating new session...");
             await createNewSession();
         } else log.debug(`getSession: Existing session expiry is  ${session.expiry().format("YYYY-MM-DD HH:mm:ss")}. Reusing session`);
-        
+
         if (session && session.isValid()) next(); else next(new Error("getSession: Could not get valid session"));
 
         return session;
@@ -291,7 +291,7 @@ async function getSession(req,res,next) {
 
 async function createNewSession(){
     try{
-        session = await evohome.GetNewSession(config.username,config.password)   ;         
+        session = await evohome.GetNewSession(config.username,config.password)   ;
         log.info("Done logging in.");
         if (config.keepSessionAlive) setSessionRenewalTimer();
         log.debug(`createNewSession: Got new session. session.isValid = ${session.isValid()}, Expiry = ${session.expiry().format("YYYY-MM-DD HH:mm:ss")}`);
@@ -312,7 +312,7 @@ async function createNewSession(){
 function setSessionRenewalTimer(){
     if (session && session.isValid()){
         log.debug(`setSessionRenewalTimer: setting timer for token renewal in ${session.credentials.expiresIn - 45} seconds`);
-        setTimeout(doSessionRenewal, (session.credentials.expiresIn - 60) * 1000);//renew 45 seconds before expiry  
+        setTimeout(doSessionRenewal, (session.credentials.expiresIn - 60) * 1000);//renew 45 seconds before expiry
     } //
 }
 
@@ -322,7 +322,7 @@ async function doSessionRenewal(){
     if (session && session.isValid()) { // use the session renewal token
         var newCreds = await evohome.login(session.credentials.username, session.credentials.password,session.refreshToken);
         log.info(`doSessionRenewal: session renewed: isValid status: ${session.isValid()}. Expiry ${session.expiry().format("YYYY-MM-DD HH:mm:ss")}`);
-        session.setCredentials(newCreds);    
+        session.setCredentials(newCreds);
     } else { //Create a new session as old one has expired
         await createNewSession();
     }

@@ -1,0 +1,50 @@
+{
+  "10": {
+    "name": "Kitchen UFH",
+    "label": "kitchen_ufh"
+  },
+  "11": {
+    "name": "Hallway",
+    "label": "hallway"
+  },
+  "00": {
+    "name": "Living Room",
+    "label": "living_room"
+  },
+  "01": {
+    "name": "Mstr Bedroom",
+    "label": "mstr_bedroom"
+  },
+  "02": {
+    "name": "Hanees Room",
+    "label": "hanees_room"
+  },
+  "03": {
+    "name": "Office",
+    "label": "office"
+  },
+  "04": {
+    "name": "Safi's Room",
+    "label": "safis_room"
+  },
+  "05": {
+    "name": "Um's Room",
+    "label": "ums_room"
+  },
+  "06": {
+    "name": "Garage",
+    "label": "garage"
+  },
+  "07": {
+    "name": "Dining Room",
+    "label": "dining_room"
+  },
+  "08": {
+    "name": "Landing",
+    "label": "landing"
+  },
+  "09": {
+    "name": "Bathroom",
+    "label": "bathroom"
+  }
+}

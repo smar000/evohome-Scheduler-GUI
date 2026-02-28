@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  evoweb:
+    build: .
+    ports:
+      - "3330:3330"
+    environment:
+      - NODE_ENV=production
+      - HEATING_PROVIDER=${HEATING_PROVIDER:-honeywell}
+      - HONEYWELL_USERNAME=${HONEYWELL_USERNAME}
+      - HONEYWELL_PASSWORD=${HONEYWELL_PASSWORD}
+      - MQTT_BROKER_URL=${MQTT_BROKER_URL:-mqtt://localhost:1883}
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+    volumes:
+      - ./config:/app/config
+      - ./logs:/app/logs
+    restart: always
