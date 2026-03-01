@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useHeatingApi } from './api/useHeatingApi';
 import { useHeatingStore } from './store/useHeatingStore';
-import { Thermometer, Droplets, Settings, Activity, RefreshCw, AlertCircle, LayoutDashboard } from 'lucide-react';
+import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard } from 'lucide-react';
 import { Scheduler } from './components/Scheduler';
 
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider, refreshMqttMappings } = useHeatingApi();
+  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider } = useHeatingApi();
   const { zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
   const isInitialized = React.useRef(false);
