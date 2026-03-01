@@ -1,65 +1,82 @@
 # evoWeb: Browser-based Schedule Editor for Honeywell evohome
 
-**evoWeb** provides a modern, responsive web interface for managing Honeywell evohome heating systems. While Honeywell offers mobile apps, it lacks a dedicated browser-based portal for comprehensive schedule management.
+**evoWeb** is a web-based interface for managing Honeywell evohome heating system schedules. While Honeywell provides official mobile applications, this project was developed to address the lack of a dedicated, browser-accessible portal suitable for desktop use and integration into home automation dashboards.
 
-The primary purpose of this project is to provide a powerful, web-based alternative to the mobile app, allowing for easy integration into home automation systems like [openHAB](https://www.openhab.org).
+This application was created to meet a specific personal requirement for a more flexible scheduling interface and is shared in the hope that it may be of use to others with similar needs.
 
 ![Dashboard](./misc/other/embedded_sched.png)
 
-## Why evoWeb?
+## Overview
 
-*   **Browser-Based:** Heating management from any desktop or tablet browser—no mobile app required.
-*   **Home Automation Ready:** Optimized for embedding in iframes (e.g., openHAB's HABPanel or Basic UI) with automatic resizing support.
-*   **Dual-Mode Support:** Seamless switching between official **Cloud control** and fast, privacy-focused **Local control**.
-*   **Precision Scheduling:** A visual grid-based editor that makes managing complex weekly schedules intuitive.
+*   **Browser-Based:** Provides schedule management from any desktop or tablet browser without the need for a mobile app.
+*   **Automation Integration:** Designed for embedding within iframes, facilitating integration into platforms such as [openHAB](https://www.openhab.org) (e.g., HABPanel or Basic UI).
+*   **Dual-Mode Support:** Supports communication via official Honeywell Cloud APIs (TCC) or local control via MQTT when used with [evogateway](https://github.com/zxdavb/evogateway).
+*   **Visual Grid Editor:** Offers a graphical representation of weekly schedules for intuitive editing.
+
+## Project Status
+
+This tool is considered feature-complete for its original intended purpose. No significant further development is planned beyond minor bug fixes. However, the project remains open to community contributions; bug reports and pull requests are welcome.
 
 ## Understanding "Slots"
 
-In the evohome system, a schedule for a day is composed of **Slots**. 
-*   A **Slot** is a specific period of time (e.g., 07:00 to 09:00) with a target temperature (e.g., 21°C).
-*   The entire 24-hour period must be covered by slots.
-*   When one slot ends, the next one immediately begins.
+In the evohome system, a daily schedule consists of **Slots**. 
+*   A **Slot** represents a specific time period (e.g., 07:00 to 09:00) with a defined target temperature (e.g., 21°C).
+*   The entire 24-hour period is covered by contiguous slots.
+*   The end of one slot marks the immediate start of the next.
 
 ## Schedule Management
 
-The **Scheduler** tab provides access to heating plans. Two primary view modes are available for different planning needs:
+The **Scheduler** tab facilitates the viewing and editing of heating plans through two primary modes:
 
-*   **Zone View (Week View):** Displays the full 7-day schedule for a single selected zone. This is ideal for managing the weekly rhythm of a specific room.
-*   **Day View (Multi-Zone View):** Displays the schedules of all heating zones for a single selected day. This provides a comprehensive overview of the entire house's heating plan for that day.
-
-The **Day View** is particularly effective for balancing heating requirements across the home. It facilitates the comparison of different zones and enables the efficient use of the **Copy** and **Paste** functionality to synchronize schedules across multiple rooms.
+*   **Zone View (Week View):** Displays the 7-day schedule for a single selected zone.
+*   **Day View (Multi-Zone View):** Displays the schedules of all zones for a single selected day, allowing for easier comparison and synchronization across the home.
 
 ### Editing a Slot
-1.  **Double-clicking** any slot in the grid opens the **Edit Popover**.
-2.  The **Start Time**, **End Time**, or **Target Temperature** may then be adjusted.
-3.  Clicking **OK** applies the changes locally.
+1.  **Double-clicking** a slot in the grid opens the **Edit Popover**.
+2.  The **Start Time**, **End Time**, or **Target Temperature** may be adjusted.
+3.  Clicking **Apply** updates the local session view.
 
 ### Resizing and Moving Slots
-The **Edit Slots** mode in the header can be toggled to enable boundary adjustments:
-*   In this mode, handles appear at the boundaries of each slot.
-*   The **handles are dragged** to precisely adjust when a slot starts or ends.
+Toggling the **Edit** mode enables boundary adjustments:
+*   Handles appear at the boundaries of each slot.
+*   Dragging these handles allows for precise adjustment of slot start and end times.
 
 ### Splitting and Deleting
-*   **Split:** Toggling **Split Slots** mode and clicking anywhere inside an existing slot divides it into two.
-*   **Delete:** Clicking **Delete** within the Edit Popover (opened via double-click) removes the slot and automatically merges the space into the preceding slot.
-
-### Copy and Paste
-The **Copy** and **Paste** buttons next to each row allow for quick duplication of a full day's schedule to another day or a different zone.
+*   **Split:** Toggling **Split** mode and double-clicking inside a slot divides it into two segments.
+*   **Delete:** Clicking **Delete** within the Edit Popover removes the slot and merges the resulting gap into the preceding slot.
 
 ### Saving Changes
-Changes made in the UI remain local until the **Save** button is clicked. This pushes the entire week's schedule for the active zone(s) to the evohome controller.
+Modifications remain local to the browser session until the **Save** button is clicked. This action pushes the updated weekly schedule to the evohome controller.
 
-## Cloud vs Local Control
+## Status Indicators
 
-evoWeb supports two distinct ways of communicating with the evohome system:
+The system provides real-time connection feedback via status badges.
 
-1.  **Cloud (Honeywell TCC):** Connection via Honeywell's official APIs. This is the simplest configuration and works with any internet-connected evohome gateway (RFG100 or built-in Wi-Fi).
-2.  **Local (MQTT):** Connection to a local [evogateway](https://github.com/zxdavb/evogateway) instance. This mode is significantly faster, works without an internet connection, and provides real-time updates via MQTT.
+### evoGateway (Local Mode)
+*   **evoGateway: Online (Green):** Successful communication with the local hardware gateway.
+*   **evoGateway: Offline (Red):** The gateway is unresponsive or the MQTT broker connection has been lost.
 
-### Provider Switching
-Cloud and Local modes may be toggled at any time:
-*   **On the Dashboard:** The dropdown selector in the top-left header may be used.
-*   **In the Scheduler:** A long-click (press and hold) on the **Cloud/CPU icon** next to the "Schedule Manager" title initiates the switch. This is particularly useful when the UI is embedded in another system (like openHAB) where the main header might be hidden.
+### TCC (Cloud Mode)
+*   **TCC: Authenticated (Green):** Successful session established with Honeywell Total Connect Comfort services.
+*   **TCC: Not Authenticated (Red):** Authentication failed or the session has expired.
+
+## Configuration (.env)
+
+System behavior is managed via environment variables.
+
+### Basic Settings
+*   `HEATING_PROVIDER`: Specifies `honeywell` or `mqtt`.
+*   `MQTT_BASE_TOPIC`: Defines the root MQTT topic (default: `evohome/evogateway`).
+
+### Advanced Configuration
+| Parameter | Default | Description |
+| :--- | :--- | :--- |
+| `HONEYWELL_CACHE_TTL` | `3` | Minutes to cache cloud data before a refresh is required. |
+| `HONEYWELL_LOGIN_LIMIT` | `15` | Minutes to wait between full re-authentications. |
+| `MQTT_RECONNECT_PERIOD` | `5000` | Milliseconds between MQTT reconnection attempts. |
+| `MQTT_SCHEDULE_TIMEOUT` | `10000` | Milliseconds to wait for an MQTT schedule response. |
+| `SCHEDULER_TIME_RESOLUTION` | `10` | The granularity of the grid (in minutes). |
+| `SCHEDULER_DEFAULT_TEMP` | `20` | Default temperature for newly created slots. |
 
 ## Installation
 
@@ -71,9 +88,8 @@ cd evoweb
 cp .env.example .env
 
 # 2. Run
-docker-compose up -d
+docker-compose up --build -d
 ```
-The UI is accessible at `http://localhost:3330`.
 
 ### Manual Installation
 Prerequisites: **Node.js 20+**
@@ -86,18 +102,10 @@ npm run start:evoweb
 
 ## openHAB Integration
 
-evoWeb is designed for embedding. Navigation can be hidden and focus placed on a single zone using URL parameters:
-
+Navigation may be hidden to focus on a single zone for embedding:
 ```
 http://<your-ip>:3330/?embed=true&zoneId=01
 ```
-
-**Sitemap Example:**
-```
-Webview url="http://192.168.1.50:3330/?embed=true&zoneId=123456" height=15
-```
-
-For advanced users, see `misc/openhab/` for a wrapper that handles automatic iframe resizing.
 
 ---
 *Disclaimer: This project is unofficial and not affiliated with Honeywell. Use at your own risk.*
