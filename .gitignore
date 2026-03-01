@@ -16,7 +16,6 @@ config.json
 # Local Data and State
 data/*
 !data/.gitkeep
-!data/zones.json
 
 # Logs
 logs/*
