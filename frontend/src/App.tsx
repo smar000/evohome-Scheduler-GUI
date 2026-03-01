@@ -147,21 +147,6 @@ function App() {
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-
-          {provider?.name === 'MQTT' && (
-            <button 
-              onClick={() => {
-                if (window.confirm("This will attempt to sync zone names from Honeywell Cloud. If you get a 401 error, please switch to Cloud mode first to re-authenticate, then try again. Continue?")) {
-                  refreshMqttMappings();
-                }
-              }}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-500 hover:bg-slate-50 disabled:opacity-50 transition-all"
-            >
-              <Activity size={18} />
-              <span className="hidden sm:inline">Sync</span>
-            </button>
-          )}
         </div>
       </header>
 
