@@ -11,6 +11,12 @@
 - [x] **Phase 3 (Infrastructure):** Docker environment validated and optimized.
 - [x] **Phase 3 (Documentation):** Created `DEVELOPMENT.md` with API and architecture details.
 - [x] **Phase 3 (Testing):** Updated and verified unit tests for MqttProvider.
+- [x] **Phase 4 (Maintenance & Reliability):**
+    - **Hot Water Logic:** Fixed MQTT DHW schedules using `"HW"` index and boolean `enabled` parameter.
+    - **Security:** Purged sensitive legacy files (`.env`, `config.json`) from entire Git history.
+    - **Architecture:** Moved dynamic state from `config/` to `data/` and documented in `ARCHITECTURE.md`.
+    - **UX Refinement:** Integrated navigation tabs and system status into the header; contextualized zone sync.
+    - **Build Stability:** Resolved Docker and TypeScript build errors.
 
-## Status: Modernization Complete
-The project is now fully converted to a modern, maintainable, and robust stack. It supports both cloud (Honeywell) and local (MQTT) control with a high-quality responsive user interface.
+## Status: Maintenance Phase Complete
+The project is secure, well-documented, and the MQTT implementation is fully production-ready for both heating and hot water. Current work is on the `feat/modernized-frontend-scheduler` branch.
