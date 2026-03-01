@@ -99,7 +99,15 @@ function App() {
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
       <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 pb-6 gap-6">
         <div className="flex flex-col gap-2 min-w-[200px]">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
+            {system && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100/50">
+                <div className={`w-1.5 h-1.5 rounded-full bg-indigo-500 ${system.systemMode === 'Auto' ? 'animate-pulse' : ''}`}></div>
+                <span className="text-[10px] font-black uppercase tracking-wider">{system.systemMode}</span>
+              </div>
+            )}
+          </div>
           
           <select 
             value={provider?.name === 'Honeywell' ? 'honeywell' : (provider?.name === 'MQTT' ? 'mqtt' : 'mock')}
@@ -153,16 +161,6 @@ function App() {
               <Activity size={18} />
               <span className="hidden sm:inline">Sync</span>
             </button>
-          )}
-
-          {system && (
-            <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
-              <Settings size={20} className="text-slate-400" />
-              <div className="text-sm">
-                <span className="text-slate-400 hidden xl:inline">System:</span>
-                <span className="font-bold text-slate-800">{system.systemMode}</span>
-              </div>
-            </div>
           )}
         </div>
       </header>
