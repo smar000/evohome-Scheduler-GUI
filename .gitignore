@@ -1,21 +1,38 @@
-*log
-*log.*
-logs/*
-*.old.*
-*.old
-bak_*
-old_*
-*.pyc
-.vscode*
-*.sh
-*/config.json
-.session.json
-.env
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Build Artifacts
 dist/
 static/
-node_modules/
 frontend/dist/
-frontend/node_modules/
-config/
+
+# Secrets and Configuration
+.env
+.session.json
+config.json
+*/config.json
+
+# Local Data and State
 data/*
+!data/.gitkeep
 !data/zones.json
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+npm-debug.log*
+
+# OS and IDE Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.pyc
+
+# Legacy/Backup Files
+*.old
+*.bak
+bak_*
+old_*
