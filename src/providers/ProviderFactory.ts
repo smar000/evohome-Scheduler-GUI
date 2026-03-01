@@ -8,7 +8,7 @@ export class ProviderFactory {
   static create(): HeatingProvider {
     switch (config.providerType) {
       case 'honeywell':
-        return new HoneywellTccProvider(config.honeywell.username, config.honeywell.password);
+        return new HoneywellTccProvider(config.honeywell);
       case 'mqtt':
         return new MqttProvider(config.mqtt);
       case 'mock':

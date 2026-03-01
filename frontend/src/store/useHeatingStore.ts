@@ -24,7 +24,14 @@ interface HeatingState {
   provider: {
       name: string;
       error: string | null;
+      gatewayStatus?: string;
   } | null; 
+  uiConfig: {
+      timeResolution: number;
+      defaultTemp: number;
+      longPressMs: number;
+      apiTimeout: number;
+  } | null;
   selectedZoneId: string | null;
   failedSchedules: Set<string>;
   
@@ -37,7 +44,8 @@ interface HeatingState {
   setLoading: (loading: boolean) => void;
   setLoadingMessage: (message: string | null) => void;
   setError: (error: string | null) => void;
-  setProviderInfo: (name: string, error: string | null) => void;
+  setProviderInfo: (name: string, error: string | null, gatewayStatus?: string) => void;
+  setUiConfig: (config: any) => void;
   setSelectedZoneId: (id: string | null) => void;
   markScheduleFailed: (id: string) => void;
   clearFailedSchedules: () => void;
@@ -54,6 +62,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   loadingMessage: null,
   error: null,
   provider: null,
+  uiConfig: null,
   selectedZoneId: null,
   failedSchedules: new Set(),
 
@@ -83,7 +92,8 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setLoadingMessage: (loadingMessage) => set({ loadingMessage }),
   setError: (error) => set({ error }),
-  setProviderInfo: (name, error) => set({ provider: { name, error } }),
+  setProviderInfo: (name, error, gatewayStatus) => set({ provider: { name, error, gatewayStatus } }),
+  setUiConfig: (uiConfig) => set({ uiConfig }),
   setSelectedZoneId: (selectedZoneId) => set({ selectedZoneId }),
   markScheduleFailed: (id) => set(produce((state: HeatingState) => { state.failedSchedules.add(id); })),
   clearFailedSchedules: () => set({ failedSchedules: new Set() }),

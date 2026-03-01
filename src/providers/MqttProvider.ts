@@ -1,10 +1,10 @@
 import mqtt, { MqttClient } from 'mqtt';
-import fs from 'fs';
 import path from 'path';
-import { 
-  HeatingProvider, 
-  ZoneStatus, 
-  ZoneSchedule, 
+import fs from 'fs';
+import {
+  HeatingProvider,
+  ZoneStatus,
+  ZoneSchedule,
   DailySchedule,
   SystemStatus,
   DhwStatus,
@@ -13,8 +13,7 @@ import {
 import { Logger } from '../utils/Logger';
 
 const ZONES_CACHE_FILE = path.join(process.cwd(), 'data', 'zones.json');
-
-const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export class MqttProvider implements HeatingProvider {
   private client: MqttClient | null = null;
@@ -23,7 +22,8 @@ export class MqttProvider implements HeatingProvider {
   private system: SystemStatus = { systemMode: "Auto", permanent: true };
   private dhw: DhwStatus | null = null;
   private lastError: string | null = null;
-  
+  private gatewayStatus: string = "Unknown";
+
   // Mapping of zoneId -> { name, label, honeywellId }
   private zoneIdToMapping: Record<string, { name: string, label: string, honeywellId: string }> = {};
   // Reverse mapping: label -> zoneId
@@ -32,7 +32,25 @@ export class MqttProvider implements HeatingProvider {
   // Pending schedule requests: zoneId -> Promise resolver
   private pendingSchedules: Map<string, (schedule: ZoneSchedule) => void> = new Map();
 
+  // Derived topics
+  private base: string;
+  private commandTopic: string;
+  private statusTopic: string;
+  private zonesTopic: string;
+  private dhwTopic: string;
+  private systemTopic: string;
+  private gatewayStatusTopic: string;
+
   constructor(private config: any) {
+    this.base = config.baseTopic;
+    this.commandTopic = `${this.base}/system/_command`;
+    this.statusTopic = `${this.commandTopic}/_lastcommand`;
+    this.zonesTopic = `${this.base}/${config.zonesSubtopic}`;
+    this.dhwTopic = `${this.base}/${config.dhwSubtopic}`;
+    this.systemTopic = `${this.base}/system`;
+    this.gatewayStatusTopic = `${this.base}/status`;
+    Logger.debug(`MQTT: Gateway status topic: ${this.gatewayStatusTopic}`);
+
     this.dhw = {
         dhwId: "dhw",
         state: "Unknown",
@@ -89,30 +107,42 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async initialize(): Promise<void> {
-    Logger.info(`MQTT: Connecting to broker at ${this.config.brokerUrl}...`);
-    
-    this.client = mqtt.connect(this.config.brokerUrl, {
-      username: this.config.username,
-      password: this.config.password,
-      reconnectPeriod: 5000,
-      connectTimeout: 10000,
-    });
+    if (this.client) return;
 
-    return new Promise((resolve) => {
-      this.client?.on('connect', () => {
-        Logger.info("MQTT: Connected successfully.");
+    return new Promise((resolve, reject) => {
+      Logger.info(`MQTT: Connecting to broker at ${this.config.brokerUrl}...`);
+      
+      this.client = mqtt.connect(this.config.brokerUrl, {
+        username: this.config.username,
+        password: this.config.password,
+        reconnectPeriod: this.config.reconnectPeriod,
+        connectTimeout: this.config.connectTimeout,
+      });
+
+      let resolved = false;
+
+      this.client.on('connect', () => {
+        Logger.info("MQTT: Connected to broker.");
         this.lastError = null;
         this.setupSubscriptions();
-        resolve();
+        
+        // Give a short window for retained messages to arrive before resolving
+        if (!resolved) {
+            resolved = true;
+            setTimeout(resolve, this.config.retainedWindow);
+        }
       });
 
-      this.client?.on('error', (err) => {
+      this.client.on('error', (err) => {
+        Logger.error("MQTT: Connection error:", err);
         this.lastError = err.message;
-        Logger.error("MQTT: Connection error.", err);
-        resolve(); 
+        if (!resolved) {
+            resolved = true;
+            reject(err);
+        }
       });
 
-      this.client?.on('message', (topic, payload) => {
+      this.client.on('message', (topic, payload) => {
         this.handleMessage(topic, payload.toString());
       });
     });
@@ -120,53 +150,61 @@ export class MqttProvider implements HeatingProvider {
 
   private setupSubscriptions(): void {
     if (!this.client) return;
-    
-    // Subscribe to command responses
-    this.client.subscribe(this.config.statusTopic);
-    
-    // Subscribe specifically to zone status (level 4)
-    this.client.subscribe(`${this.config.zonesTopic}/+`);
 
-    // Subscribe to detailed zone status (level 6)
-    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/setpoint`);
-    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/temperature`);
-    this.client.subscribe(`${this.config.zonesTopic}/+/ctl_controller/zone_mode`);
+    // Command status
+    this.client.subscribe(this.statusTopic);
 
-    // Subscribe specifically to zone schedules (level 6)
-    this.client.subscribe(`${this.config.zonesTopic}/+/+/zone_schedule`);
-    // Subscribe specifically to dhw schedule
-    this.client.subscribe('evohome/evogateway/dhw/+/zone_schedule');
+    // Zones
+    this.client.subscribe(`${this.zonesTopic}/+`);
+    this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/setpoint`);
+    this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/temperature`);
+    this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/zone_mode`);
+    this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule`);
 
-    // Subscribe to specific DHW status topics
-    this.client.subscribe('evohome/evogateway/zones/_dhw/ctl_controller/dhw_mode');
-    this.client.subscribe('evohome/evogateway/zones/_dhw/dhw_wireless_sender/dhw_temp');
+    // DHW
+    this.client.subscribe(`${this.dhwTopic}/+/zone_schedule`);
+    this.client.subscribe(`${this.zonesTopic}/_dhw/ctl_controller/dhw_mode`);
+    this.client.subscribe(`${this.zonesTopic}/_dhw/dhw_wireless_sender/dhw_temp`);
+    this.client.subscribe(this.dhwTopic);
+    this.client.subscribe(`${this.base}/_dhw`);
 
-    // Subscribe to system and dhw status
-    this.client.subscribe('evohome/evogateway/system');
-    this.client.subscribe('evohome/evogateway/dhw');
-    this.client.subscribe('evohome/evogateway/_dhw');
-    
-    Logger.debug(`MQTT: Optimized subscriptions setup.`);
+    // System and Gateway Status
+    this.client.subscribe(this.systemTopic);
+    this.client.subscribe(this.gatewayStatusTopic);
+
+    Logger.info(`MQTT: Subscribed to topics under ${this.base}`);
   }
 
   private handleMessage(topic: string, payload: string): void {
-    // Only ignore timestamp and active flag topics, don't ignore /_ topics as they are used for status and dhw
-    if (topic.endsWith('_ts') || topic.endsWith('/active')) {
+    // Only ignore timestamp topics
+    if (topic.endsWith('_ts')) {
+        return;
+    }
+
+    // 1. Gateway status (often just a string "Online"/"Offline" or JSON)
+    if (topic === this.gatewayStatusTopic) {
+        try {
+            const data = JSON.parse(payload);
+            this.gatewayStatus = data.status || data.state || data.gateway || payload;
+        } catch (e) {
+            this.gatewayStatus = payload;
+        }
+        Logger.info(`MQTT: Gateway status updated to: ${this.gatewayStatus}`);
         return;
     }
 
     try {
-        // 2. Handle last command status (might not be JSON)
-        if (topic === this.config.statusTopic) {
+        // 2. Command status
+        if (topic === this.statusTopic) {
             Logger.debug(`MQTT: Last command status: ${payload}`);
             return;
         }
 
         // --- Handle values (JSON based on logs) ---
-        if (topic.endsWith('/setpoint') || topic.endsWith('/temperature') || topic.endsWith('/zone_mode') || 
-            topic.endsWith('/dhw_mode') || topic.endsWith('/dhw_temp')) {
+        if ((topic.endsWith('/setpoint') || topic.endsWith('/temperature') || topic.endsWith('/zone_mode') || 
+            topic.endsWith('/dhw_mode') || topic.endsWith('/dhw_temp')) && topic !== this.gatewayStatusTopic) {
             const parts = topic.split('/');
-            const zoneLabel = parts[3];
+            const zoneLabel = parts[parts.length - 3]; // Topic is zones/label/ctl/field
             
             try {
                 const valData = JSON.parse(payload);
@@ -182,7 +220,10 @@ export class MqttProvider implements HeatingProvider {
                         };
                         this.dhw.setpointMode = modeMap[valData.mode] || valData.mode || 'Following Schedule';
                         this.dhw.until = valData.until;
-                        if (valData.active !== undefined) this.dhw.state = valData.active ? "On" : "Off";
+                        if (valData.active !== undefined) {
+                            this.dhw.state = valData.active ? "On" : "Off";
+                            Logger.debug(`MQTT: Updated DHW state to ${this.dhw.state} from ${topic} (active=${valData.active})`);
+                        }
                     } else if (topic.endsWith('/dhw_temp')) {
                         const temp = typeof valData === 'number' ? valData : valData.temperature;
                         if (temp !== undefined) this.dhw.temperature = temp;
@@ -199,8 +240,6 @@ export class MqttProvider implements HeatingProvider {
                     } else if (topic.endsWith('/temperature')) {
                         this.zones[zoneId].temperature = valData.temperature;
                     } else if (topic.endsWith('/zone_mode')) {
-                        // Map internal mode names to friendly labels
-                        Logger.debug(`MQTT: Raw zone_mode for ${zoneLabel}: ${JSON.stringify(valData)}`);
                         const modeMap: Record<string, string> = {
                             'follow_schedule': 'Following Schedule',
                             'temporary_override': 'Temporary Override',
@@ -208,17 +247,6 @@ export class MqttProvider implements HeatingProvider {
                         };
                         this.zones[zoneId].setpointMode = modeMap[valData.mode] || valData.mode || 'Unknown';
                         this.zones[zoneId].until = valData.until;
-                        Logger.debug(`MQTT: Updated ${zoneLabel} mode to ${this.zones[zoneId].setpointMode}`);
-                    }
-                    
-                    // If we found a mismatch (different label for same ID), update the mapping
-                    if (!this.labelToZoneId[zoneLabel]) {
-                        Logger.info(`MQTT: Mapping discovered label ${zoneLabel} to zone ID ${zoneId}`);
-                        this.labelToZoneId[zoneLabel] = zoneId;
-                        if (this.zoneIdToMapping[zoneId]) {
-                            this.zoneIdToMapping[zoneId].label = zoneLabel;
-                            this.saveZoneMapping();
-                        }
                     }
                 }
             } catch (e) {
@@ -239,15 +267,12 @@ export class MqttProvider implements HeatingProvider {
 
         const data = JSON.parse(payload);
         
+        // Schedules
         if (topic.endsWith('/zone_schedule')) {
-            if (!data.schedule) {
-                Logger.debug(`MQTT: Ignoring fragment status for ${topic}`);
-                return;
-            }
+            if (!data.schedule) return;
 
             const parts = topic.split('/');
-            const zoneLabel = parts[3]; 
-            // Input zone_idx might be hex (e.g. "0A" or "HW"), we map everything internally to decimal strings (e.g. "10") or "dhw"
+            const zoneLabel = parts[parts.length - 3] || parts[parts.length - 2]; 
             const zoneId = (data.zone_idx === 'DH' || data.zone_idx === 'HW') ? 'dhw' : (data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel]);
             
             if (zoneId) {
@@ -263,7 +288,8 @@ export class MqttProvider implements HeatingProvider {
             return;
         }
 
-        if (topic === 'evohome/evogateway/system' && !data.command) {
+        // System status
+        if (topic === this.systemTopic && !data.command) {
             this.system = {
                 systemMode: data.system_mode || data.mode || "Auto",
                 timeUntil: data.until,
@@ -272,11 +298,9 @@ export class MqttProvider implements HeatingProvider {
             return;
         }
 
-        // Handle DHW status
-        if (topic.includes('/_dhw') || topic === 'evohome/evogateway/dhw' || topic === 'evohome/evogateway/_dhw') {
-            if (!this.dhw) {
-                this.dhw = { dhwId: "dhw", state: "Off", temperature: 0, setpointMode: "Following Schedule" };
-            }
+        // DHW status
+        if (topic.includes('/_dhw') || topic === this.dhwTopic || topic === `${this.base}/_dhw`) {
+            if (!this.dhw) this.dhw = { dhwId: "dhw", state: "Off", temperature: 0, setpointMode: "Following Schedule" };
 
             if (topic.endsWith('/dhw_mode')) {
                 const modeMap: Record<string, string> = {
@@ -286,25 +310,28 @@ export class MqttProvider implements HeatingProvider {
                 };
                 this.dhw.setpointMode = modeMap[data.mode] || data.mode || 'Following Schedule';
                 this.dhw.until = data.until;
-                // If it's active, it's "On", otherwise we can't be sure but usually we'd rely on schedule
-                if (data.active !== undefined) this.dhw.state = data.active ? "On" : "Off";
+                if (data.active !== undefined) {
+                    this.dhw.state = data.active ? "On" : "Off";
+                    Logger.debug(`MQTT: Updated DHW state to ${this.dhw.state} from ${topic} (active=${data.active}, secondary block)`);
+                }
             } else if (topic.endsWith('/dhw_temp')) {
-                // If payload is just a number (some gateways do this) or JSON
                 const temp = typeof data === 'number' ? data : data.temperature;
                 if (temp !== undefined) this.dhw.temperature = temp;
             } else {
-                // Legacy/General DHW status message
-                if (data.state !== undefined) this.dhw.state = data.state;
-                if (data.temperature !== undefined) this.dhw.temperature = data.temperature;
-                if (data.setpointMode !== undefined) this.dhw.setpointMode = data.setpointMode;
-                if (data.until !== undefined) this.dhw.until = data.until;
+                if (data.state !== undefined && data.state !== null) {
+                    this.dhw.state = data.state;
+                    Logger.debug(`MQTT: Updated DHW state to ${this.dhw.state} from ${topic} (legacy)`);
+                }
+                if (data.temperature !== undefined && data.temperature !== null) this.dhw.temperature = data.temperature;
+                if (data.setpointMode !== undefined && data.setpointMode !== null) this.dhw.setpointMode = data.setpointMode;
+                if (data.until !== undefined && data.until !== null) this.dhw.until = data.until;
             }
             return;
         }
 
-        const zonesTopicRoot = this.config.zonesTopic;
-        if (topic.startsWith(zonesTopicRoot)) {
-            const subPath = topic.substring(zonesTopicRoot.length + 1);
+        // Generic Zone status (direct under zonesTopic)
+        if (topic.startsWith(this.zonesTopic)) {
+            const subPath = topic.substring(this.zonesTopic.length + 1);
             if (subPath && !subPath.includes('/')) {
                 const zoneLabel = subPath;
                 const rawZoneId = data.zoneId ? (data.zoneId.length > 2 ? this.labelToZoneId[zoneLabel] : data.zoneId) : this.labelToZoneId[zoneLabel];
@@ -328,11 +355,13 @@ export class MqttProvider implements HeatingProvider {
                     until: data.until
                 };
 
-                if (rawZoneId && !this.zoneIdToMapping[zoneId]) {
+                // If we found a mismatch (different label for same ID) or new mapping, update the cache
+                if (rawZoneId && (!this.zoneIdToMapping[zoneId] || this.zoneIdToMapping[zoneId].label !== zoneLabel)) {
+                    Logger.info(`MQTT: Mapping discovered/updated for ${zoneLabel} to zone ID ${zoneId}`);
                     this.zoneIdToMapping[zoneId] = { 
-                        name: data.name || zoneLabel, 
+                        name: data.name || (this.zoneIdToMapping[zoneId]?.name) || zoneLabel, 
                         label: zoneLabel, 
-                        honeywellId: "" 
+                        honeywellId: this.zoneIdToMapping[zoneId]?.honeywellId || "" 
                     };
                     this.labelToZoneId[zoneLabel] = zoneId;
                     this.saveZoneMapping();
@@ -342,10 +371,10 @@ export class MqttProvider implements HeatingProvider {
 
     } catch (e) {
         const expectedJson = topic.endsWith('/zone_schedule') || 
-                             topic === 'evohome/evogateway/system' || 
-                             topic === 'evohome/evogateway/dhw' ||
-                             topic === 'evohome/evogateway/_dhw' ||
-                             !topic.includes('/', (this.config.zonesTopic?.length || 0) + 1);
+                             topic === this.systemTopic || 
+                             topic === this.dhwTopic ||
+                             topic === `${this.base}/_dhw` ||
+                             !topic.includes('/', this.zonesTopic.length + 1);
         
         if (expectedJson) {
             Logger.error(`MQTT: Error parsing JSON on topic ${topic}`, e);
@@ -359,7 +388,6 @@ export class MqttProvider implements HeatingProvider {
       switchpoints: ds.switchpoints.map((sw: any) => {
           const sp: any = { timeOfDay: sw.time_of_day };
           if (sw.state !== undefined) sp.state = sw.state;
-          // Handle boolean enabled (DHW)
           if (sw.enabled !== undefined) sp.state = sw.enabled ? "On" : "Off";
           if (sw.heat_setpoint !== undefined) sp.heatSetpoint = sw.heat_setpoint;
           return sp;
@@ -378,11 +406,9 @@ export class MqttProvider implements HeatingProvider {
         switchpoints: ds.switchpoints.map(sw => {
             const sp: any = { time_of_day: sw.timeOfDay };
             if (isDhw) {
-                // For DHW, send 'enabled' as boolean
                 if (sw.state !== undefined) {
                     sp.enabled = (sw.state === "On" || (sw.state as any) === true);
                 } else if (sw.heatSetpoint !== undefined) {
-                    // Fallback: treat any setpoint > 0 as enabled
                     sp.enabled = sw.heatSetpoint > 0;
                 }
             } else {
@@ -411,22 +437,16 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async getScheduleForId(id: string, force = false): Promise<ZoneSchedule> {
-    // If we have it in cache and not forcing refresh, return immediately
     if (!force && this.schedules[id]) {
-        Logger.debug(`MQTT: Returning cached schedule for zone ${id}`);
         return this.schedules[id];
     }
 
     return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
             this.pendingSchedules.delete(id);
-            if (this.schedules[id]) {
-                Logger.warn(`MQTT: Timeout waiting for schedule ${id}, returning cached.`);
-                resolve(this.schedules[id]);
-            } else {
-                reject(new Error(`Timeout waiting for schedule response for zone ${id}`));
-            }
-        }, 10000);
+            if (this.schedules[id]) resolve(this.schedules[id]);
+            else reject(new Error(`Timeout waiting for schedule response for zone ${id}`));
+        }, this.config.scheduleTimeout);
 
         this.pendingSchedules.set(id, (schedule) => {
             clearTimeout(timeout);
@@ -434,57 +454,34 @@ export class MqttProvider implements HeatingProvider {
         });
 
         const hexId = id === 'dhw' ? 'HW' : parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');
-
-        const command = {
-            command: "get_schedule",
-            zone_idx: hexId,
-            force_refresh: force
-        };
-
-        Logger.info(`MQTT: Requesting schedule for zone ${id} (hex=${hexId}, force=${force})`);
-        this.client?.publish(this.config.commandTopic, JSON.stringify(command));
+        const command = { command: "get_schedule", zone_idx: hexId, force_refresh: force };
+        this.client?.publish(this.commandTopic, JSON.stringify(command));
     });
   }
 
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
     const hexId = zoneId === 'dhw' ? 'HW' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
     const command = this.translateScheduleToMqtt(hexId, schedule);
-    Logger.info(`MQTT: Saving schedule for ${zoneId} (hex=${hexId})`);
-    this.client?.publish(this.config.commandTopic, JSON.stringify(command));
+    this.client?.publish(this.commandTopic, JSON.stringify(command));
   }
 
   async setZoneSetpoint(zoneId: string, setpoint: number, until?: string): Promise<void> {
-    const command = {
-        command: "set_setpoint",
-        zone_idx: zoneId,
-        setpoint: setpoint,
-        until: until
-    };
-    this.client?.publish(this.config.commandTopic, JSON.stringify(command));
+    const command = { command: "set_setpoint", zone_idx: zoneId, setpoint: setpoint, until: until };
+    this.client?.publish(this.commandTopic, JSON.stringify(command));
   }
 
   async setSystemMode(mode: string, until?: string): Promise<void> {
-    const command = {
-        command: "set_system_mode",
-        mode: mode,
-        until: until
-    };
-    this.client?.publish(this.config.commandTopic, JSON.stringify(command));
+    const command = { command: "set_system_mode", mode: mode, until: until };
+    this.client?.publish(this.commandTopic, JSON.stringify(command));
   }
 
   async setHotWaterState(state: string, until?: string): Promise<void> {
-    const command = {
-        command: "set_dhw_state",
-        state: state,
-        until: until
-    };
-    this.client?.publish(this.config.commandTopic, JSON.stringify(command));
+    const command = { command: "set_dhw_state", state: state, until: until };
+    this.client?.publish(this.commandTopic, JSON.stringify(command));
   }
 
   async renewSession(): Promise<void> {
-    if (this.client) {
-        this.client.reconnect();
-    }
+    if (this.client) this.client.reconnect();
   }
 
   getSessionInfo(): any {
@@ -492,6 +489,7 @@ export class MqttProvider implements HeatingProvider {
         provider: "MQTT",
         connected: this.client?.connected || false,
         error: this.lastError,
+        gatewayStatus: this.gatewayStatus,
         zonesMapped: Object.keys(this.zoneIdToMapping).length
     };
   }

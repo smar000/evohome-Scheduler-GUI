@@ -33,15 +33,32 @@ export const useHeatingApi = () => {
     setError,
     originalSchedules,
     setProviderInfo,
+    setUiConfig,
     markScheduleFailed,
   } = useHeatingStore();
 
+  const ensureConfig = async () => {
+    if (useHeatingStore.getState().uiConfig) return;
+    try {
+        const response = await api.get('/config');
+        setUiConfig(response.data);
+        if (response.data.apiTimeout) {
+            // Update axios default timeout for subsequent calls
+            api.defaults.timeout = response.data.apiTimeout;
+        }
+    } catch (e) {
+        console.error("Failed to fetch UI config");
+    }
+  }
+
   const ensureProviderInfo = async () => {
+    await ensureConfig();
     try {
         const response = await api.get('/session');
         const name = response.data.userId ? 'Honeywell' : (response.data.provider || 'Unknown');
         const error = response.data.error || null;
-        setProviderInfo(name, error);
+        const gatewayStatus = response.data.gatewayStatus || null;
+        setProviderInfo(name, error, gatewayStatus);
     } catch (e) {
         console.error("Failed to fetch provider info");
     }

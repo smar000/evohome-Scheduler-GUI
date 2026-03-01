@@ -18,10 +18,13 @@ describe('MqttProvider', () => {
     let mockClient: MockClient;
     const config = {
         brokerUrl: 'mqtt://localhost',
-        commandTopic: 'evohome/evogateway/system/_command',
-        statusTopic: 'evohome/evogateway/system/_command/_lastcommand',
-        zonesTopic: 'evohome/evogateway/zones'
+        baseTopic: 'evohome/evogateway',
+        zonesSubtopic: 'zones',
+        dhwSubtopic: '_dhw'
     };
+
+    const statusTopic = `${config.baseTopic}/system/_command/_lastcommand`;
+    const zonesTopic = `${config.baseTopic}/${config.zonesSubtopic}`;
 
     beforeEach(() => {
         (fs.existsSync as jest.Mock).mockReturnValue(false);
@@ -32,21 +35,13 @@ describe('MqttProvider', () => {
 
     it('should initialize and subscribe to topics', async () => {
         const initPromise = provider.initialize();
-        
-        // Wait for initialize to reach mqtt.connect call
-        let attempts = 0;
-        while ((mqtt.connect as jest.Mock).mock.calls.length === 0 && attempts < 100) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-            attempts++;
-        }
-
         mockClient.emit('connect');
         await initPromise;
 
-        expect(mockClient.subscribe).toHaveBeenCalledWith(config.statusTopic);
-        expect(mockClient.subscribe).toHaveBeenCalledWith(`${config.zonesTopic}/+`);
-        expect(mockClient.subscribe).toHaveBeenCalledWith('evohome/evogateway/system');
-        expect(mockClient.subscribe).toHaveBeenCalledWith('evohome/evogateway/dhw');
+        expect(mockClient.subscribe).toHaveBeenCalledWith(statusTopic);
+        expect(mockClient.subscribe).toHaveBeenCalledWith(`${zonesTopic}/+`);
+        expect(mockClient.subscribe).toHaveBeenCalledWith(`${config.baseTopic}/system`);
+        expect(mockClient.subscribe).toHaveBeenCalledWith(`${config.baseTopic}/${config.dhwSubtopic}`);
     });
 
     it('should handle zone status messages and map labels', async () => {
@@ -62,7 +57,7 @@ describe('MqttProvider', () => {
         });
 
         // Topic matches subscription pattern
-        mockClient.emit('message', 'evohome/evogateway/zones/living_room', Buffer.from(payload));
+        mockClient.emit('message', `${zonesTopic}/living_room`, Buffer.from(payload));
 
         const zones = await provider.getZonesStatus();
         expect(zones).toHaveLength(1);
@@ -80,7 +75,7 @@ describe('MqttProvider', () => {
 
         // Verify command published
         expect(mockClient.publish).toHaveBeenCalledWith(
-            config.commandTopic,
+            `${config.baseTopic}/system/_command`,
             expect.stringContaining('"command":"get_schedule"')
         );
 
@@ -92,10 +87,21 @@ describe('MqttProvider', () => {
             ]
         });
 
-        mockClient.emit('message', 'evohome/evogateway/zones/living_room/ctl_controller/zone_schedule', Buffer.from(payload));
+        mockClient.emit('message', `${zonesTopic}/living_room/ctl_controller/zone_schedule`, Buffer.from(payload));
 
         const schedule = await schedulePromise;
         expect(schedule.schedule).toHaveLength(1);
         expect(schedule.schedule[0].dayOfWeek).toBe('Monday');
+    });
+
+    it('should handle gateway status messages', async () => {
+        const initPromise = provider.initialize();
+        mockClient.emit('connect');
+        await initPromise;
+
+        mockClient.emit('message', `${config.baseTopic}/status`, Buffer.from('Online'));
+        
+        const info = provider.getSessionInfo();
+        expect(info.gatewayStatus).toBe('Online');
     });
 });

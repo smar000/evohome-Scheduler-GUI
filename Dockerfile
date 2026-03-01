@@ -38,4 +38,4 @@ COPY data/ ./data/
 EXPOSE 3330
 
 # Start from the dist folder
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "start:evoweb"]

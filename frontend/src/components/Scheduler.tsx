@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Activity, Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu } from 'lucide-react';
+import { Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2 } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
 // --- Constants ---
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TOTAL_DAY_MINUTES = 24 * 60;
-const TIME_RESOLUTION_MINUTES = 10;
-const TOTAL_BLOCKS = TOTAL_DAY_MINUTES / TIME_RESOLUTION_MINUTES;
 
 // --- Color & Style Helpers ---
 const getTempColor = (temp: number): string => {
@@ -35,6 +33,51 @@ const minutesToTime = (minutes: number): string => {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+};
+
+// --- Logic Helpers ---
+
+const switchpointsToBlocks = (sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[], resolution: number, isDhw?: boolean): number[] => {
+    const totalBlocks = TOTAL_DAY_MINUTES / resolution;
+    const blocks = new Array(totalBlocks).fill(isDhw ? 0 : 20);
+    if (!sps || sps.length === 0) return blocks;
+
+    const sorted = [...sps].sort((a,b) => a.timeOfDay.localeCompare(b.timeOfDay));
+
+    const getVal = (sp: any) => {
+        if (isDhw) return sp.state === 'On' ? 1 : 0;
+        return sp.heatSetpoint ?? 20;
+    };
+
+    let currentVal = getVal(sorted[sorted.length - 1]);
+    let spIndex = 0;
+
+    for (let i = 0; i < totalBlocks; i++) {
+        const currentMins = i * resolution;
+        if (spIndex < sorted.length && timeToMinutes(sorted[spIndex].timeOfDay) <= currentMins) {
+            currentVal = getVal(sorted[spIndex]);
+            spIndex++;
+        }
+        blocks[i] = currentVal;
+    }
+    return blocks;
+};
+
+const blocksToSwitchpoints = (blocks: number[], resolution: number, isDhw?: boolean): { timeOfDay: string, heatSetpoint?: number, state?: string }[] => {
+    const sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[] = [];
+    if (!blocks || blocks.length === 0) return sps;
+
+    let lastVal = blocks[blocks.length - 1];
+    blocks.forEach((val, i) => {
+        if (val !== lastVal) {
+            const sp: any = { timeOfDay: minutesToTime(i * resolution) };
+            if (isDhw) sp.state = val === 1 ? 'On' : 'Off';
+            else sp.heatSetpoint = val;
+            sps.push(sp);
+            lastVal = val;
+        }
+    });
+    return sps;
 };
 
 // --- Internal Components ---
@@ -62,13 +105,13 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
 
   return (
     <FloatingPortal>
-      <div ref={refs.setFloating} style={floatingStyles} className="bg-slate-800 text-white p-4 rounded-lg shadow-2xl z-20 border border-slate-700">
+      <div ref={refs.setFloating} style={floatingStyles} className="bg-slate-800 text-white p-4 rounded-lg shadow-2xl z-50 border border-slate-700">
         <div className="grid grid-cols-2 gap-3 mb-4">
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Start Time</label>
-          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
           
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">End Time</label>
-          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500" />
+          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
           
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{isDhw ? 'State' : 'Target Temp'}</label>
           {isDhw ? (
@@ -88,16 +131,18 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500" />
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
               <span className="text-xs font-bold text-slate-400">°C</span>
             </div>
           )}
         </div>
         <div className="flex justify-between gap-2 border-t border-slate-700 pt-4">
-          <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors">Delete</button>
+          <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors flex items-center gap-1">
+              <Trash2 size={12}/> Delete
+          </button>
           <div className="flex gap-2">
             <button onClick={onCancel} className="px-3 py-1 bg-slate-700 rounded text-xs hover:bg-slate-600 transition-colors">Cancel</button>
-            <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-slate-700 border border-slate-600 rounded text-xs font-bold hover:bg-slate-600 transition-colors">Apply</button>
+            <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-indigo-600 border border-indigo-500 rounded text-xs font-bold hover:bg-indigo-500 transition-colors">Apply</button>
           </div>
         </div>
       </div>
@@ -105,61 +150,16 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
   );
 };
 
-// --- Logic Helpers ---
-
-const switchpointsToBlocks = (sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[], isDhw?: boolean): number[] => {
-    const blocks = new Array(TOTAL_BLOCKS).fill(isDhw ? 0 : 20);
-    if (sps.length === 0) return blocks;
-
-    const sorted = [...sps].sort((a,b) => a.timeOfDay.localeCompare(b.timeOfDay));
-    
-    const getVal = (sp: any) => {
-        if (isDhw) return sp.state === 'On' ? 1 : 0;
-        return sp.heatSetpoint ?? 20;
-    };
-
-    let currentVal = getVal(sorted[sorted.length - 1]);
-    let spIndex = 0;
-
-    for (let i = 0; i < TOTAL_BLOCKS; i++) {
-        const currentMins = i * TIME_RESOLUTION_MINUTES;
-        if (spIndex < sorted.length && timeToMinutes(sorted[spIndex].timeOfDay) <= currentMins) {
-            currentVal = getVal(sorted[spIndex]);
-            spIndex++;
-        }
-        blocks[i] = currentVal;
-    }
-    return blocks;
-};
-
-const blocksToSwitchpoints = (blocks: number[], isDhw?: boolean): { timeOfDay: string, heatSetpoint?: number, state?: string }[] => {
-    const sps: { timeOfDay: string, heatSetpoint?: number, state?: string }[] = [];
-    if (blocks.length === 0) return sps;
-
-    let lastVal = blocks[blocks.length - 1];
-    
-    blocks.forEach((val, i) => {
-        if (val !== lastVal) {
-            const sp: any = { timeOfDay: minutesToTime(i * TIME_RESOLUTION_MINUTES) };
-            if (isDhw) sp.state = val === 1 ? 'On' : 'Off';
-            else sp.heatSetpoint = val;
-            sps.push(sp);
-            lastVal = val;
-        }
-    });
-
-    return sps;
-};
-
-// --- Main Component ---
-
 type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules } = useHeatingStore();
-  const { fetchAllSchedules, saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
+  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, uiConfig } = useHeatingStore();
+  const { saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
   
+  const resolution = uiConfig?.timeResolution || 10;
+  const totalBlocks = TOTAL_DAY_MINUTES / resolution;
+
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
   const [editMode, setEditMode] = useState<EditMode>('resize');
   const [selectedDay, setSelectedDay] = useState<string>(DAYS[0]);
@@ -169,6 +169,9 @@ export const Scheduler: React.FC = () => {
   const [showProviderPopup, setShowProviderPopup] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
+
+  const queryParams = new URLSearchParams(window.location.search);
+  const isEmbedded = queryParams.get('embed') === 'true';
 
   const handleZoneRefresh = async (zoneId: string) => {
     const now = Date.now();
@@ -201,7 +204,7 @@ export const Scheduler: React.FC = () => {
   const handleLongPressStart = () => {
     const timer = setTimeout(() => {
       setShowProviderPopup(true);
-    }, 600); 
+    }, uiConfig?.longPressMs || 600);
     setLongPressTimer(timer);
   };
 
@@ -212,18 +215,14 @@ export const Scheduler: React.FC = () => {
     }
   };
 
-  const activeZone = selectedZoneId === dhw?.dhwId 
-    ? { name: 'Hot Water', temperature: dhw.temperature, setpoint: dhw.state === 'On' ? 1 : 0, setpointMode: dhw.setpointMode, until: dhw.until, zoneId: dhw.dhwId } as any
-    : zones.find(z => z.zoneId === selectedZoneId);
-
   const updateScheduleBlocks = (day: string, zoneId: string, transform: (blocks: number[]) => void) => {
     const isDhw = zoneId === dhw?.dhwId;
     setSchedules(produce(schedules, draft => {
         const daySched = draft[zoneId]?.schedule.find(s => s.dayOfWeek === day);
         if (daySched) {
-            const blocks = switchpointsToBlocks(daySched.switchpoints, isDhw);
+            const blocks = switchpointsToBlocks(daySched.switchpoints, resolution, isDhw);
             transform(blocks);
-            daySched.switchpoints = blocksToSwitchpoints(blocks, isDhw) as any;
+            daySched.switchpoints = blocksToSwitchpoints(blocks, resolution, isDhw) as any;
         }
     }));
   };
@@ -232,13 +231,13 @@ export const Scheduler: React.FC = () => {
     if (editMode === 'split') {
       const startMins = timeToMinutes(element.dataset.startTime!);
       const endMins = timeToMinutes(element.dataset.endTime!);
-      const midMins = Math.round((startMins + endMins) / 2 / TIME_RESOLUTION_MINUTES) * TIME_RESOLUTION_MINUTES;
+      const midMins = Math.round((startMins + endMins) / 2 / resolution) * resolution;
       if (midMins <= startMins || midMins >= endMins) return;
 
       updateScheduleBlocks(day, zoneId, (blocks) => {
-          const midBlock = midMins / TIME_RESOLUTION_MINUTES;
+          const midBlock = midMins / resolution;
           if (blocks[midBlock] === blocks[midBlock - 1]) {
-              blocks[midBlock] = blocks[midBlock] + 0.5; 
+              blocks[midBlock] = (blocks[midBlock] > 0) ? blocks[midBlock] - 0.1 : blocks[midBlock] + 0.1;
           }
       });
     } else {
@@ -251,18 +250,18 @@ export const Scheduler: React.FC = () => {
     const { day, zoneId, element } = editingSlot;
     const oldStartMins = timeToMinutes(element.dataset.startTime!);
     const oldEndMins = timeToMinutes(element.dataset.endTime!);
-    
+
     updateScheduleBlocks(day, zoneId, (blocks) => {
         const newStartMins = timeToMinutes(newStart);
         const newEndMins = timeToMinutes(newEnd);
-        const fillerTemp = oldStartMins > 0 ? blocks[(oldStartMins / TIME_RESOLUTION_MINUTES) - 1] : blocks[TOTAL_BLOCKS - 1];
-        for (let i = oldStartMins / TIME_RESOLUTION_MINUTES; i < oldEndMins / TIME_RESOLUTION_MINUTES; i++) {
+        const fillerTemp = oldStartMins > 0 ? blocks[(oldStartMins / resolution) - 1] : blocks[totalBlocks - 1];
+        for (let i = oldStartMins / resolution; i < oldEndMins / resolution; i++) {
             blocks[i] = fillerTemp;
         }
-        const startBlock = newStartMins / TIME_RESOLUTION_MINUTES;
-        const endBlock = newEndMins / TIME_RESOLUTION_MINUTES;
+        const startBlock = newStartMins / resolution;
+        const endBlock = newEndMins / resolution;
         for (let i = startBlock; i < endBlock; i++) {
-            blocks[i % TOTAL_BLOCKS] = newTemp;
+            blocks[i % totalBlocks] = newTemp;
         }
     });
     setEditingSlot(null);
@@ -273,11 +272,11 @@ export const Scheduler: React.FC = () => {
     const { day, zoneId, element } = editingSlot;
     const startMins = timeToMinutes(element.dataset.startTime!);
     const endMins = timeToMinutes(element.dataset.endTime!);
-    
+
     updateScheduleBlocks(day, zoneId, (blocks) => {
-        const startBlock = startMins / TIME_RESOLUTION_MINUTES;
-        const endBlock = endMins / TIME_RESOLUTION_MINUTES;
-        const fillerTemp = startBlock > 0 ? blocks[startBlock - 1] : blocks[TOTAL_BLOCKS - 1];
+        const startBlock = startMins / resolution;
+        const endBlock = endMins / resolution;
+        const fillerTemp = startBlock > 0 ? blocks[startBlock - 1] : blocks[totalBlocks - 1];
         for (let i = startBlock; i < endBlock; i++) {
             blocks[i] = fillerTemp;
         }
@@ -343,76 +342,63 @@ export const Scheduler: React.FC = () => {
     const hasData = zoneSchedule && zoneSchedule.schedule && zoneSchedule.schedule.length > 0;
     const daySchedule = hasData ? zoneSchedule.schedule.find(s => s.dayOfWeek === dayName) : null;
     
-    const sps = daySchedule ? [...daySchedule.switchpoints].sort((a, b) => a.timeOfDay.localeCompare(b.timeOfDay)) : [];
     const slots: React.ReactNode[] = [];
     
     if (hasData) {
-        let lastMins = 0;
-        const getVal = (sp: any) => {
-            if (isDhw) return sp.state === 'On' ? 1 : 0;
-            return sp.heatSetpoint ?? 20;
-        };
+        const blocks = switchpointsToBlocks(daySchedule?.switchpoints || [], resolution, isDhw);
+        const segments: { val: number, start: number, length: number }[] = [];
+        
+        if (blocks.length > 0) {
+            let currentVal = blocks[0];
+            let start = 0;
+            blocks.forEach((val, i) => {
+                if (val !== currentVal) {
+                    segments.push({ val: currentVal, start, length: i - start });
+                    currentVal = val;
+                    start = i;
+                }
+            });
+            segments.push({ val: currentVal, start, length: blocks.length - start });
+        }
 
-        let lastVal = sps.length > 0 ? getVal(sps[sps.length - 1]) : (isDhw ? 0 : 20);
-
-        sps.forEach((sp, i) => {
-        const currentMins = timeToMinutes(sp.timeOfDay);
-        const width = ((currentMins - lastMins) / TOTAL_DAY_MINUTES) * 100;
-        if (width > 0) {
-            const rangeText = `${minutesToTime(lastMins)} - ${minutesToTime(currentMins)}`;
-            const color = isDhw ? (lastVal === 1 ? '#ea580c' : '#94a3b8') : getTempColor(lastVal);
-            const labelText = isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : `${lastVal}°`;
+        segments.forEach((seg, i) => {
+            const width = (seg.length / totalBlocks) * 100;
+            const startTimeText = minutesToTime(seg.start * resolution);
+            const endTimeText = minutesToTime((seg.start + seg.length) * resolution);
+            const rangeText = `${startTimeText} - ${endTimeText}`;
+            const color = isDhw ? (seg.val === 1 ? '#6366f1' : '#94a3b8') : getTempColor(seg.val);
+            const labelText = isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : `${seg.val.toFixed(1)}°`;
 
             slots.push(
-            <div key={i} style={{ width: `${width}%`, backgroundColor: color }}
-                className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot"
-                onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
-                title={`${rangeText} | ${isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : lastVal + '°C'}`}
-                data-start-time={minutesToTime(lastMins)} data-end-time={minutesToTime(currentMins)} data-temp={lastVal}>
-                <span className="text-[10px]">{labelText}</span>
-                {width > 8 && (
-                    <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
-                        {minutesToTime(lastMins)}
-                    </span>
-                )}
-            </div>
+                <div 
+                    key={i} 
+                    style={{ width: `${width}%`, backgroundColor: color }}
+                    className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot flex-shrink-0"
+                    onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
+                    title={`${rangeText} | ${isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : seg.val + '°C'}`}
+                    data-start-time={startTimeText} 
+                    data-end-time={endTimeText} 
+                    data-val={seg.val}
+                >
+                    <span className="text-[10px]">{labelText}</span>
+                    {width > 8 && (
+                        <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
+                            {startTimeText}
+                        </span>
+                    )}
+                </div>
             );
-        }
-        lastMins = currentMins;
-        lastVal = getVal(sp);
         });
-
-        const finalWidth = ((TOTAL_DAY_MINUTES - lastMins) / TOTAL_DAY_MINUTES) * 100;
-        if (finalWidth > 0) {
-        const rangeText = `${minutesToTime(lastMins)} - 24:00`;
-        const color = isDhw ? (lastVal === 1 ? '#ea580c' : '#94a3b8') : getTempColor(lastVal);
-        const labelText = isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : `${lastVal}°`;
-
-        slots.push(
-            <div key="last" style={{ width: `${finalWidth}%`, backgroundColor: color }}
-            className="h-full flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 select-none relative group/slot"
-            onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
-            title={`${rangeText} | ${isDhw ? (lastVal === 1 ? 'ON' : 'OFF') : lastVal + '°C'}`}
-            data-start-time={minutesToTime(lastMins)} data-end-time="24:00" data-temp={lastVal}>
-            <span className="text-[10px]">{labelText}</span>
-            {finalWidth > 8 && (
-                    <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
-                        {minutesToTime(lastMins)}
-                    </span>
-                )}
-            </div>
-        );
-        }
     }
 
     const isSource = clipboardSource === label;
 
     return (
-      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-2">
+      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-2 mb-1 last:mb-0">
         <div className="w-24 pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
-        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 items-center justify-center relative">
+        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative">
           {hasData ? slots : (
-              <div className="flex items-center gap-2 text-slate-300">
+              <div className="flex-1 flex items-center justify-center gap-2 text-slate-300">
                   <Clock size={14} />
                   <span className="text-[10px] font-bold uppercase tracking-widest">No Schedule Data</span>
               </div>
@@ -434,143 +420,155 @@ export const Scheduler: React.FC = () => {
   };
 
   return (
-    <section className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-        <div className="flex items-center gap-3">
-          <button 
+    <section className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col min-h-[600px] p-6 md:p-8">
+      <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <div 
             ref={refs.setReference}
             onMouseDown={handleLongPressStart}
             onMouseUp={handleLongPressEnd}
             onMouseLeave={handleLongPressEnd}
             onTouchStart={handleLongPressStart}
             onTouchEnd={handleLongPressEnd}
-            title="Long press to change provider"
-            className={`${provider?.name === 'MQTT' ? 'bg-emerald-500' : 'bg-slate-400'} p-2 rounded-xl text-white shadow-lg ${provider?.name === 'MQTT' ? 'shadow-emerald-100' : 'shadow-slate-100'} transition-transform active:scale-95 cursor-pointer outline-none border-none`}
+            className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 cursor-pointer hover:bg-indigo-500 transition-colors"
           >
-            {provider?.name === 'MQTT' ? <Cpu size={24} /> : <Cloud size={24} />}
-          </button>
-
+            {provider?.name === 'MQTT' ? <Cpu size={24}/> : <Cloud size={24}/>}
+          </div>
+          
           {showProviderPopup && (
             <FloatingPortal>
               <div 
                 ref={refs.setFloating}
                 style={floatingStyles}
-                className="bg-white border border-slate-200 p-2 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+                className="bg-white border border-slate-100 p-1 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
               >
                 <div className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 mb-1 tracking-widest border-b border-slate-50">Select Provider</div>
                 <button 
-                  onClick={() => { selectProvider('honeywell'); setShowProviderPopup(false); }}
-                  className={`w-full border-none flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${provider?.name === 'Honeywell' ? 'bg-slate-50 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}
+                  onClick={() => selectProvider('honeywell')}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors"
                 >
-                  <Cloud size={18} className="text-slate-400" />
-                  Cloud (Honeywell)
+                  <Cloud size={16} className="text-sky-500" /> Cloud (Honeywell)
                 </button>
                 <button 
-                  onClick={() => { selectProvider('mqtt'); setShowProviderPopup(false); }}
-                  className={`w-full border-none flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-colors ${provider?.name === 'MQTT' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50'}`}
+                  onClick={() => selectProvider('mqtt')}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors"
                 >
-                  <Cpu size={18} className="text-emerald-500" />
-                  Local (MQTT)
+                  <Cpu size={16} className="text-emerald-500" /> Local (MQTT)
                 </button>
               </div>
             </FloatingPortal>
           )}
 
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Schedule Manager</h2>
+          {isEmbedded && provider?.gatewayStatus && (
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                <span className="text-[10px] font-black uppercase tracking-wider">
+                  {provider.name === 'Honeywell' ? 'TCC' : 'evoGateway'}: {provider.gatewayStatus}
+                </span>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button onClick={() => setViewMode('zone')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><User size={16} className="inline mr-2"/>Zones</button>
             <button onClick={() => setViewMode('day')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={16} className="inline mr-2"/>Days</button>
           </div>
+
+          <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
+
           <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setEditMode('resize')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Move size={16} className="inline mr-2"/>Edit Slots</button>
-            <button onClick={() => setEditMode('split')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Scissors size={16} className="inline mr-2"/>Split Slots</button>
+            <button onClick={() => setEditMode('resize')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`} title="Resize and move slots"><Move size={16} className="inline mr-2"/>Edit</button>
+            <button onClick={() => setEditMode('split')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`} title="Double click to split a slot"><Scissors size={16} className="inline mr-2"/>Split</button>
           </div>
-          <button onClick={() => fetchAllSchedules(false, true)} disabled={!isDirty} className={`px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-400 transition-all ${isDirty ? 'hover:bg-slate-200' : 'cursor-not-allowed'}`}><X size={18} className="inline mr-2"/>Cancel</button>
-          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}><Save size={18} className="inline mr-2"/>Save</button>
+
+          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`ml-2 px-6 py-2 rounded-xl text-sm font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}><Save size={18} className="inline mr-2"/>Save</button>
         </div>
-      </div>
-      <div className="mb-8 flex flex-col md:flex-row items-end gap-4">
+      </header>
+
+      <main className="flex-1 overflow-y-auto">
         {viewMode === 'zone' ? (
-          <div className="flex-1 flex items-end gap-6">
+          <div className="flex-1 flex items-end gap-6 mb-8">
             <div className="max-w-xs w-full">
               <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
             </div>
-            
-            {activeZone && (
-              <div className="hidden lg:flex items-center gap-6 mb-1 text-slate-600 border-l-2 border-slate-100 pl-6 h-10">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Current</span>
-                  <span className="text-xl font-black text-slate-800 leading-none">{activeZone.temperature.toFixed(1)}°</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">{selectedZoneId === dhw?.dhwId ? 'State' : 'Target'}</span>
-                  <span className={`text-xl font-black leading-none ${selectedZoneId === dhw?.dhwId ? (activeZone.setpoint === 1 ? 'text-orange-500' : 'text-slate-400') : 'text-indigo-600'}`}>
-                      {selectedZoneId === dhw?.dhwId ? (activeZone.setpoint === 1 ? 'ON' : 'OFF') : `${activeZone.setpoint.toFixed(1)}°`}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Mode</span>
-                  <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none mt-1.5">
-                    {activeZone.setpointMode}
-                    {activeZone.until && ` until ${new Date(activeZone.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                  </span>
-                </div>
-              </div>
+            {selectedZoneId && (
+                <button 
+                    onClick={() => handleZoneRefresh(selectedZoneId)}
+                    className="p-2.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
+                    title="Refresh Schedule"
+                >
+                    <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+                </button>
             )}
           </div>
         ) : (
-          <div className="flex-1 max-w-xs">
-            <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 ml-1">Select Day</label>
-            <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="w-full bg-slate-50 border-2 border-slate-100 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all">{DAYS.map(d => <option key={d} value={d}>{d}</option>)}</select>
+          <div className="flex items-center gap-4 mb-8 bg-slate-50 p-2 rounded-2xl w-fit">
+            {DAYS.map(day => (
+              <button 
+                key={day} 
+                onClick={() => setSelectedDay(day)}
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white text-indigo-600 shadow-md shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'}`}
+              >{day.substring(0, 3)}</button>
+            ))}
+            <div className="h-6 w-px bg-slate-200 mx-2"></div>
+            <button 
+                onClick={fetchAllSchedulesSequentially}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+            >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh All
+            </button>
           </div>
         )}
 
-        <div className="flex gap-2">
-          {viewMode === 'zone' && selectedZoneId && (
-            <button 
-              onClick={() => handleZoneRefresh(selectedZoneId)}
-              disabled={loading}
-              title="Refresh Current Zone (Click twice within 20s to force refresh)"
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-500 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50 transition-all"
-            >
-              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-              Refresh Zone
-            </button>
-          )}
-          
-          <button 
-            onClick={fetchAllSchedulesSequentially}
-            disabled={loading}
-            title="Refresh All Schedules One by One"
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-600 disabled:opacity-50 transition-all"
-          >
-            <Activity size={16} className={loading ? "animate-pulse" : ""} />
-            Refresh All
-          </button>
-        </div>
-      </div>
+        <div className="bg-slate-50/50 rounded-2xl p-4 md:p-6 border border-slate-100">
+          {renderTimelineHeader()}
 
-      <div className="space-y-3">
-        {renderTimelineHeader()}
-        {viewMode === 'zone' ? (selectedZoneId ? DAYS.map(day => renderRow(day, day, selectedZoneId)) : null) : 
-          [
-            ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : []),
-            ...[...zones].sort((a,b) => a.name.localeCompare(b.name))
-          ].map(item => renderRow(item.name, selectedDay, item.zoneId))}
-      </div>
+          <div className="space-y-1">
+            {viewMode === 'zone' ? (
+              selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 font-bold">Select a zone to view schedule</div>
+            ) : (
+              [...zones, ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : [])].map(z => renderRow(z.name, selectedDay, z.zoneId))
+            )}
+          </div>
+        </div>
+
+        {clipboard && (
+            <div className="mt-8 flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 animate-in slide-in-from-bottom-2 duration-300">
+                <ClipboardCheck size={18} />
+                <span className="text-xs font-bold">Day schedule copied from <span className="font-black underline">{clipboardSource}</span>. Ready to paste!</span>
+                <button onClick={() => setClipboard(null)} className="ml-auto text-indigo-300 hover:text-indigo-600"><X size={16}/></button>
+            </div>
+        )}
+      </main>
+
+      <footer className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between text-slate-400">
+        <div className="flex items-center gap-2">
+          <Clock size={14}/>
+          <span className="text-[10px] font-black uppercase tracking-widest">Resolution: {resolution} mins</span>
+        </div>
+        <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-slate-300"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Off/Eco</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Comfort</span>
+            </div>
+        </div>
+      </footer>
 
       {editingSlot && (
         <EditPopover 
-            anchor={editingSlot.element} 
-            initialTemp={parseFloat(editingSlot.element.dataset.temp!)} 
-            startTime={editingSlot.element.dataset.startTime!} 
-            endTime={editingSlot.element.dataset.endTime!} 
+            anchor={editingSlot.element}
+            initialTemp={parseFloat(editingSlot.element.dataset.val || '20')}
+            startTime={editingSlot.element.dataset.startTime!}
+            endTime={editingSlot.element.dataset.endTime!}
             isDhw={editingSlot.zoneId === dhw?.dhwId}
-            onSave={handleUpdate} 
-            onCancel={() => setEditingSlot(null)} 
-            onDelete={handleDelete} 
+            onSave={handleUpdate}
+            onCancel={() => setEditingSlot(null)}
+            onDelete={handleDelete}
         />
       )}
     </section>

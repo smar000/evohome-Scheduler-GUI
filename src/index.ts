@@ -80,7 +80,7 @@ app.post('/rest/selectprovider', async (req, res) => {
 app.post('/rest/mqtt/refresh-mappings', async (req, res) => {
     try {
         Logger.info("API: Refreshing MQTT zone mappings from Honeywell...");
-        const honeywell = new HoneywellTccProvider(config.honeywell.username, config.honeywell.password);
+        const honeywell = new HoneywellTccProvider(config.honeywell);
         await honeywell.initialize();
         const zones = await honeywell.getZonesStatus();
         
@@ -119,6 +119,10 @@ app.get('/rest/session', (req, res) => {
         return res.json({ provider: "None", error: "Provider not initialized" });
     }
     res.json(provider.getSessionInfo());
+});
+
+app.get('/rest/config', (req, res) => {
+    res.json(config.scheduler);
 });
 
 app.get('/rest/renewsession', async (req, res) => {

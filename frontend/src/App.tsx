@@ -107,6 +107,14 @@ function App() {
                 <span className="text-[10px] font-black uppercase tracking-wider">{system.systemMode}</span>
               </div>
             )}
+            {provider?.gatewayStatus && (
+              <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+                <span className="text-[10px] font-black uppercase tracking-wider">
+                  {provider.name === 'Honeywell' ? 'TCC' : 'evoGateway'}: {provider.gatewayStatus}
+                </span>
+              </div>
+            )}
           </div>
           
           <select 

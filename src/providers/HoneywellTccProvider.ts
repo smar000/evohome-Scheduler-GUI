@@ -12,9 +12,6 @@ import {
 } from './HeatingProvider';
 import { Logger } from '../utils/Logger';
 
-const URL_DOMAIN = "https://mytotalconnectcomfort.com";
-const URL_LOGIN = `${URL_DOMAIN}/Auth/OAuth/Token`;
-const URL_API_BASE = `${URL_DOMAIN}/WebAPI/emea/api/v1`;
 const SESSION_FILE = path.join(process.cwd(), '.session.json');
 
 export class HoneywellTccProvider implements HeatingProvider {
@@ -34,14 +31,21 @@ export class HoneywellTccProvider implements HeatingProvider {
   // Caching
   private cachedFullStatus: any = null;
   private lastApiFetch: DateTime | null = null;      
-  private readonly CACHE_TTL_MINUTES = 3;
   
   private lastFullLogin: DateTime | null = null;
 
-  constructor(private username?: string, private password?: string) {}
+  private urlDomain: string;
+  private urlLogin: string;
+  private urlApiBase: string;
+
+  constructor(private config: any) {
+    this.urlDomain = config.urlDomain;
+    this.urlLogin = `${this.urlDomain}/Auth/OAuth/Token`;
+    this.urlApiBase = `${this.urlDomain}/WebAPI/emea/api/v1`;
+  }
 
   async initialize(): Promise<void> {
-    if (!this.username || !this.password) {
+    if (!this.config.username || !this.config.password) {
       throw new Error("Username and password are required for Honeywell TCC provider.");
     }
 
@@ -128,8 +132,8 @@ export class HoneywellTccProvider implements HeatingProvider {
 
   private async login(refreshToken?: string): Promise<void> {
     const now = DateTime.now();
-    if (!refreshToken && this.lastFullLogin && now.diff(this.lastFullLogin, 'minutes').minutes < 15) {
-        const waitMins = Math.ceil(15 - now.diff(this.lastFullLogin, 'minutes').minutes);
+    if (!refreshToken && this.lastFullLogin && now.diff(this.lastFullLogin, 'minutes').minutes < this.config.loginLimitMinutes) {
+        const waitMins = Math.ceil(this.config.loginLimitMinutes - now.diff(this.lastFullLogin, 'minutes').minutes);
         Logger.error(`Honeywell TCC: Login rate-limit guard active. Please wait ${waitMins} minutes before full re-authentication.`);
         throw new Error(`Login rate-limit guard active. Wait ${waitMins} mins.`);
     }
@@ -145,12 +149,12 @@ export class HoneywellTccProvider implements HeatingProvider {
     if (refreshToken) {
       body = `grant_type=refresh_token&refresh_token=${refreshToken}`;
     } else {
-      body = `grant_type=password&scope=EMEA-V1-Basic EMEA-V1-Anonymous EMEA-V1-Get-Current-User-Account&Username=${encodeURIComponent(this.username!)}&Password=${encodeURIComponent(this.password!)}`;
+      body = `grant_type=password&scope=EMEA-V1-Basic EMEA-V1-Anonymous EMEA-V1-Get-Current-User-Account&Username=${encodeURIComponent(this.config.username!)}&Password=${encodeURIComponent(this.config.password!)}`;
       this.lastFullLogin = now;
     }
 
     try {
-      const response = await axios.post(URL_LOGIN, body, { headers, timeout: 10000 });
+      const response = await axios.post(this.urlLogin, body, { headers, timeout: this.config.apiTimeout });
       const data = response.data;
       this.credentials = {
         accessToken: data.access_token,
@@ -170,8 +174,8 @@ export class HoneywellTccProvider implements HeatingProvider {
   private setupAxiosInstance() {
     if (!this.credentials) return;
     this.axiosInstance = axios.create({
-      baseURL: URL_API_BASE,
-      timeout: 10000,
+      baseURL: this.urlApiBase,
+      timeout: this.config.apiTimeout,
       headers: {
         'Authorization': `bearer ${this.credentials.accessToken}`,
         'applicationId': 'b013aa26-9724-4dbd-8897-048b9aada249',
@@ -244,7 +248,7 @@ export class HoneywellTccProvider implements HeatingProvider {
   private async getFullStatus(force = false, preferCache = false): Promise<any> {
     const now = DateTime.now();
     const secondsSinceLastApiFetch = this.lastApiFetch ? now.diff(this.lastApiFetch, 'seconds').seconds : 999;
-    const isCacheExpired = secondsSinceLastApiFetch > (this.CACHE_TTL_MINUTES * 60);
+    const isCacheExpired = secondsSinceLastApiFetch > (this.config.cacheTtlMinutes * 60);
 
     // NEW LOGIC: If preferCache is true AND we have data, use it regardless of expiration (within reason)
     if ((preferCache || !force) && !isCacheExpired && this.cachedFullStatus) {
@@ -389,8 +393,8 @@ export class HoneywellTccProvider implements HeatingProvider {
   }
 
   async renewSession(): Promise<void> {
-    if (this.credentials?.refreshToken) {
-        await this.login(this.credentials.refreshToken);
+    if (this.config.refreshToken) {
+        await this.login(this.config.refreshToken);
     } else {
         await this.login();
     }
@@ -398,12 +402,14 @@ export class HoneywellTccProvider implements HeatingProvider {
 
   getSessionInfo(): any {
     return {
+        provider: "Honeywell",
         userId: this.userId,
         locationId: this.locationId,
         systemId: this.systemId,
         dhwId: this.dhwId,
         expires: this.credentials?.expires.toISO(),
-        lastFullLogin: this.lastFullLogin?.toISO()
+        lastFullLogin: this.lastFullLogin?.toISO(),
+        gatewayStatus: this.userId ? "Authenticated" : "Not Authenticated"
     };
   }
 }
