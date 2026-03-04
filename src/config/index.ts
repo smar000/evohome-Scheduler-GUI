@@ -36,5 +36,23 @@ export const config = {
     defaultTemp: parseFloat(process.env.SCHEDULER_DEFAULT_TEMP || '20'),
     longPressMs: parseInt(process.env.SCHEDULER_LONG_PRESS_MS || '600', 10),
     apiTimeout: parseInt(process.env.FRONTEND_API_TIMEOUT || '15000', 10),
+    tempColors: (() => {
+      const defaults = [
+        { maxTemp: 5,  color: '#94a3b8' },
+        { maxTemp: 14, color: '#2563eb' },
+        { maxTemp: 16, color: '#0891b2' },
+        { maxTemp: 18, color: '#0d9488' },
+        { maxTemp: 20, color: '#059669' },
+        { maxTemp: 22, color: '#d97706' },
+        { maxTemp: 23, color: '#ea580c' },
+        { maxTemp: 25, color: '#dc2626' },
+        {              color: '#9f1239' },
+      ];
+      try {
+        return process.env.TEMP_COLORS ? JSON.parse(process.env.TEMP_COLORS) : defaults;
+      } catch {
+        return defaults;
+      }
+    })(),
   }
 };

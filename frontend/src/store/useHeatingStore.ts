@@ -31,6 +31,7 @@ interface HeatingState {
       defaultTemp: number;
       longPressMs: number;
       apiTimeout: number;
+      tempColors?: { maxTemp?: number; color: string }[];
   } | null;
   selectedZoneId: string | null;
   failedSchedules: Set<string>;

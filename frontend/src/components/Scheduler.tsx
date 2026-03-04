@@ -11,16 +11,24 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 const TOTAL_DAY_MINUTES = 24 * 60;
 
 // --- Color & Style Helpers ---
-const getTempColor = (temp: number): string => {
-  if (temp <= 5) return '#94a3b8'; // Slate
-  if (temp <= 10) return '#3b82f6'; // Blue
-  if (temp <= 15) return '#38bdf8'; // Sky
-  if (temp <= 17) return '#4ade80'; // Green
-  if (temp <= 20) return '#facc15'; // Yellow
-  if (temp <= 22) return '#fbbf24'; // Amber
-  if (temp <= 24) return '#f97316'; // Orange
-  if (temp <= 30) return '#ea580c'; // Deep Orange
-  return '#ef4444'; // Red
+const DEFAULT_TEMP_COLORS: { maxTemp?: number; color: string }[] = [
+  { maxTemp: 5,  color: '#94a3b8' },
+  { maxTemp: 14, color: '#2563eb' },
+  { maxTemp: 16, color: '#0891b2' },
+  { maxTemp: 18, color: '#0d9488' },
+  { maxTemp: 20, color: '#059669' },
+  { maxTemp: 22, color: '#d97706' },
+  { maxTemp: 23, color: '#ea580c' },
+  { maxTemp: 25, color: '#dc2626' },
+  {              color: '#9f1239' },
+];
+
+const getTempColor = (temp: number, palette?: { maxTemp?: number; color: string }[]): string => {
+  const colors = palette ?? DEFAULT_TEMP_COLORS;
+  for (const entry of colors) {
+    if (entry.maxTemp === undefined || temp <= entry.maxTemp) return entry.color;
+  }
+  return colors[colors.length - 1]?.color ?? '#94a3b8';
 };
 
 const timeToMinutes = (time: string): number => {
@@ -150,6 +158,49 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
   );
 };
 
+const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete }) => {
+  const [temp, setTemp] = useState(initialTemp);
+  const [start, setStart] = useState(startTime);
+  const [end, setEnd] = useState(endTime);
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onCancel} />
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl p-6 animate-in slide-in-from-bottom duration-300">
+        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
+        <h3 className="text-base font-black text-slate-800 mb-5">Edit Slot</h3>
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <label className="text-sm font-bold text-slate-500 self-center">Start Time</label>
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+
+          <label className="text-sm font-bold text-slate-500 self-center">End Time</label>
+          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+
+          <label className="text-sm font-bold text-slate-500 self-center">{isDhw ? 'State' : 'Target Temp'}</label>
+          {isDhw ? (
+            <div className="flex bg-slate-100 rounded-xl p-1">
+              <button onClick={() => setTemp(1)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>ON</button>
+              <button onClick={() => setTemp(0)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 0 ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>OFF</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 rounded-xl p-3 text-base w-full outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+              <span className="text-sm font-bold text-slate-400">°C</span>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-3">
+          <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
+            <Trash2 size={16} /> Delete
+          </button>
+          <button onClick={onCancel} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">Cancel</button>
+          <button onClick={() => onSave(temp, start, end)} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors">Apply</button>
+        </div>
+      </div>
+    </>
+  );
+};
+
 type ViewMode = 'zone' | 'day';
 type EditMode = 'resize' | 'split';
 
@@ -169,6 +220,9 @@ export const Scheduler: React.FC = () => {
   const [showProviderPopup, setShowProviderPopup] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
+  const [zoomLevel, setZoomLevel] = useState(() => window.innerWidth < 640 ? 2 : 1);
+  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
 
   const queryParams = new URLSearchParams(window.location.search);
   const isEmbedded = queryParams.get('embed') === 'true';
@@ -193,6 +247,12 @@ export const Scheduler: React.FC = () => {
         fetchScheduleForZone(selectedZoneId, true);
     }
   }, [selectedZoneId, schedules, loading, fetchScheduleForZone, failedSchedules]);
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   const { refs, floatingStyles } = useFloating({
     open: showProviderPopup,
@@ -265,6 +325,7 @@ export const Scheduler: React.FC = () => {
         }
     });
     setEditingSlot(null);
+    setSelectedSlotKey(null);
   };
 
   const handleDelete = () => {
@@ -282,6 +343,7 @@ export const Scheduler: React.FC = () => {
         }
     });
     setEditingSlot(null);
+    setSelectedSlotKey(null);
   };
 
   const handleCopy = (dayName: string, zoneId: string, rowLabel: string) => {
@@ -319,7 +381,7 @@ export const Scheduler: React.FC = () => {
     const markers = [0, 3, 6, 9, 12, 15, 18, 21, 24];
     return (
       <div className="flex items-center mb-2">
-        <div className="w-24 pr-2 text-right opacity-0">Time</div>
+        <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right opacity-0">Time</div>
         <div className="flex-1 h-6 relative w-full flex items-end">
           {markers.map((hour) => {
             const left = (hour / 24) * 100;
@@ -331,7 +393,7 @@ export const Scheduler: React.FC = () => {
             );
           })}
         </div>
-        <div className="w-16 opacity-0" />
+        <div className="hidden sm:block w-16 opacity-0" />
       </div>
     );
   };
@@ -366,18 +428,28 @@ export const Scheduler: React.FC = () => {
             const startTimeText = minutesToTime(seg.start * resolution);
             const endTimeText = minutesToTime((seg.start + seg.length) * resolution);
             const rangeText = `${startTimeText} - ${endTimeText}`;
-            const color = isDhw ? (seg.val === 1 ? '#6366f1' : '#94a3b8') : getTempColor(seg.val);
+            const color = isDhw ? (seg.val === 1 ? '#6366f1' : '#94a3b8') : getTempColor(seg.val, uiConfig?.tempColors);
             const labelText = isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : `${seg.val.toFixed(1)}°`;
 
+            const slotKey = `${dayName}-${zoneId}-${i}`;
+            const isSelected = selectedSlotKey === slotKey;
             slots.push(
-                <div 
-                    key={i} 
+                <div
+                    key={i}
                     style={{ width: `${width}%`, backgroundColor: color }}
-                    className="h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot flex-shrink-0"
-                    onDoubleClick={(e) => handleSlotDoubleClick(dayName, zoneId, e.currentTarget)}
+                    className={`h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot flex-shrink-0 ${isSelected ? 'ring-2 ring-white ring-inset brightness-125 z-10' : ''}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (isSelected) {
+                            setSelectedSlotKey(null);
+                            handleSlotDoubleClick(dayName, zoneId, e.currentTarget);
+                        } else {
+                            setSelectedSlotKey(slotKey);
+                        }
+                    }}
                     title={`${rangeText} | ${isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : seg.val + '°C'}`}
-                    data-start-time={startTimeText} 
-                    data-end-time={endTimeText} 
+                    data-start-time={startTimeText}
+                    data-end-time={endTimeText}
                     data-val={seg.val}
                 >
                     <span className="text-[10px]">{labelText}</span>
@@ -394,9 +466,9 @@ export const Scheduler: React.FC = () => {
     const isSource = clipboardSource === label;
 
     return (
-      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-2 mb-1 last:mb-0">
-        <div className="w-24 pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
-        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative">
+      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
+        <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
+        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative" onClick={() => setSelectedSlotKey(null)}>
           {hasData ? slots : (
               <div className="flex-1 flex items-center justify-center gap-2 text-slate-300">
                   <Clock size={14} />
@@ -404,7 +476,7 @@ export const Scheduler: React.FC = () => {
               </div>
           )}
         </div>
-        <div className="w-16 flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
+        <div className="hidden sm:flex w-16 items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
             {hasData && (
                 <>
                     <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-2 lg:p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
@@ -420,8 +492,8 @@ export const Scheduler: React.FC = () => {
   };
 
   return (
-    <section className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col min-h-[600px] p-6 md:p-8">
-      <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <section className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col min-h-[600px] p-2 md:p-8">
+      <header className="mb-3 md:mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-6">
         <div className="flex items-center gap-4">
           <div 
             ref={refs.setReference}
@@ -430,7 +502,7 @@ export const Scheduler: React.FC = () => {
             onMouseLeave={handleLongPressEnd}
             onTouchStart={handleLongPressStart}
             onTouchEnd={handleLongPressEnd}
-            className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 cursor-pointer hover:bg-indigo-500 transition-colors"
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg cursor-pointer transition-colors ${(['online', 'authenticated'].includes((provider?.gatewayStatus ?? '').toLowerCase())) ? 'bg-emerald-500 shadow-emerald-200 hover:bg-emerald-400' : 'bg-rose-500 shadow-rose-200 hover:bg-rose-400'}`}
           >
             {provider?.name === 'MQTT' ? <Cpu size={24}/> : <Cloud size={24}/>}
           </div>
@@ -488,7 +560,7 @@ export const Scheduler: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto">
         {viewMode === 'zone' ? (
-          <div className="flex-1 flex items-end gap-6 mb-8">
+          <div className="flex-1 flex items-end gap-6 mb-4 md:mb-8">
             <div className="max-w-xs w-full">
               <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
             </div>
@@ -503,7 +575,7 @@ export const Scheduler: React.FC = () => {
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-4 mb-8 bg-slate-50 p-2 rounded-2xl w-fit">
+          <div className="flex items-center gap-4 mb-4 md:mb-8 bg-slate-50 p-2 rounded-2xl w-fit">
             {DAYS.map(day => (
               <button 
                 key={day} 
@@ -521,15 +593,18 @@ export const Scheduler: React.FC = () => {
           </div>
         )}
 
-        <div className="bg-slate-50/50 rounded-2xl p-4 md:p-6 border border-slate-100">
-          {renderTimelineHeader()}
-
-          <div className="space-y-1">
-            {viewMode === 'zone' ? (
-              selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 font-bold">Select a zone to view schedule</div>
-            ) : (
-              [...zones, ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : [])].map(z => renderRow(z.name, selectedDay, z.zoneId))
-            )}
+        <div className="bg-slate-50/50 rounded-2xl p-1 md:p-6 border border-slate-100">
+          <div className="overflow-x-auto">
+            <div style={{ width: zoomLevel === 1 ? '100%' : `${zoomLevel * 100}%`, minWidth: '100%' }}>
+              {renderTimelineHeader()}
+              <div className="space-y-1">
+                {viewMode === 'zone' ? (
+                  selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 font-bold">Select a zone to view schedule</div>
+                ) : (
+                  [...zones, ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : [])].map(z => renderRow(z.name, selectedDay, z.zoneId))
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -542,34 +617,54 @@ export const Scheduler: React.FC = () => {
         )}
       </main>
 
-      <footer className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between text-slate-400">
-        <div className="flex items-center gap-2">
-          <Clock size={14}/>
-          <span className="text-[10px] font-black uppercase tracking-widest">Resolution: {resolution} mins</span>
-        </div>
+      <footer className="mt-3 md:mt-8 pt-3 md:pt-6 border-t border-slate-100 flex items-center justify-between text-slate-400">
         <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-slate-300"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Off/Eco</span>
-            </div>
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Comfort</span>
-            </div>
+          <div className="flex sm:hidden items-center gap-2">
+            <Clock size={14}/>
+            <span className="text-[10px] font-black uppercase tracking-widest">Resolution: {resolution} mins</span>
+          </div>
+          <div className="flex sm:hidden items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setZoomLevel(l => Math.max(1, l - 1))}
+              disabled={zoomLevel === 1}
+              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Zoom out"
+            >−</button>
+            <span className="text-[10px] font-black uppercase tracking-widest px-1 min-w-[2rem] text-center">{zoomLevel}×</span>
+            <button
+              onClick={() => setZoomLevel(l => Math.min(4, l + 1))}
+              disabled={zoomLevel === 4}
+              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Zoom in"
+            >+</button>
+          </div>
         </div>
       </footer>
 
       {editingSlot && (
-        <EditPopover 
+        isMobile ? (
+          <EditBottomSheet
             anchor={editingSlot.element}
             initialTemp={parseFloat(editingSlot.element.dataset.val || '20')}
             startTime={editingSlot.element.dataset.startTime!}
             endTime={editingSlot.element.dataset.endTime!}
             isDhw={editingSlot.zoneId === dhw?.dhwId}
             onSave={handleUpdate}
-            onCancel={() => setEditingSlot(null)}
+            onCancel={() => { setEditingSlot(null); setSelectedSlotKey(null); }}
             onDelete={handleDelete}
-        />
+          />
+        ) : (
+          <EditPopover
+            anchor={editingSlot.element}
+            initialTemp={parseFloat(editingSlot.element.dataset.val || '20')}
+            startTime={editingSlot.element.dataset.startTime!}
+            endTime={editingSlot.element.dataset.endTime!}
+            isDhw={editingSlot.zoneId === dhw?.dhwId}
+            onSave={handleUpdate}
+            onCancel={() => { setEditingSlot(null); setSelectedSlotKey(null); }}
+            onDelete={handleDelete}
+          />
+        )
       )}
     </section>
   );
