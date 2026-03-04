@@ -560,12 +560,32 @@ export const Scheduler: React.FC = () => {
 
       <main className="flex-1 overflow-y-auto">
         {viewMode === 'zone' ? (
-          <div className="flex-1 flex items-end gap-6 mb-4 md:mb-8">
+          <div className="flex-1 flex items-end gap-4 md:gap-6 mb-4 md:mb-8">
             <div className="max-w-xs w-full">
               <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
             </div>
+            {selectedZoneId && (() => {
+              const zoneStatus = zones.find(z => z.zoneId === selectedZoneId);
+              if (!zoneStatus) return null;
+              const modeNorm = zoneStatus.setpointMode.toLowerCase().replace(/[\s_]/g, '');
+              const isOverride = !modeNorm.startsWith('follow') && modeNorm !== 'unknown' && modeNorm !== '';
+              const modeLabel = isOverride
+                ? `Override${zoneStatus.until ? ` until ${new Date(zoneStatus.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
+                : 'Following Schedule';
+              return (
+                <div className="hidden sm:inline-grid grid-cols-[auto_auto_auto] gap-x-3 gap-y-0.5">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target</div>
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mode</div>
+                  <div className="text-2xl font-black text-slate-700 leading-none">{zoneStatus.temperature.toFixed(1)}°</div>
+                  <div className="text-2xl font-black text-indigo-500 leading-none">{zoneStatus.setpoint.toFixed(1)}°</div>
+                  <div className={`text-sm font-black uppercase tracking-widest self-end leading-none ${isOverride ? 'text-amber-500' : 'text-indigo-500'}`}>{modeLabel}</div>
+                </div>
+              );
+            })()}
+            <div className="flex-1" />
             {selectedZoneId && (
-                <button 
+                <button
                     onClick={() => handleZoneRefresh(selectedZoneId)}
                     className="p-2.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
                     title="Refresh Schedule"
