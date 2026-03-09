@@ -4,7 +4,28 @@
 
 This application was created to meet a specific personal requirement for a browser based scheduling interface to evohome, and is shared in the hope that it may be of use to others with similar needs.
 
-![Dashboard](./misc/other/embedded_sched.png)
+<table>
+  <tr>
+    <td align="center">
+      <a href="./misc/other/evoWeb.png">
+        <img src="./misc/other/evoWeb.png" width="280" alt="Schedule Manager — weekly zone view with slot editing toolbar"><br>
+        <sub><b>Schedule Manager</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="./misc/other/evoWeb-dashboard.png">
+        <img src="./misc/other/evoWeb-dashboard.png" width="280" alt="Dashboard — live status from both MQTT and Cloud providers side by side"><br>
+        <sub><b>Dual-Provider Dashboard</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="./misc/other/evoWeb-embedded.png">
+        <img src="./misc/other/evoWeb-embedded.png" width="280" alt="Embedded view — compact iframe mode for openHAB HABPanel or Basic UI"><br>
+        <sub><b>Embedded (iframe) Mode</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ## Overview
 
