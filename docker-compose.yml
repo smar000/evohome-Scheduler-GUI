@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   evoweb:
     container_name: evoweb
