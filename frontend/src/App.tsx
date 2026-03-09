@@ -1,12 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useHeatingApi } from './api/useHeatingApi';
 import { useHeatingStore } from './store/useHeatingStore';
-import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard } from 'lucide-react';
+import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard, Cpu, Cloud } from 'lucide-react';
 import { Scheduler } from './components/Scheduler';
 
+// Normalise setpointMode strings from both providers into a short human label
+function formatMode(mode: string, until?: string): string {
+  const n = mode.toLowerCase().replace(/[\s_]/g, '');
+  if (n.startsWith('follow')) return 'Following Schedule';
+  if (n.includes('temporary')) {
+    return until
+      ? `Override until ${new Date(until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      : 'Temp Override';
+  }
+  if (n.includes('permanent')) return 'Permanent Override';
+  return mode;
+}
+
+function normName(name: string) { return name.toLowerCase().trim(); }
+
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider } = useHeatingApi();
-  const { zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId } = useHeatingStore();
+  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
+  const {
+    zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId,
+    selectedZoneId,
+    mqttSnapshot, cloudSnapshot, providersStatus,
+  } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
   const isInitialized = React.useRef(false);
 
@@ -19,35 +38,30 @@ function App() {
   useEffect(() => {
     if (isInitialized.current) return;
     isInitialized.current = true;
-
     const init = async () => {
-        // 1. Fetch general status
         await fetchCurrentStatus();
-        
-        // 2. Fetch all schedules if not embedded (embedded will fetch specifically)
-        if (!isEmbedded) {
-            await fetchAllSchedules();
-        }
+        if (!isEmbedded) await fetchAllSchedules();
     };
     init();
   }, []);
 
-  // Handle URL parameters for initial zone selection once zones are loaded
+  // Load dual status whenever the dashboard tab is active
+  useEffect(() => {
+    if (activeTab === 'dashboard') fetchDualStatus();
+  }, [activeTab]);
+
   useEffect(() => {
     if (zones.length > 0 && !urlParamProcessed.current) {
         const targetId = initialZoneId || initialZoneLabel;
-        
         if (targetId) {
             const normalize = (s: string) => s.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
             const search = normalize(targetId);
-            
-            const found = zones.find(z => 
-                (z.label && normalize(z.label) === search) || 
-                (z.name && normalize(z.name) === search) || 
+            const found = zones.find(z =>
+                (z.label && normalize(z.label) === search) ||
+                (z.name && normalize(z.name) === search) ||
                 z.zoneId === targetId ||
                 z.zoneId === search
             );
-
             if (found) {
                 urlParamProcessed.current = true;
                 setSelectedZoneId(found.zoneId);
@@ -55,19 +69,23 @@ function App() {
                 return;
             }
         }
-
-        // Fallback: If no match or no param, select first zone if nothing is selected
-        if (!useHeatingStore.getState().selectedZoneId) {
+        const currentId = useHeatingStore.getState().selectedZoneId;
+        if (!currentId || !zones.find(z => z.zoneId === currentId)) {
             setSelectedZoneId(zones[0].zoneId);
-            // fetchScheduleForZone will be triggered by Scheduler.tsx's effect
         }
-        urlParamProcessed.current = true; 
+        urlParamProcessed.current = true;
     }
   }, [zones, initialZoneId, initialZoneLabel]);
+
+  // Persist the selected zone so it is restored on the next page load
+  useEffect(() => {
+    if (selectedZoneId) localStorage.setItem('evoWeb:lastZoneId', selectedZoneId);
+  }, [selectedZoneId]);
 
   const handleManualRefresh = async () => {
     await fetchCurrentStatus(true);
     await fetchAllSchedules(true);
+    if (activeTab === 'dashboard') await fetchDualStatus();
   };
 
   const getTitle = () => {
@@ -84,7 +102,6 @@ function App() {
             <main className="p-2">
                 <Scheduler />
             </main>
-            {/* Minimal loader for embedded mode */}
             {loading && (
                 <div className="fixed bottom-4 right-4 bg-slate-900/80 text-white px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-sm">
                     <RefreshCw size={14} className="animate-spin text-indigo-400" />
@@ -94,6 +111,21 @@ function App() {
         </div>
     );
   }
+
+  // --- Dashboard helpers ---
+  const mqttConnected  = providersStatus?.mqtt?.connected  ?? false;
+  const cloudConnected = providersStatus?.cloud?.connected ?? false;
+
+  // Union of all zone names across both snapshots, sorted
+  const allZoneNames = Array.from(new Set([
+    ...(mqttSnapshot?.zones.map(z => z.name)   ?? []),
+    ...(cloudSnapshot?.zones.map(z => z.name)  ?? []),
+  ])).sort((a, b) => a.localeCompare(b));
+
+  // DHW from either snapshot
+  const mqttDhw  = mqttSnapshot?.dhw  ?? null;
+  const cloudDhw = cloudSnapshot?.dhw ?? null;
+  const hasDhw   = !!(mqttDhw || cloudDhw);
 
   return (
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
@@ -116,8 +148,8 @@ function App() {
               </div>
             )}
           </div>
-          
-          <select 
+
+          <select
             value={provider?.name === 'Honeywell' ? 'honeywell' : (provider?.name === 'MQTT' ? 'mqtt' : 'mock')}
             onChange={(e) => selectProvider(e.target.value as any)}
             className="bg-slate-100 border-none rounded-lg px-3 py-1.5 text-xs font-black uppercase tracking-wider text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer w-fit"
@@ -128,16 +160,15 @@ function App() {
           </select>
         </div>
 
-        {/* TAB NAVIGATION IN HEADER */}
         <div className="flex gap-1 bg-slate-200/50 p-1 rounded-2xl w-fit lg:mx-auto">
-          <button 
+          <button
             onClick={() => setActiveTab('scheduler')}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'scheduler' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
             <Activity size={16} />
             Scheduler
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('dashboard')}
             className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'dashboard' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -145,9 +176,9 @@ function App() {
             Dashboard
           </button>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
-          <button 
+          <button
             onClick={handleManualRefresh}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all"
@@ -171,71 +202,188 @@ function App() {
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-black flex items-center gap-3 text-slate-800 tracking-tight">
                   <LayoutDashboard size={28} className="text-indigo-500" />
                   Live House Overview
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {/* Hot Water Card (Always First) */}
-                {dhw && (
-                  <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 border-l-4 border-l-blue-500 flex flex-col justify-between hover:shadow-md transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Droplets size={20} className="text-blue-500" />
-                          <h3 className="font-bold text-slate-800 text-lg">Hot Water</h3>
-                        </div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          {dhw.setpointMode}
-                          {dhw.setpointMode === 'Temporary Override' && dhw.until && ` until ${new Date(dhw.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${dhw.state === 'On' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                        {dhw.state}
-                      </span>
+              {/* --- Connection status row --- */}
+              <div className="flex flex-wrap gap-3 mb-8">
+                {/* MQTT */}
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${mqttConnected ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'}`}>
+                  <Cpu size={16} className={mqttConnected ? 'text-emerald-500' : 'text-slate-400'} />
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Local (MQTT)</div>
+                    <div className={`text-xs font-black uppercase tracking-wide ${mqttConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
+                      {providersStatus?.mqtt?.status ?? (mqttSnapshot ? 'unknown' : '—')}
                     </div>
-                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-50 flex items-center justify-between mt-auto">
-                      <span className="text-[10px] uppercase font-black text-blue-400 tracking-widest">Temperature</span>
-                      <span className="text-3xl font-black text-blue-700">{dhw.temperature.toFixed(1)}°</span>
-                    </div>
+                    {providersStatus?.mqtt?.error && (
+                      <div className="text-[9px] text-rose-500 font-bold mt-0.5">{providersStatus.mqtt.error}</div>
+                    )}
                   </div>
-                )}
+                  <div className={`w-2 h-2 rounded-full ml-1 ${mqttConnected ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                </div>
 
-                {/* Zone Cards */}
-                {[...zones].sort((a, b) => a.name.localeCompare(b.name)).map((zone) => (
-                  <div key={zone.zoneId} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-all group flex flex-col">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight mb-1">{zone.name}</h3>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                          {zone.setpointMode}
-                          {zone.setpointMode === 'Temporary Override' && zone.until && ` until ${new Date(zone.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                        </p>
-                      </div>
-                      <Thermometer size={24} className={zone.temperature < zone.setpoint ? "text-orange-500 animate-pulse" : "text-slate-300"} />
+                {/* Cloud */}
+                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${cloudConnected ? 'bg-sky-50 border-sky-100' : 'bg-slate-50 border-slate-200'}`}>
+                  <Cloud size={16} className={cloudConnected ? 'text-sky-500' : 'text-slate-400'} />
+                  <div>
+                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Cloud (Honeywell)</div>
+                    <div className={`text-xs font-black uppercase tracking-wide ${cloudConnected ? 'text-sky-600' : 'text-slate-500'}`}>
+                      {providersStatus?.cloud?.status ?? (cloudSnapshot ? 'unknown' : '—')}
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mt-auto">
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                        <span className="text-[10px] uppercase font-black text-slate-400 block mb-1">Current</span>
-                        <span className="text-2xl font-black text-slate-800">{zone.temperature.toFixed(1)}°</span>
-                      </div>
-                      <div className="bg-indigo-50 p-3 rounded-2xl border border-indigo-50 text-center">
-                        <span className="text-[10px] uppercase font-black text-indigo-400 block mb-1">Target</span>
-                        <span className="text-2xl font-black text-indigo-700 block">{zone.setpoint.toFixed(1)}°</span>
-                      </div>
-                    </div>
+                    {providersStatus?.cloud?.error && (
+                      <div className="text-[9px] text-rose-500 font-bold mt-0.5">{providersStatus.cloud.error}</div>
+                    )}
                   </div>
-                ))}
+                  <div className={`w-2 h-2 rounded-full ml-1 ${cloudConnected ? 'bg-sky-400' : 'bg-slate-300'}`} />
+                </div>
               </div>
+
+              {/* --- Zone / DHW cards --- */}
+              {(allZoneNames.length === 0 && !hasDhw) ? (
+                <div className="flex flex-col items-center justify-center h-48 bg-white rounded-3xl border border-slate-100 text-slate-400 gap-3">
+                  <RefreshCw size={24} className={loading ? 'animate-spin text-indigo-400' : ''} />
+                  <span className="text-sm font-bold">
+                    {loading ? 'Loading data…' : 'No data yet — click Refresh to load'}
+                  </span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+
+                  {/* Hot Water card */}
+                  {hasDhw && (
+                    <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-3">
+                      <div className="flex items-center gap-2">
+                        <Droplets size={18} className="text-blue-500" />
+                        <h3 className="font-bold text-slate-800">Hot Water</h3>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {/* Local row */}
+                        <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-amber-50 border-l-4 border-amber-400">
+                          <div className="flex flex-col items-center gap-0.5 w-8 shrink-0">
+                            <Cpu size={13} className="text-amber-500" />
+                            <span className="text-[8px] font-black uppercase tracking-wider text-amber-600">Local</span>
+                          </div>
+                          {mqttDhw ? (
+                            <div className="flex gap-4 flex-1 items-center min-w-0">
+                              <div className="shrink-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Temp</div>
+                                <div className="text-lg font-black text-slate-700 leading-none">{mqttDhw.temperature.toFixed(1)}°</div>
+                              </div>
+                              <div className="shrink-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">State</div>
+                                <span className={`text-[9px] font-black uppercase ${mqttDhw.state === 'On' ? 'text-green-600' : 'text-slate-400'}`}>{mqttDhw.state}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>
+                                <div className="text-[9px] font-black text-amber-600 uppercase tracking-wide leading-tight truncate">{formatMode(mqttDhw.setpointMode, mqttDhw.until)}</div>
+                              </div>
+                            </div>
+                          ) : <span className="text-slate-300 font-black">—</span>}
+                        </div>
+                        {/* Cloud row */}
+                        <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-sky-50 border-l-4 border-sky-400">
+                          <div className="flex flex-col items-center gap-0.5 w-8 shrink-0">
+                            <Cloud size={13} className="text-sky-500" />
+                            <span className="text-[8px] font-black uppercase tracking-wider text-sky-600">Cloud</span>
+                          </div>
+                          {cloudDhw ? (
+                            <div className="flex gap-4 flex-1 items-center min-w-0">
+                              <div className="shrink-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Temp</div>
+                                <div className="text-lg font-black text-slate-700 leading-none">{cloudDhw.temperature.toFixed(1)}°</div>
+                              </div>
+                              <div className="shrink-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">State</div>
+                                <span className={`text-[9px] font-black uppercase ${cloudDhw.state === 'On' ? 'text-green-600' : 'text-slate-400'}`}>{cloudDhw.state}</span>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>
+                                <div className="text-[9px] font-black text-sky-600 uppercase tracking-wide leading-tight truncate">{formatMode(cloudDhw.setpointMode, cloudDhw.until)}</div>
+                              </div>
+                            </div>
+                          ) : <span className="text-slate-300 font-black">—</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Zone cards */}
+                  {allZoneNames.map((zoneName) => {
+                    const mqttZone  = mqttSnapshot?.zones.find(z => normName(z.name) === normName(zoneName));
+                    const cloudZone = cloudSnapshot?.zones.find(z => normName(z.name) === normName(zoneName));
+                    const heating   = (mqttZone ?? cloudZone);
+                    const isHeating = !!(heating && heating.temperature < heating.setpoint);
+
+                    return (
+                      <div key={zoneName} className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-all group flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-base font-bold text-slate-800 group-hover:text-indigo-600 transition-colors leading-tight">{zoneName}</h3>
+                          <Thermometer size={20} className={isHeating ? 'text-orange-500 animate-pulse' : 'text-slate-300'} />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {/* Local row */}
+                          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-amber-50 border-l-4 border-amber-400">
+                            <div className="flex flex-col items-center gap-0.5 w-8 shrink-0">
+                              <Cpu size={13} className="text-amber-500" />
+                              <span className="text-[8px] font-black uppercase tracking-wider text-amber-600">Local</span>
+                            </div>
+                            {mqttZone ? (
+                              <div className="flex gap-4 flex-1 items-center min-w-0">
+                                <div className="shrink-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Now</div>
+                                  <div className="text-lg font-black text-slate-700 leading-none">{mqttZone.temperature.toFixed(1)}°</div>
+                                </div>
+                                <div className="shrink-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Set</div>
+                                  <div className="text-lg font-black text-amber-600 leading-none">{mqttZone.setpoint.toFixed(1)}°</div>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>
+                                  <div className="text-[9px] font-black text-amber-600 uppercase tracking-wide leading-tight truncate">{formatMode(mqttZone.setpointMode, mqttZone.until)}</div>
+                                </div>
+                              </div>
+                            ) : <span className="text-slate-300 font-black">—</span>}
+                          </div>
+
+                          {/* Cloud row */}
+                          <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 bg-sky-50 border-l-4 border-sky-400">
+                            <div className="flex flex-col items-center gap-0.5 w-8 shrink-0">
+                              <Cloud size={13} className="text-sky-500" />
+                              <span className="text-[8px] font-black uppercase tracking-wider text-sky-600">Cloud</span>
+                            </div>
+                            {cloudZone ? (
+                              <div className="flex gap-4 flex-1 items-center min-w-0">
+                                <div className="shrink-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Now</div>
+                                  <div className="text-lg font-black text-slate-700 leading-none">{cloudZone.temperature.toFixed(1)}°</div>
+                                </div>
+                                <div className="shrink-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Set</div>
+                                  <div className="text-lg font-black text-sky-600 leading-none">{cloudZone.setpoint.toFixed(1)}°</div>
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>
+                                  <div className="text-[9px] font-black text-sky-600 uppercase tracking-wide leading-tight truncate">{formatMode(cloudZone.setpointMode, cloudZone.until)}</div>
+                                </div>
+                              </div>
+                            ) : <span className="text-slate-300 font-black">—</span>}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </main>
       )}
 
-      {/* FIXED STATUS BAR WITH ERROR SUPPORT */}
       <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 ${loading || provider?.error ? 'translate-y-0' : 'translate-y-full'} ${provider?.error ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
         {provider?.error ? (
             <div className="flex items-center gap-2">

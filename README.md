@@ -10,12 +10,13 @@ This application was created to meet a specific personal requirement for a more 
 
 *   **Browser-Based:** Provides schedule management from any desktop or tablet browser without the need for a mobile app.
 *   **Automation Integration:** Designed for embedding within iframes, facilitating integration into platforms such as [openHAB](https://www.openhab.org) (e.g., HABPanel or Basic UI).
-*   **Dual-Mode Support:** Supports communication via official Honeywell Cloud APIs (TCC) or local control via MQTT when used with [evogateway](https://github.com/zxdavb/evogateway).
+*   **Dual-Provider Architecture:** Both the Honeywell Cloud (TCC) and local MQTT providers run simultaneously whenever credentials are present. Live data from both sources is available via dedicated REST endpoints at all times, independently of which provider is selected as "active" in the UI.
 *   **Visual Grid Editor:** Offers a graphical representation of weekly schedules for intuitive editing.
+*   **REST API:** All live status data is also exposed via REST endpoints, suitable for integration with home automation platforms (openHAB, Home Assistant, Node-RED, etc.).
 
 ## Project Status
 
-This tool is considered feature-complete for its original intended purpose. No significant further development is planned beyond minor bug fixes. However, the project remains open to community contributions; bug reports and pull requests are welcome.
+Active development — core schedule editing is stable; the dual-provider dashboard and REST API are under active improvement.
 
 ## Understanding "Slots"
 
@@ -60,19 +61,156 @@ The system provides real-time connection feedback via status badges.
 *   **TCC: Authenticated (Green):** Successful session established with Honeywell Total Connect Comfort services.
 *   **TCC: Not Authenticated (Red):** Authentication failed or the session has expired.
 
+## Dual-Provider Architecture
+
+Both the Honeywell Cloud (TCC) and local MQTT (evogateway) providers are initialised at startup — as long as their respective credentials or broker URL are present in `.env`. They run concurrently and independently; selecting one does not disable the other.
+
+The primary motivation for this concurrent architecture is to allow the REST API to serve data from either source at any time, on demand, without requiring a provider switch. External systems (home automation platforms, dashboards, scripts) can therefore poll `/rest/cloud/currentstatus` and `/rest/mqtt/currentstatus` independently, always receiving a live response from the appropriate data source regardless of which provider is currently active in the UI.
+
+The **active provider** setting controls which data source drives the Scheduler tab (for reading schedules, setting overrides, etc.). Switching the active provider does not stop the other provider — it continues running in the background.
+
+The **Dashboard** tab uses this same concurrent capability to display live data from **both** providers side by side, enabling cross-checking of local sensor readings against cloud-reported values in real time.
+
+```
+Honeywell Cloud  ──────▶  /rest/cloud/currentstatus/<zone>   ─────┐
+                                                                    ├──▶  Dashboard (both streams, side by side)
+MQTT / evogateway ─────▶  /rest/mqtt/currentstatus/<zone>    ─────┘
+
+Active Provider   ──────▶  Scheduler, overrides, schedule save/load
+                           /rest/getcurrentstatus/<zone>
+```
+
+If only one provider is configured (e.g. no Honeywell credentials), that provider alone is used and the other column in the dashboard shows `—`.
+
+---
+
+## REST API
+
+The server listens on port **3330** (configurable via `PORT` in `.env`). All endpoints are prefixed with `/rest/`.
+
+### Common query parameters
+
+| Parameter | Values | Description |
+| :--- | :--- | :--- |
+| `?refresh=1` | `1` or `true` | Bypass the cache and force a fresh fetch from the provider |
+
+### Zone item selector
+
+Endpoints that accept an optional `/:item` segment resolve it in this order:
+1. **`label`** — snake_case zone name (e.g. `kitchen_ufh`, `living_room`)
+2. **Normalised name** — case-insensitive, spaces/hyphens become underscores
+3. **`zoneId`** — raw provider zone ID
+4. **`dhw`** — domestic hot water
+5. **`system`** — overall system mode
+
+---
+
+### Provider status
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/providers/status` | Connection state for both MQTT and Cloud providers |
+
+---
+
+### Named provider endpoints
+
+These always serve data from the specific provider, regardless of the active provider setting.
+
+#### Local (MQTT / evogateway)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/mqtt/currentstatus` | All zones, DHW, and system from MQTT |
+| `GET` | `/rest/mqtt/currentstatus/dhw` | Hot water status from MQTT |
+| `GET` | `/rest/mqtt/currentstatus/system` | System mode from MQTT |
+| `GET` | `/rest/mqtt/currentstatus/:zone_label` | Single zone by label/name/ID from MQTT |
+| `POST` | `/rest/mqtt/refresh-mappings` | Rebuild zone ID↔name mapping file from Honeywell |
+
+#### Cloud (Honeywell TCC)
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/cloud/currentstatus` | All zones, DHW, and system from Cloud |
+| `GET` | `/rest/cloud/currentstatus/dhw` | Hot water status from Cloud |
+| `GET` | `/rest/cloud/currentstatus/system` | System mode from Cloud |
+| `GET` | `/rest/cloud/currentstatus/:zone_label` | Single zone by label/name/ID from Cloud |
+
+**Examples:**
+```
+GET /rest/cloud/currentstatus/bathroom
+GET /rest/mqtt/currentstatus/kitchen_ufh?refresh=1
+GET /rest/cloud/currentstatus/dhw
+```
+
+---
+
+### Active provider endpoints
+
+These serve data from whichever provider is currently selected as active.
+
+#### Status
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/getcurrentstatus` | All zones, DHW, and system |
+| `GET` | `/rest/getcurrentstatus/dhw` | Hot water status |
+| `GET` | `/rest/getcurrentstatus/system` | System mode |
+| `GET` | `/rest/getcurrentstatus/:zone_label` | Single zone by label/name/ID |
+| `GET` | `/rest/getzones` | Zone list |
+| `GET` | `/rest/getzones/:zone_label` | Single zone |
+| `GET` | `/rest/getdhw` | Hot water status |
+| `GET` | `/rest/getsystemmode` | System mode |
+
+#### Schedules
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/getallschedules` | All zone schedules |
+| `GET` | `/rest/getscheduleforzone/:zone_label` | Schedule for one zone or `dhw` |
+| `POST` | `/rest/saveallschedules` | Save changed schedules — body: `{ [zoneId]: ZoneSchedule }` |
+
+#### Control
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/rest/setzoneoverride` | Set zone temperature — body: `{ zoneId, setpoint, until? }` |
+| `POST` | `/rest/cancelzoneoverride` | Cancel override (return to schedule) — body: `{ zoneId }` |
+| `POST` | `/rest/setsystemmode` | Set system mode — body: `{ mode, until? }` |
+| `POST` | `/rest/setdhwstate` | Set DHW state — body: `{ state, until? }` |
+| `POST` | `/rest/setdhwmodeauto` | Return DHW to schedule |
+
+#### Provider management
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/rest/selectprovider` | Switch active provider — body: `{ type: 'honeywell' \| 'mqtt' \| 'mock' }` |
+
+#### Session / utility
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/rest/session` | Active provider session info (userId, token expiry, etc.) |
+| `GET` | `/rest/renewsession` | Force token refresh |
+| `GET` | `/rest/config` | Frontend UI config (timeResolution, defaultTemp, colours) |
+| `GET` | `/rest/test` | Basic connectivity check |
+
+---
+
 ## Configuration (.env)
 
 System behavior is managed via environment variables.
 
 ### Basic Settings
-*   `HEATING_PROVIDER`: Specifies `honeywell` or `mqtt`.
+*   `HEATING_PROVIDER`: Sets the **active** provider for the Scheduler tab — `honeywell`, `mqtt`, or `mock`. Both cloud and local providers still initialise at startup if credentials are present; this only controls which one drives the scheduler.
 *   `MQTT_BASE_TOPIC`: Defines the root MQTT topic (default: `evohome/evogateway`).
 
 ### Advanced Configuration
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
-| `HONEYWELL_CACHE_TTL` | `3` | Minutes to cache cloud data before a refresh is required. |
-| `HONEYWELL_LOGIN_LIMIT` | `15` | Minutes to wait between full re-authentications. |
+| `HONEYWELL_CACHE_TTL` | `3` | Short cache TTL (minutes). Cloud data is re-fetched from the API when this expires. |
+| `HONEYWELL_AUTO_REFRESH` | `15` | Maximum data age (minutes). Any status request — even without `?refresh=1` — will trigger a fresh API call if cached data is older than this threshold. |
+| `HONEYWELL_LOGIN_LIMIT` | `15` | Minimum minutes between full password re-authentications (guards against rate-limiting). |
 | `MQTT_RECONNECT_PERIOD` | `5000` | Milliseconds between MQTT reconnection attempts. |
 | `MQTT_SCHEDULE_TIMEOUT` | `10000` | Milliseconds to wait for an MQTT schedule response. |
 | `SCHEDULER_TIME_RESOLUTION` | `10` | The granularity of the grid (in minutes). |
@@ -104,7 +242,7 @@ npm run start:evoweb
 
 Navigation may be hidden to focus on a single zone for embedding:
 ```
-http://<your-ip>:3330/?embed=true&zoneId=01
+http://<host-ip>:3330/?embed=true&zoneId=01
 ```
 
 ---

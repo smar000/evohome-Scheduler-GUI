@@ -31,6 +31,7 @@ export class MqttProvider implements HeatingProvider {
 
   // Pending schedule requests: zoneId -> Promise resolver
   private pendingSchedules: Map<string, (schedule: ZoneSchedule) => void> = new Map();
+  private scheduleTimestamps: Record<string, Date> = {};
 
   // Derived topics
   private base: string;
@@ -160,6 +161,8 @@ export class MqttProvider implements HeatingProvider {
     this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/temperature`);
     this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/zone_mode`);
     this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule`);
+    this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule_ts`);
+    this.client.subscribe(`${this.dhwTopic}/+/zone_schedule_ts`);
 
     // DHW
     this.client.subscribe(`${this.dhwTopic}/+/zone_schedule`);
@@ -178,6 +181,21 @@ export class MqttProvider implements HeatingProvider {
   private handleMessage(topic: string, payload: string): void {
     // Only ignore timestamp topics
     if (topic.endsWith('_ts')) {
+        if (topic.endsWith('/zone_schedule_ts')) {
+            const parts = topic.split('/');
+            const zoneLabel = parts[parts.length - 3] || parts[parts.length - 2];
+            const zoneId = this.labelToZoneId[zoneLabel] || zoneLabel;
+            try {
+                const raw = payload.trim().replace(/^"|"$/g, '');
+                const asFloat = parseFloat(raw);
+                const date = !isNaN(asFloat) && asFloat > 1e9 ? new Date(asFloat * 1000) : new Date(raw);
+                if (!isNaN(date.getTime())) {
+                    this.scheduleTimestamps[zoneId] = date;
+                    if (zoneLabel !== zoneId) this.scheduleTimestamps[zoneLabel] = date;
+                    Logger.debug(`MQTT: Schedule timestamp for ${zoneLabel}: ${date.toISOString()}`);
+                }
+            } catch { /* ignore malformed */ }
+        }
         return;
     }
 
@@ -275,14 +293,23 @@ export class MqttProvider implements HeatingProvider {
             const zoneLabel = parts[parts.length - 3] || parts[parts.length - 2]; 
             const zoneId = (data.zone_idx === 'DH' || data.zone_idx === 'HW') ? 'dhw' : (data.zone_idx ? parseInt(data.zone_idx, 16).toString().padStart(2, '0') : this.labelToZoneId[zoneLabel]);
             
-            if (zoneId) {
+            const resolvedId = zoneId || zoneLabel;
+            if (resolvedId) {
                 const schedule = this.translateScheduleFromMqtt(data);
-                schedule.name = zoneId === 'dhw' ? "Hot Water" : (this.zoneIdToMapping[zoneId]?.name || zoneLabel);
-                this.schedules[zoneId] = schedule;
-                
-                if (this.pendingSchedules.has(zoneId)) {
-                    this.pendingSchedules.get(zoneId)!(schedule);
-                    this.pendingSchedules.delete(zoneId);
+                schedule.name = resolvedId === 'dhw' ? "Hot Water" : (this.zoneIdToMapping[resolvedId]?.name || zoneLabel);
+                // Cache under both the derived zone ID and the topic label for resilient lookups
+                if (zoneId) this.schedules[zoneId] = schedule;
+                if (zoneLabel && zoneLabel !== zoneId) this.schedules[zoneLabel] = schedule;
+
+                const pendingKey = this.pendingSchedules.has(zoneId) ? zoneId
+                                 : this.pendingSchedules.has(zoneLabel) ? zoneLabel
+                                 : null;
+                if (pendingKey) {
+                    // Mark the fetch time now — this was an explicit request, not a retained message
+                    const fetchedAt = this.scheduleTimestamps[pendingKey] ?? new Date();
+                    this.scheduleTimestamps[pendingKey] = fetchedAt;
+                    this.pendingSchedules.get(pendingKey)!(schedule);
+                    this.pendingSchedules.delete(pendingKey);
                 }
             }
             return;
@@ -433,12 +460,16 @@ export class MqttProvider implements HeatingProvider {
   }
 
   async getAllSchedules(): Promise<Record<string, ZoneSchedule>> {
-    return this.schedules;
+    const result: Record<string, ZoneSchedule> = {};
+    for (const [id, schedule] of Object.entries(this.schedules)) {
+        result[id] = { ...schedule, fetchedAt: this.scheduleTimestamps[id]?.toISOString() };
+    }
+    return result;
   }
 
   async getScheduleForId(id: string, force = false): Promise<ZoneSchedule> {
     if (!force && this.schedules[id]) {
-        return this.schedules[id];
+        return { ...this.schedules[id], fetchedAt: this.scheduleTimestamps[id]?.toISOString() };
     }
 
     return new Promise((resolve, reject) => {
@@ -450,7 +481,7 @@ export class MqttProvider implements HeatingProvider {
 
         this.pendingSchedules.set(id, (schedule) => {
             clearTimeout(timeout);
-            resolve(schedule);
+            resolve({ ...schedule, fetchedAt: this.scheduleTimestamps[id]?.toISOString() });
         });
 
         const hexId = id === 'dhw' ? 'HW' : parseInt(id, 10).toString(16).toUpperCase().padStart(2, '0');

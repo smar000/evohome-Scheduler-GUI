@@ -30,8 +30,10 @@ export class HoneywellTccProvider implements HeatingProvider {
 
   // Caching
   private cachedFullStatus: any = null;
-  private lastApiFetch: DateTime | null = null;      
-  
+  private lastApiFetch: DateTime | null = null;
+  // Deduplicates concurrent HTTP calls — all callers share the same in-flight promise
+  private fetchInFlight: Promise<any> | null = null;
+
   private lastFullLogin: DateTime | null = null;
 
   private urlDomain: string;
@@ -248,32 +250,52 @@ export class HoneywellTccProvider implements HeatingProvider {
   private async getFullStatus(force = false, preferCache = false): Promise<any> {
     const now = DateTime.now();
     const secondsSinceLastApiFetch = this.lastApiFetch ? now.diff(this.lastApiFetch, 'seconds').seconds : 999;
-    const isCacheExpired = secondsSinceLastApiFetch > (this.config.cacheTtlMinutes * 60);
+    const isCacheExpired   = secondsSinceLastApiFetch > (this.config.cacheTtlMinutes    * 60);
+    const isDataTooStale   = secondsSinceLastApiFetch > (this.config.autoRefreshMinutes * 60);
 
-    // NEW LOGIC: If preferCache is true AND we have data, use it regardless of expiration (within reason)
-    if ((preferCache || !force) && !isCacheExpired && this.cachedFullStatus) {
-      Logger.debug(`Honeywell TCC: Using cached data (${Math.round(secondsSinceLastApiFetch)}s old). PreferCache=${preferCache}`);
+    // Return cached data when:
+    //  - not a forced refresh
+    //  - data is not beyond the absolute stale ceiling (autoRefreshMinutes)
+    //  - cache exists
+    //  - caller prefers cache OR the short TTL has not yet expired
+    if (!force && !isDataTooStale && this.cachedFullStatus && (preferCache || !isCacheExpired)) {
+      Logger.debug(`Honeywell TCC: Using cached data (${Math.round(secondsSinceLastApiFetch)}s old, preferCache=${preferCache})`);
       return this.cachedFullStatus;
     }
 
     if (force) {
-        Logger.info(`Honeywell TCC: Forced refresh requested. Bypassing cache.`);
+        Logger.info('Honeywell TCC: Forced refresh requested.');
+    } else if (isDataTooStale) {
+        Logger.info(`Honeywell TCC: Data is ${Math.round(secondsSinceLastApiFetch / 60)}min old — auto-refreshing (threshold: ${this.config.autoRefreshMinutes}min).`);
     } else {
-        Logger.debug("Honeywell TCC: Cache expired. Fetching fresh data from API...");
+        Logger.debug('Honeywell TCC: Short cache TTL expired. Fetching fresh data...');
     }
 
-    await this.ensureSession();
-    
-    if (!this.axiosInstance) {
-        throw new Error("Honeywell TCC: Axios instance not initialized. Possible login failure.");
+    // Deduplicate: if a fetch is already in progress all callers share the same promise
+    // to avoid hammering the Honeywell API with simultaneous requests.
+    if (this.fetchInFlight) {
+        Logger.debug('Honeywell TCC: Fetch already in progress — awaiting shared result.');
+        return this.fetchInFlight;
     }
 
-    const response = await this.axiosInstance.get(`/location/${this.locationId}/status?includeTemperatureControlSystems=True`);
-    
-    this.cachedFullStatus = response.data;
-    this.lastApiFetch = now;
-    
-    return this.cachedFullStatus;
+    this.fetchInFlight = (async () => {
+        try {
+            await this.ensureSession();
+            if (!this.axiosInstance) {
+                throw new Error('Honeywell TCC: Axios instance not initialized. Possible login failure.');
+            }
+            const response = await this.axiosInstance.get(
+                `/location/${this.locationId}/status?includeTemperatureControlSystems=True`
+            );
+            this.cachedFullStatus = response.data;
+            this.lastApiFetch = DateTime.now();
+            return this.cachedFullStatus;
+        } finally {
+            this.fetchInFlight = null;
+        }
+    })();
+
+    return this.fetchInFlight;
   }
 
   async getZonesStatus(force = false, preferCache = false): Promise<ZoneStatus[]> {
@@ -283,10 +305,10 @@ export class HoneywellTccProvider implements HeatingProvider {
       zoneId: z.zoneId,
       name: z.name,
       label: z.name.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, ''),
-      setpoint: z.heatSetpointStatus?.targetTemperature ?? 0,
+      setpoint: z.setpointStatus?.targetHeatTemperature ?? 0,
       temperature: z.temperatureStatus?.temperature ?? 0,
-      setpointMode: z.heatSetpointStatus?.setpointMode ?? 'Unknown',
-      until: z.heatSetpointStatus?.untilTime,
+      setpointMode: z.setpointStatus?.setpointMode ?? 'Unknown',
+      until: z.setpointStatus?.untilTime,
     }));
   }
 
@@ -393,8 +415,13 @@ export class HoneywellTccProvider implements HeatingProvider {
   }
 
   async renewSession(): Promise<void> {
-    if (this.config.refreshToken) {
-        await this.login(this.config.refreshToken);
+    if (this.credentials?.refreshToken) {
+        try {
+            await this.login(this.credentials.refreshToken);
+        } catch (e) {
+            Logger.debug('Honeywell TCC: Token refresh failed in renewSession. Falling back to full login.');
+            await this.login();
+        }
     } else {
         await this.login();
     }

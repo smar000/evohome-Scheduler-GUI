@@ -13,6 +13,7 @@ export const config = {
     username: process.env.HONEYWELL_USERNAME,
     password: process.env.HONEYWELL_PASSWORD,
     cacheTtlMinutes: parseInt(process.env.HONEYWELL_CACHE_TTL || '3', 10),
+    autoRefreshMinutes: parseInt(process.env.HONEYWELL_AUTO_REFRESH || '15', 10),
     urlDomain: process.env.HONEYWELL_URL_DOMAIN || 'https://mytotalconnectcomfort.com',
     apiTimeout: parseInt(process.env.HONEYWELL_API_TIMEOUT || '10000', 10),
     loginLimitMinutes: parseInt(process.env.HONEYWELL_LOGIN_LIMIT || '15', 10),
@@ -29,6 +30,7 @@ export const config = {
     connectTimeout: parseInt(process.env.MQTT_CONNECT_TIMEOUT || '10000', 10),
     retainedWindow: parseInt(process.env.MQTT_RETAINED_WINDOW || '1000', 10),
     scheduleTimeout: parseInt(process.env.MQTT_SCHEDULE_TIMEOUT || '10000', 10),
+    scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
   },
 
   scheduler: {
@@ -36,6 +38,7 @@ export const config = {
     defaultTemp: parseFloat(process.env.SCHEDULER_DEFAULT_TEMP || '20'),
     longPressMs: parseInt(process.env.SCHEDULER_LONG_PRESS_MS || '600', 10),
     apiTimeout: parseInt(process.env.FRONTEND_API_TIMEOUT || '15000', 10),
+    scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
     tempColors: (() => {
       const defaults = [
         { maxTemp: 5,  color: '#94a3b8' },

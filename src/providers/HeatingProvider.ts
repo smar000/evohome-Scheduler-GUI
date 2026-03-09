@@ -1,6 +1,7 @@
 export interface ZoneSchedule {
   name: string;
   schedule: DailySchedule[];
+  fetchedAt?: string;
 }
 
 export interface DailySchedule {

@@ -223,6 +223,7 @@ export const Scheduler: React.FC = () => {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [zoomLevel, setZoomLevel] = useState(() => window.innerWidth < 640 ? 2 : 1);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  const [, setTick] = useState(0);
 
   const queryParams = new URLSearchParams(window.location.search);
   const isEmbedded = queryParams.get('embed') === 'true';
@@ -237,16 +238,29 @@ export const Scheduler: React.FC = () => {
   };
 
   useEffect(() => {
-    if (viewMode === 'zone' && !selectedZoneId && zones.length > 0) {
-        setSelectedZoneId(zones[0].zoneId);
+    if (viewMode === 'zone' && zones.length > 0 && !selectedZoneId) {
+        const savedId = localStorage.getItem('evoWeb:lastZoneId');
+        const restored = savedId ? zones.find(z => z.zoneId === savedId) : null;
+        setSelectedZoneId((restored ?? zones[0]).zoneId);
     }
   }, [viewMode, zones, selectedZoneId, setSelectedZoneId]);
 
   useEffect(() => {
-    if (selectedZoneId && !schedules[selectedZoneId] && !loading && !failedSchedules.has(selectedZoneId)) {
-        fetchScheduleForZone(selectedZoneId, true);
+    if (selectedZoneId && zones.length > 0 && !loading && !failedSchedules.has(selectedZoneId)) {
+        const hasSchedule = !!schedules[selectedZoneId];
+        const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
+        const thresholdMs = (uiConfig?.scheduleStaleThresholdDays ?? 7) * 24 * 60 * 60 * 1000;
+        const isStale = !fetchedAt || (Date.now() - new Date(fetchedAt).getTime()) > thresholdMs;
+        if (!hasSchedule || isStale) {
+            fetchScheduleForZone(selectedZoneId, !hasSchedule, isStale && hasSchedule);
+        }
     }
-  }, [selectedZoneId, schedules, loading, fetchScheduleForZone, failedSchedules]);
+  }, [selectedZoneId, zones, schedules, loading, fetchScheduleForZone, failedSchedules, uiConfig]);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
@@ -584,6 +598,18 @@ export const Scheduler: React.FC = () => {
               );
             })()}
             <div className="flex-1" />
+            {selectedZoneId && (() => {
+              const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
+              const thresholdDays = uiConfig?.scheduleStaleThresholdDays ?? 7;
+              if (!fetchedAt) return <span className="text-[10px] font-black uppercase text-slate-300 hidden sm:block">Schedule: unknown</span>;
+              const ageMs = Date.now() - new Date(fetchedAt).getTime();
+              const ageHours = ageMs / 3600000;
+              const ageDays = ageHours / 24;
+              const ageMins = ageMs / 60000;
+              const label = ageMins < 1 ? 'Just now' : ageHours < 1 ? `${Math.round(ageMins)}m ago` : ageHours < 24 ? `${Math.round(ageHours)}h ago` : `${Math.round(ageDays)}d ago`;
+              const color = ageDays > thresholdDays ? 'text-red-400' : ageDays > 1 ? 'text-amber-400' : 'text-emerald-500';
+              return <span className={`text-[10px] font-black uppercase ${color} hidden sm:block`} title={new Date(fetchedAt).toLocaleString()}>Synced: {label}</span>;
+            })()}
             {selectedZoneId && (
                 <button
                     onClick={() => handleZoneRefresh(selectedZoneId)}

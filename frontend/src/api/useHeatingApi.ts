@@ -5,6 +5,7 @@ import isEqual from 'lodash.isequal';
 // --- Types ---
 interface ZoneSchedule {
   name: string;
+  fetchedAt?: string;
   schedule: {
     dayOfWeek: string;
     switchpoints: {
@@ -22,19 +23,22 @@ const api = axios.create({
 });
 
 export const useHeatingApi = () => {
-  const { 
-    setZones, 
-    setDhw, 
-    setSystem, 
-    setInitialSchedules, 
+  const {
+    setZones,
+    setDhw,
+    setSystem,
+    setInitialSchedules,
     setZoneSchedule,
-    setLoading, 
+    setLoading,
     setLoadingMessage,
     setError,
     originalSchedules,
     setProviderInfo,
     setUiConfig,
     markScheduleFailed,
+    setMqttSnapshot,
+    setCloudSnapshot,
+    setProvidersStatus,
   } = useHeatingStore();
 
   const ensureConfig = async () => {
@@ -43,13 +47,12 @@ export const useHeatingApi = () => {
         const response = await api.get('/config');
         setUiConfig(response.data);
         if (response.data.apiTimeout) {
-            // Update axios default timeout for subsequent calls
             api.defaults.timeout = response.data.apiTimeout;
         }
     } catch (e) {
         console.error("Failed to fetch UI config");
     }
-  }
+  };
 
   const ensureProviderInfo = async () => {
     await ensureConfig();
@@ -62,13 +65,15 @@ export const useHeatingApi = () => {
     } catch (e) {
         console.error("Failed to fetch provider info");
     }
-  }
+  };
 
   const selectProvider = async (type: 'honeywell' | 'mqtt' | 'mock') => {
     setLoading(true);
     try {
         await api.post('/selectprovider', { type });
-        window.location.reload(); 
+        // Clear persisted zone so the next load starts fresh for the new provider
+        localStorage.removeItem('evoWeb:lastZoneId');
+        window.location.reload();
     } catch (err: any) {
         setError(err.message || 'Failed to switch provider');
         setLoading(false);
@@ -126,10 +131,7 @@ export const useHeatingApi = () => {
       }
       if (changeCount === 0) { setLoading(false); return; }
       await api.post('/saveallschedules', changedSchedules);
-      
-      // Update local store immediately with the saved values
-      // This prevents the UI from reverting while waiting for async MQTT updates
-      setInitialSchedules(schedules); 
+      setInitialSchedules(schedules);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to save schedules');
@@ -142,7 +144,7 @@ export const useHeatingApi = () => {
     setLoading(true);
     try {
         await api.post('/mqtt/refresh-mappings');
-        await fetchCurrentStatus(true); 
+        await fetchCurrentStatus(true);
         setError(null);
     } catch (err: any) {
         setError(err.message || 'Failed to refresh mappings');
@@ -191,6 +193,60 @@ export const useHeatingApi = () => {
     }
   };
 
+  // Fetch status from both providers simultaneously for the dashboard
+  const fetchDualStatus = async () => {
+    try {
+        const [statusRes, mqttRes, cloudRes] = await Promise.allSettled([
+            api.get('/providers/status'),
+            api.get('/mqtt/currentstatus'),
+            api.get('/cloud/currentstatus'),
+        ]);
+
+        const provStatus = statusRes.status === 'fulfilled' ? statusRes.value.data : null;
+        if (provStatus) setProvidersStatus(provStatus);
+
+        const mqttMeta = provStatus?.mqtt;
+        if (mqttRes.status === 'fulfilled') {
+            setMqttSnapshot({
+                zones:     mqttRes.value.data.zones ?? [],
+                dhw:       mqttRes.value.data.dhw   ?? null,
+                connected: mqttMeta?.connected       ?? false,
+                status:    mqttMeta?.status          ?? 'unknown',
+                error:     mqttMeta?.error,
+            });
+        } else {
+            setMqttSnapshot({
+                zones:     [],
+                dhw:       null,
+                connected: false,
+                status:    mqttMeta?.status ?? 'unavailable',
+                error:     mqttMeta?.error  ?? (mqttRes as PromiseRejectedResult).reason?.message,
+            });
+        }
+
+        const cloudMeta = provStatus?.cloud;
+        if (cloudRes.status === 'fulfilled') {
+            setCloudSnapshot({
+                zones:     cloudRes.value.data.zones ?? [],
+                dhw:       cloudRes.value.data.dhw   ?? null,
+                connected: cloudMeta?.connected       ?? false,
+                status:    cloudMeta?.status          ?? 'unknown',
+                error:     cloudMeta?.error,
+            });
+        } else {
+            setCloudSnapshot({
+                zones:     [],
+                dhw:       null,
+                connected: false,
+                status:    cloudMeta?.status ?? 'unavailable',
+                error:     cloudMeta?.error  ?? (cloudRes as PromiseRejectedResult).reason?.message,
+            });
+        }
+    } catch (e) {
+        console.error('Failed to fetch dual provider status', e);
+    }
+  };
+
   return {
     fetchCurrentStatus,
     fetchAllSchedules,
@@ -198,6 +254,7 @@ export const useHeatingApi = () => {
     selectProvider,
     refreshMqttMappings,
     fetchScheduleForZone,
-    fetchAllSchedulesSequentially
+    fetchAllSchedulesSequentially,
+    fetchDualStatus,
   };
 };

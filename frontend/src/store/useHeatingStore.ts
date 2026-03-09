@@ -5,10 +5,23 @@ import isEqual from 'lodash.isequal';
 // --- Types ---
 interface Switchpoint { heatSetpoint?: number; state?: string; timeOfDay: string; }
 interface DailySchedule { dayOfWeek: string; switchpoints: Switchpoint[]; }
-interface ZoneSchedule { name: string; schedule: DailySchedule[]; }
+interface ZoneSchedule { name: string; schedule: DailySchedule[]; fetchedAt?: string; }
 interface ZoneStatus { zoneId: string; name: string; label?: string; setpoint: number; temperature: number; setpointMode: string; until?: string; }
 interface DhwStatus { dhwId: string; state: string; temperature: number; setpointMode: string; until?: string; }
 interface SystemStatus { systemMode: string; timeUntil?: string; permanent: boolean; }
+
+export interface ProviderSnapshot {
+    zones: ZoneStatus[];
+    dhw: DhwStatus | null;
+    connected: boolean;
+    status: string;
+    error?: string;
+}
+
+export interface ProvidersStatus {
+    mqtt:  { available: boolean; connected: boolean; status: string; error?: string };
+    cloud: { available: boolean; connected: boolean; status: string; error?: string };
+}
 // -------------
 
 interface HeatingState {
@@ -25,7 +38,7 @@ interface HeatingState {
       name: string;
       error: string | null;
       gatewayStatus?: string;
-  } | null; 
+  } | null;
   uiConfig: {
       timeResolution: number;
       defaultTemp: number;
@@ -35,7 +48,12 @@ interface HeatingState {
   } | null;
   selectedZoneId: string | null;
   failedSchedules: Set<string>;
-  
+
+  // Dual-provider dashboard data
+  mqttSnapshot: ProviderSnapshot | null;
+  cloudSnapshot: ProviderSnapshot | null;
+  providersStatus: ProvidersStatus | null;
+
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
   setSystem: (system: SystemStatus | null) => void;
@@ -50,6 +68,9 @@ interface HeatingState {
   setSelectedZoneId: (id: string | null) => void;
   markScheduleFailed: (id: string) => void;
   clearFailedSchedules: () => void;
+  setMqttSnapshot: (snapshot: ProviderSnapshot | null) => void;
+  setCloudSnapshot: (snapshot: ProviderSnapshot | null) => void;
+  setProvidersStatus: (status: ProvidersStatus) => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -64,12 +85,13 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   error: null,
   provider: null,
   uiConfig: null,
-  selectedZoneId: null,
+  selectedZoneId: localStorage.getItem('evoWeb:lastZoneId'),
   failedSchedules: new Set(),
+  mqttSnapshot: null,
+  cloudSnapshot: null,
+  providersStatus: null,
 
-  setZones: (zones) => {
-    set({ zones });
-  },
+  setZones: (zones) => set({ zones }),
   setDhw: (dhw) => set({ dhw }),
   setSystem: (system) => set({ system }),
   setInitialSchedules: (schedules) => set({ schedules, originalSchedules: schedules, isDirty: false }),
@@ -98,4 +120,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setSelectedZoneId: (selectedZoneId) => set({ selectedZoneId }),
   markScheduleFailed: (id) => set(produce((state: HeatingState) => { state.failedSchedules.add(id); })),
   clearFailedSchedules: () => set({ failedSchedules: new Set() }),
+  setMqttSnapshot: (mqttSnapshot) => set({ mqttSnapshot }),
+  setCloudSnapshot: (cloudSnapshot) => set({ cloudSnapshot }),
+  setProvidersStatus: (providersStatus) => set({ providersStatus }),
 }));
