@@ -13,7 +13,7 @@ describe('HoneywellTccProvider', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockedFs.existsSync.mockReturnValue(false); // No session file
-        provider = new HoneywellTccProvider('user', 'pass');
+        provider = new HoneywellTccProvider({ username: 'user', password: 'pass', urlDomain: 'https://mytotalconnectcomfort.com', cacheTtlMinutes: 3, autoRefreshMinutes: 15, loginLimitMinutes: 15, apiTimeout: 10000 });
         (axios.create as jest.Mock).mockReturnValue(axios);
     });
 
