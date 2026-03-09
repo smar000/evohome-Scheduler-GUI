@@ -20,6 +20,8 @@ RUN npm run build
 
 # Stage 3: Production image
 FROM node:22-slim
+LABEL org.opencontainers.image.title="evoweb" \
+      org.opencontainers.image.description="evoWeb Heating Schedule Manager"
 WORKDIR /app
 
 # Copy backend dependencies
