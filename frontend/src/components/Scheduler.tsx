@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Scissors, Move, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2 } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -99,9 +99,10 @@ interface EditPopoverProps {
   onSave: (newTemp: number, newStartTime: string, newEndTime: string) => void;
   onCancel: () => void;
   onDelete: () => void;
+  onAddSlot: (newStart: string, newEnd: string, newTemp: number) => void;
 }
 
-const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete }) => {
+const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete, onAddSlot }) => {
   const [temp, setTemp] = useState(initialTemp);
   const [start, setStart] = useState(startTime);
   const [end, setEnd] = useState(endTime);
@@ -145,9 +146,14 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
           )}
         </div>
         <div className="flex justify-between gap-2 border-t border-slate-700 pt-4">
-          <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors flex items-center gap-1">
-              <Trash2 size={12}/> Delete
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors flex items-center gap-1">
+                <Trash2 size={12}/> Delete
+            </button>
+            <button onClick={() => onAddSlot(start, end, temp)} className="px-3 py-1 bg-emerald-900/50 text-emerald-200 rounded text-xs font-bold hover:bg-emerald-800 transition-colors flex items-center gap-1">
+                <Plus size={12}/> Add slot
+            </button>
+          </div>
           <div className="flex gap-2">
             <button onClick={onCancel} className="px-3 py-1 bg-slate-700 rounded text-xs hover:bg-slate-600 transition-colors">Cancel</button>
             <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-indigo-600 border border-indigo-500 rounded text-xs font-bold hover:bg-indigo-500 transition-colors">Apply</button>
@@ -158,7 +164,7 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
   );
 };
 
-const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete }) => {
+const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete, onAddSlot }) => {
   const [temp, setTemp] = useState(initialTemp);
   const [start, setStart] = useState(startTime);
   const [end, setEnd] = useState(endTime);
@@ -190,9 +196,14 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
           )}
         </div>
         <div className="flex gap-3">
-          <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
-            <Trash2 size={16} /> Delete
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
+              <Trash2 size={16} /> Delete
+            </button>
+            <button onClick={() => onAddSlot(start, end, temp)} className="px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-colors flex items-center gap-2">
+              <Plus size={16} /> Add slot
+            </button>
+          </div>
           <button onClick={onCancel} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">Cancel</button>
           <button onClick={() => onSave(temp, start, end)} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors">Apply</button>
         </div>
@@ -202,7 +213,6 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
 };
 
 type ViewMode = 'zone' | 'day';
-type EditMode = 'resize' | 'split';
 
 export const Scheduler: React.FC = () => {
   const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, uiConfig } = useHeatingStore();
@@ -212,7 +222,6 @@ export const Scheduler: React.FC = () => {
   const totalBlocks = TOTAL_DAY_MINUTES / resolution;
 
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
-  const [editMode, setEditMode] = useState<EditMode>('resize');
   const [selectedDay, setSelectedDay] = useState<string>(DAYS[0]);
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
   const [clipboard, setClipboard] = useState<any[] | null>(null);
@@ -222,7 +231,10 @@ export const Scheduler: React.FC = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 640);
   const [zoomLevel, setZoomLevel] = useState(() => window.innerWidth < 640 ? 2 : 1);
-  const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<{
+    key: string; day: string; zoneId: string; element: HTMLElement; relX: number;
+    startTime: string; endTime: string; val: number;
+  } | null>(null);
   const [, setTick] = useState(0);
 
   const queryParams = new URLSearchParams(window.location.search);
@@ -263,6 +275,14 @@ export const Scheduler: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setSelectedSlot(null); setEditingSlot(null); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
@@ -274,6 +294,26 @@ export const Scheduler: React.FC = () => {
     placement: 'bottom-start',
     middleware: [offset(10), shift()],
   });
+
+  const { refs: toolbarRefs, floatingStyles: toolbarFloatingStyles } = useFloating({
+    placement: 'top',
+    middleware: [offset(-12), shift({ padding: 4 })],
+  });
+
+  useEffect(() => {
+    toolbarRefs.setReference(selectedSlot?.element ?? null);
+  }, [selectedSlot]);
+
+  useEffect(() => {
+    if (!selectedSlot) return;
+    const handler = (e: MouseEvent) => {
+      if (!toolbarRefs.floating.current?.contains(e.target as Node)) {
+        setSelectedSlot(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [selectedSlot, toolbarRefs.floating]);
 
   const handleLongPressStart = () => {
     const timer = setTimeout(() => {
@@ -302,21 +342,40 @@ export const Scheduler: React.FC = () => {
   };
 
   const handleSlotDoubleClick = (day: string, zoneId: string, element: HTMLElement) => {
-    if (editMode === 'split') {
-      const startMins = timeToMinutes(element.dataset.startTime!);
-      const endMins = timeToMinutes(element.dataset.endTime!);
-      const midMins = Math.round((startMins + endMins) / 2 / resolution) * resolution;
-      if (midMins <= startMins || midMins >= endMins) return;
+    setSelectedSlot(null);
+    setEditingSlot({ day, zoneId, element });
+  };
 
-      updateScheduleBlocks(day, zoneId, (blocks) => {
-          const midBlock = midMins / resolution;
-          if (blocks[midBlock] === blocks[midBlock - 1]) {
-              blocks[midBlock] = (blocks[midBlock] > 0) ? blocks[midBlock] - 0.1 : blocks[midBlock] + 0.1;
-          }
-      });
-    } else {
-      setEditingSlot({ day, zoneId, element });
-    }
+  const handleSplitDirect = (day: string, zoneId: string, element: HTMLElement, relX: number) => {
+    const startMins = timeToMinutes(element.dataset.startTime!);
+    const endMins = timeToMinutes(element.dataset.endTime!);
+    const rangeMins = endMins - startMins;
+    if (rangeMins < resolution * 2) return;
+    const rawSplit = startMins + rangeMins * relX;
+    const splitMins = Math.round(rawSplit / resolution) * resolution;
+    const clampedSplit = Math.max(startMins + resolution, Math.min(endMins - resolution, splitMins));
+    if (clampedSplit <= startMins || clampedSplit >= endMins) return;
+    const defaultTemp = uiConfig?.defaultTemp ?? 20;
+    updateScheduleBlocks(day, zoneId, (blocks) => {
+      const splitBlock = clampedSplit / resolution;
+      const endBlock = endMins / resolution;
+      const originalTemp = blocks[splitBlock - 1];
+      const newTemp = originalTemp !== defaultTemp ? defaultTemp : Math.max(0, defaultTemp - 0.5);
+      for (let i = splitBlock; i < endBlock; i++) blocks[i] = newTemp;
+    });
+    setSelectedSlot(null);
+  };
+
+  const handleDeleteDirect = (day: string, zoneId: string, element: HTMLElement) => {
+    const startMins = timeToMinutes(element.dataset.startTime!);
+    const endMins = timeToMinutes(element.dataset.endTime!);
+    updateScheduleBlocks(day, zoneId, (blocks) => {
+      const startBlock = startMins / resolution;
+      const endBlock = endMins / resolution;
+      const fillerTemp = startBlock > 0 ? blocks[startBlock - 1] : blocks[totalBlocks - 1];
+      for (let i = startBlock; i < endBlock; i++) blocks[i] = fillerTemp;
+    });
+    setSelectedSlot(null);
   };
 
   const handleUpdate = (newTemp: number, newStart: string, newEnd: string) => {
@@ -332,14 +391,14 @@ export const Scheduler: React.FC = () => {
         for (let i = oldStartMins / resolution; i < oldEndMins / resolution; i++) {
             blocks[i] = fillerTemp;
         }
-        const startBlock = newStartMins / resolution;
-        const endBlock = newEndMins / resolution;
+        const startBlock = Math.round(newStartMins / resolution);
+        const endBlock = Math.round(newEndMins / resolution);
         for (let i = startBlock; i < endBlock; i++) {
             blocks[i % totalBlocks] = newTemp;
         }
     });
     setEditingSlot(null);
-    setSelectedSlotKey(null);
+    setSelectedSlot(null);
   };
 
   const handleDelete = () => {
@@ -357,7 +416,7 @@ export const Scheduler: React.FC = () => {
         }
     });
     setEditingSlot(null);
-    setSelectedSlotKey(null);
+    setSelectedSlot(null);
   };
 
   const handleCopy = (dayName: string, zoneId: string, rowLabel: string) => {
@@ -446,7 +505,7 @@ export const Scheduler: React.FC = () => {
             const labelText = isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : `${seg.val.toFixed(1)}°`;
 
             const slotKey = `${dayName}-${zoneId}-${i}`;
-            const isSelected = selectedSlotKey === slotKey;
+            const isSelected = selectedSlot?.key === slotKey;
             slots.push(
                 <div
                     key={i}
@@ -454,13 +513,11 @@ export const Scheduler: React.FC = () => {
                     className={`h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot flex-shrink-0 ${isSelected ? 'ring-2 ring-white ring-inset brightness-125 z-10' : ''}`}
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (isSelected) {
-                            setSelectedSlotKey(null);
-                            handleSlotDoubleClick(dayName, zoneId, e.currentTarget);
-                        } else {
-                            setSelectedSlotKey(slotKey);
-                        }
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const relX = (e.clientX - rect.left) / rect.width;
+                        setSelectedSlot({ key: slotKey, day: dayName, zoneId, element: e.currentTarget, relX, startTime: startTimeText, endTime: endTimeText, val: seg.val });
                     }}
+                    onDoubleClick={(e) => { e.stopPropagation(); handleSlotDoubleClick(dayName, zoneId, e.currentTarget); }}
                     title={`${rangeText} | ${isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : seg.val + '°C'}`}
                     data-start-time={startTimeText}
                     data-end-time={endTimeText}
@@ -482,11 +539,28 @@ export const Scheduler: React.FC = () => {
     return (
       <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
         <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
-        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative" onClick={() => setSelectedSlotKey(null)}>
+        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative" onClick={() => setSelectedSlot(null)}>
           {hasData ? slots : (
-              <div className="flex-1 flex items-center justify-center gap-2 text-slate-300">
-                  <Clock size={14} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest">No Schedule Data</span>
+              <div
+                  className="flex-1 flex items-center justify-center gap-2 text-slate-300 hover:text-indigo-400 hover:bg-indigo-50/50 cursor-pointer transition-colors"
+                  title="Click to add first slot"
+                  onClick={(e) => {
+                      e.stopPropagation();
+                      const defaultTemp = uiConfig?.defaultTemp ?? 20;
+                      setSchedules(produce(schedules, draft => {
+                          if (!draft[zoneId]) {
+                              const zoneName = zones.find(z => z.zoneId === zoneId)?.name || zoneId;
+                              draft[zoneId] = { name: zoneName, schedule: DAYS.map(d => ({ dayOfWeek: d, switchpoints: [] })) } as any;
+                          }
+                          const daySched = draft[zoneId]?.schedule.find((s: any) => s.dayOfWeek === dayName);
+                          if (daySched) {
+                              daySched.switchpoints = [isDhw ? { timeOfDay: '00:00', state: 'Off' } : { timeOfDay: '00:00', heatSetpoint: defaultTemp }] as any;
+                          }
+                      }));
+                  }}
+              >
+                  <Plus size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Add first slot</span>
               </div>
           )}
         </div>
@@ -559,13 +633,6 @@ export const Scheduler: React.FC = () => {
           <div className="flex bg-slate-100 p-1 rounded-xl">
             <button onClick={() => setViewMode('zone')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><User size={16} className="inline mr-2"/>Zones</button>
             <button onClick={() => setViewMode('day')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={16} className="inline mr-2"/>Days</button>
-          </div>
-
-          <div className="h-8 w-px bg-slate-200 mx-1 hidden md:block"></div>
-
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setEditMode('resize')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'resize' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`} title="Resize and move slots"><Move size={16} className="inline mr-2"/>Edit</button>
-            <button onClick={() => setEditMode('split')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${editMode === 'split' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`} title="Double click to split a slot"><Scissors size={16} className="inline mr-2"/>Split</button>
           </div>
 
           <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`ml-2 px-6 py-2 rounded-xl text-sm font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}><Save size={18} className="inline mr-2"/>Save</button>
@@ -696,8 +763,19 @@ export const Scheduler: React.FC = () => {
             endTime={editingSlot.element.dataset.endTime!}
             isDhw={editingSlot.zoneId === dhw?.dhwId}
             onSave={handleUpdate}
-            onCancel={() => { setEditingSlot(null); setSelectedSlotKey(null); }}
+            onCancel={() => { setEditingSlot(null); setSelectedSlot(null); }}
             onDelete={handleDelete}
+            onAddSlot={(newStart, newEnd, newTemp) => {
+              if (editingSlot) {
+                const { day, zoneId } = editingSlot;
+                updateScheduleBlocks(day, zoneId, (blocks) => {
+                  const s = Math.round(timeToMinutes(newStart) / resolution);
+                  const e = Math.round(timeToMinutes(newEnd) / resolution) || totalBlocks;
+                  for (let i = s; i < e; i++) blocks[i % totalBlocks] = newTemp;
+                });
+                setEditingSlot(null);
+              }
+            }}
           />
         ) : (
           <EditPopover
@@ -707,10 +785,64 @@ export const Scheduler: React.FC = () => {
             endTime={editingSlot.element.dataset.endTime!}
             isDhw={editingSlot.zoneId === dhw?.dhwId}
             onSave={handleUpdate}
-            onCancel={() => { setEditingSlot(null); setSelectedSlotKey(null); }}
+            onCancel={() => { setEditingSlot(null); setSelectedSlot(null); }}
             onDelete={handleDelete}
+            onAddSlot={(newStart, newEnd, newTemp) => {
+              if (editingSlot) {
+                const { day, zoneId } = editingSlot;
+                updateScheduleBlocks(day, zoneId, (blocks) => {
+                  const s = Math.round(timeToMinutes(newStart) / resolution);
+                  const e = Math.round(timeToMinutes(newEnd) / resolution) || totalBlocks;
+                  for (let i = s; i < e; i++) blocks[i % totalBlocks] = newTemp;
+                });
+                setEditingSlot(null);
+              }
+            }}
           />
         )
+      )}
+
+      {selectedSlot && (
+        <FloatingPortal>
+          <div
+            ref={toolbarRefs.setFloating}
+            style={toolbarFloatingStyles}
+            className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-slate-100 p-1.5 z-50"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedSlot) { setEditingSlot({ day: selectedSlot.day, zoneId: selectedSlot.zoneId, element: selectedSlot.element }); setSelectedSlot(null); }
+              }}
+              className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors"
+              title="Edit slot"
+            >
+              <Pencil size={14} />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedSlot) handleSplitDirect(selectedSlot.day, selectedSlot.zoneId, selectedSlot.element, selectedSlot.relX);
+              }}
+              className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors"
+              title="Add new slot here"
+            >
+              <Plus size={14} />
+            </button>
+            <div className="w-px h-4 bg-slate-200 mx-0.5" />
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (selectedSlot) handleDeleteDirect(selectedSlot.day, selectedSlot.zoneId, selectedSlot.element);
+              }}
+              className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-colors"
+              title="Delete slot"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </FloatingPortal>
       )}
     </section>
   );
