@@ -22,7 +22,7 @@ function normName(name: string) { return name.toLowerCase().trim(); }
 function App() {
   const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
   const {
-    zones, dhw, system, loading, loadingMessage, error, provider, setSelectedZoneId,
+    zones, system, loading, loadingMessage, error, provider, setSelectedZoneId,
     selectedZoneId,
     mqttSnapshot, cloudSnapshot, providersStatus,
   } = useHeatingStore();

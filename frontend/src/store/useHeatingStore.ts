@@ -44,6 +44,7 @@ interface HeatingState {
       defaultTemp: number;
       longPressMs: number;
       apiTimeout: number;
+      scheduleStaleThresholdDays?: number;
       tempColors?: { maxTemp?: number; color: string }[];
   } | null;
   selectedZoneId: string | null;
