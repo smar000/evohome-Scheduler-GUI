@@ -2,7 +2,7 @@
 
 **evoWeb** is a web-based interface for managing Honeywell evohome heating system schedules. While Honeywell provides official mobile applications, this project was developed to address the lack of a dedicated, browser-accessible portal suitable for desktop use and integration into home automation dashboards.
 
-This application was created to meet a specific personal requirement for a more flexible scheduling interface and is shared in the hope that it may be of use to others with similar needs.
+This application was created to meet a specific personal requirement for a browser based scheduling interface to evohome, and is shared in the hope that it may be of use to others with similar needs.
 
 ![Dashboard](./misc/other/embedded_sched.png)
 
@@ -16,7 +16,7 @@ This application was created to meet a specific personal requirement for a more 
 
 ## Project Status
 
-Active development — core schedule editing is stable; the dual-provider dashboard and REST API are under active improvement.
+Not in active development. The project is at a point where it serves the original intended use. Bug fixe and PRs are welcome.
 
 ## Understanding "Slots"
 
@@ -32,19 +32,25 @@ The **Scheduler** tab facilitates the viewing and editing of heating plans throu
 *   **Zone View (Week View):** Displays the 7-day schedule for a single selected zone.
 *   **Day View (Multi-Zone View):** Displays the schedules of all zones for a single selected day, allowing for easier comparison and synchronization across the home.
 
-### Editing a Slot
-1.  **Double-clicking** a slot in the grid opens the **Edit Popover**.
-2.  The **Start Time**, **End Time**, or **Target Temperature** may be adjusted.
-3.  Clicking **Apply** updates the local session view.
+### Editing Slots
 
-### Resizing and Moving Slots
-Toggling the **Edit** mode enables boundary adjustments:
-*   Handles appear at the boundaries of each slot.
-*   Dragging these handles allows for precise adjustment of slot start and end times.
+Clicking any slot reveals a compact floating **action toolbar** anchored to that slot:
 
-### Splitting and Deleting
-*   **Split:** Toggling **Split** mode and double-clicking inside a slot divides it into two segments.
-*   **Delete:** Clicking **Delete** within the Edit Popover removes the slot and merges the resulting gap into the preceding slot.
+| Button | Action |
+|--------|--------|
+| ✏ **Edit** | Opens the Edit Popover to adjust Start Time, End Time, and Target Temperature. Clicking **Apply** updates the local view. |
+| ＋ **Add slot** | Splits the selected slot at the click position, creating a new slot in the right half at the configured default temperature. |
+| 🗑 **Delete** | Removes the slot and merges the gap into the preceding slot. |
+
+**Double-clicking** a slot opens the Edit Popover directly, skipping the toolbar.
+
+Pressing **Escape** or clicking anywhere outside the toolbar dismisses it without making changes.
+
+The Edit Popover also includes an **Add slot** button that creates a new sub-slot using the times and temperature currently entered in the form, allowing precise placement without returning to the grid.
+
+### Adding the First Slot
+
+When a day row shows **"Add first slot"**, clicking it bootstraps a full-day slot at the default temperature. The slot can then be refined using the toolbar.
 
 ### Saving Changes
 Modifications remain local to the browser session until the **Save** button is clicked. This action pushes the updated weekly schedule to the evohome controller.
