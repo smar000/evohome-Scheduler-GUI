@@ -161,7 +161,7 @@ export const useHeatingApi = () => {
         let url = `/getscheduleforzone/${zoneId}`;
         if (force) url += '?refresh=true';
         const response = await api.get(url);
-        setZoneSchedule(zoneId, response.data, isInitial);
+        setZoneSchedule(zoneId, response.data, isInitial || force);
         setError(null);
     } catch (err: any) {
         markScheduleFailed(zoneId);

@@ -182,9 +182,10 @@ function App() {
             onClick={handleManualRefresh}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition-all"
+            title="Refresh live temperatures, modes and all zone schedules"
           >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">Refresh All</span>
           </button>
         </div>
       </header>

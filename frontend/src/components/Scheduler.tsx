@@ -635,7 +635,6 @@ export const Scheduler: React.FC = () => {
             <button onClick={() => setViewMode('day')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={16} className="inline mr-2"/>Days</button>
           </div>
 
-          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`ml-2 px-6 py-2 rounded-xl text-sm font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}><Save size={18} className="inline mr-2"/>Save</button>
         </div>
       </header>
 
@@ -680,12 +679,21 @@ export const Scheduler: React.FC = () => {
             {selectedZoneId && (
                 <button
                     onClick={() => handleZoneRefresh(selectedZoneId)}
-                    className="p-2.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all"
-                    title="Refresh Schedule"
+                    className="flex items-center gap-2 px-5 py-2 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-sm font-black transition-all"
+                    title="Refresh zone schedule (click twice within 20s to force from controller)"
                 >
-                    <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    <span className="hidden sm:inline">Refresh</span>
                 </button>
             )}
+            <button
+                onClick={() => saveAllSchedules(schedules)}
+                disabled={!isDirty}
+                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                title="Save all pending schedule changes to the controller"
+            >
+                <Save size={18} />Save
+            </button>
           </div>
         ) : (
           <div className="flex items-center gap-4 mb-4 md:mb-8 bg-slate-50 p-2 rounded-2xl w-fit">
@@ -697,11 +705,20 @@ export const Scheduler: React.FC = () => {
               >{day.substring(0, 3)}</button>
             ))}
             <div className="h-6 w-px bg-slate-200 mx-2"></div>
-            <button 
+            <button
                 onClick={fetchAllSchedulesSequentially}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+                title="Reload schedules for all zones from the controller"
             >
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh All
+            </button>
+            <button
+                onClick={() => saveAllSchedules(schedules)}
+                disabled={!isDirty}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                title="Save all pending schedule changes to the controller"
+            >
+                <Save size={14} /> Save
             </button>
           </div>
         )}
