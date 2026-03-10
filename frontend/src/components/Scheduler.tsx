@@ -262,7 +262,10 @@ export const Scheduler: React.FC = () => {
         const hasSchedule = !!schedules[selectedZoneId];
         const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
         const thresholdMs = (uiConfig?.scheduleStaleThresholdDays ?? 7) * 24 * 60 * 60 * 1000;
-        const isStale = !fetchedAt || (Date.now() - new Date(fetchedAt).getTime()) > thresholdMs;
+        // Only auto-refresh if we know the age and it exceeds the threshold.
+        // No fetchedAt means data came from retained MQTT messages — treat as present but unaged,
+        // so no radio request is made unless the user explicitly requests a refresh.
+        const isStale = !!fetchedAt && (Date.now() - new Date(fetchedAt).getTime()) > thresholdMs;
         if (!hasSchedule || isStale) {
             fetchScheduleForZone(selectedZoneId, !hasSchedule, isStale && hasSchedule);
         }
