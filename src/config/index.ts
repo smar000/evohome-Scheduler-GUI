@@ -39,6 +39,14 @@ export const config = {
     longPressMs: parseInt(process.env.SCHEDULER_LONG_PRESS_MS || '600', 10),
     apiTimeout: parseInt(process.env.FRONTEND_API_TIMEOUT || '15000', 10),
     scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
+    dhwColors: (() => {
+      const defaults = { on: '#6366f1', off: '#e2e8f0' };
+      try {
+        return process.env.DHW_COLORS ? JSON.parse(process.env.DHW_COLORS) : defaults;
+      } catch {
+        return defaults;
+      }
+    })(),
     tempColors: (() => {
       const defaults = [
         { maxTemp: 5,  color: '#94a3b8' },

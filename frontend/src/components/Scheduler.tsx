@@ -31,6 +31,16 @@ const getTempColor = (temp: number, palette?: { maxTemp?: number; color: string 
   return colors[colors.length - 1]?.color ?? '#94a3b8';
 };
 
+// Returns black or white depending on which contrasts better against the given hex background colour.
+const getContrastColor = (hex: string): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  // Perceived luminance (WCAG formula)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55 ? '#334155' : '#ffffff';
+};
+
 const timeToMinutes = (time: string): number => {
   if (typeof time !== 'string' || !time.includes(':')) return 0;
   const [hours, minutes] = time.split(':').map(Number);
@@ -85,6 +95,12 @@ const blocksToSwitchpoints = (blocks: number[], resolution: number, isDhw?: bool
             lastVal = val;
         }
     });
+    // For DHW: if all blocks are uniformly ON, no value changes occur so sps is empty.
+    // An empty switchpoints list means "all OFF" to the system, so emit an explicit
+    // 00:00 → On entry to preserve a full-day ON state.
+    if (isDhw && sps.length === 0 && blocks.length > 0 && blocks[0] === 1) {
+        sps.push({ timeOfDay: '00:00', state: 'On' });
+    }
     return sps;
 };
 
@@ -96,14 +112,15 @@ interface EditPopoverProps {
   startTime: string;
   endTime: string;
   isDhw?: boolean;
+  isNewSlot?: boolean;
   onSave: (newTemp: number, newStartTime: string, newEndTime: string) => void;
   onCancel: () => void;
   onDelete: () => void;
   onAddSlot: (newStart: string, newEnd: string, newTemp: number) => void;
 }
 
-const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete, onAddSlot }) => {
-  const [temp, setTemp] = useState(initialTemp);
+const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTime, endTime, isDhw, isNewSlot, onSave, onCancel, onDelete, onAddSlot }) => {
+  const [temp, setTemp] = useState(isDhw && (isNewSlot || (initialTemp !== 0 && initialTemp !== 1)) ? 1 : initialTemp);
   const [start, setStart] = useState(startTime);
   const [end, setEnd] = useState(endTime);
   const { refs, floatingStyles } = useFloating({
@@ -112,51 +129,62 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
     middleware: [offset(10), shift()],
   });
 
+  const norm = (t: string) => t === '24:00' ? '23:59' : t;
+  const timesChanged = start !== startTime || norm(end) !== norm(endTime);
+  const hasValidTimes = timeToMinutes(start) < timeToMinutes(end);
+  const tempChanged = isDhw || temp !== initialTemp;
+  const canApply = !isNewSlot && !timesChanged;
+  const canAddSlot = hasValidTimes && (isNewSlot || timesChanged) && (isNewSlot || tempChanged);
+  const showTempHint = !isDhw && timesChanged && !tempChanged;
+
   return (
     <FloatingPortal>
-      <div ref={refs.setFloating} style={floatingStyles} className="bg-slate-800 text-white p-4 rounded-lg shadow-2xl z-50 border border-slate-700">
+      <div ref={refs.setFloating} style={floatingStyles} className="bg-white text-slate-700 p-4 rounded-2xl shadow-2xl z-50 border border-slate-100">
         <div className="grid grid-cols-2 gap-3 mb-4">
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Start Time</label>
-          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
-          
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
+
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">End Time</label>
-          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
-          
+          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
+
           <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{isDhw ? 'State' : 'Target Temp'}</label>
           {isDhw ? (
-            <div className="flex bg-slate-700 rounded p-1">
-              <button 
-                onClick={() => setTemp(1)} 
+            <div className="flex bg-slate-100 rounded p-1">
+              <button
+                onClick={() => setTemp(1)}
                 className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
               >
                 ON
               </button>
-              <button 
-                onClick={() => setTemp(0)} 
-                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 0 ? 'bg-slate-600 text-white' : 'text-slate-400'}`}
+              <button
+                onClick={() => setTemp(0)}
+                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 0 ? 'bg-slate-400 text-white' : 'text-slate-400'}`}
               >
                 OFF
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500 text-white" />
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
               <span className="text-xs font-bold text-slate-400">°C</span>
             </div>
           )}
         </div>
-        <div className="flex justify-between gap-2 border-t border-slate-700 pt-4">
+        {showTempHint && (
+          <p className="text-[10px] text-amber-500 font-bold mb-3 -mt-1">Change temperature to create a distinct new slot</p>
+        )}
+        <div className="flex justify-between gap-2 border-t border-slate-100 pt-4">
           <div className="flex gap-2">
-            <button onClick={onDelete} className="px-3 py-1 bg-red-900/50 text-red-200 rounded text-xs font-bold hover:bg-red-800 transition-colors flex items-center gap-1">
+            {!isNewSlot && <button onClick={onDelete} className="px-3 py-1 bg-red-50 text-red-500 rounded text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
                 <Trash2 size={12}/> Delete
-            </button>
-            <button onClick={() => onAddSlot(start, end, temp)} className="px-3 py-1 bg-emerald-900/50 text-emerald-200 rounded text-xs font-bold hover:bg-emerald-800 transition-colors flex items-center gap-1">
+            </button>}
+            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-3 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1 ${canAddSlot ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
                 <Plus size={12}/> Add slot
             </button>
           </div>
           <div className="flex gap-2">
-            <button onClick={onCancel} className="px-3 py-1 bg-slate-700 rounded text-xs hover:bg-slate-600 transition-colors">Cancel</button>
-            <button onClick={() => onSave(temp, start, end)} className="px-3 py-1 bg-indigo-600 border border-indigo-500 rounded text-xs font-bold hover:bg-indigo-500 transition-colors">Apply</button>
+            <button onClick={onCancel} className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200 transition-colors">Cancel</button>
+            <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`px-3 py-1 rounded text-xs font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Apply</button>
           </div>
         </div>
       </div>
@@ -164,23 +192,31 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
   );
 };
 
-const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, endTime, isDhw, onSave, onCancel, onDelete, onAddSlot }) => {
-  const [temp, setTemp] = useState(initialTemp);
+const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, endTime, isDhw, isNewSlot, onSave, onCancel, onDelete, onAddSlot }) => {
+  const [temp, setTemp] = useState(isDhw && (isNewSlot || (initialTemp !== 0 && initialTemp !== 1)) ? 1 : initialTemp);
   const [start, setStart] = useState(startTime);
   const [end, setEnd] = useState(endTime);
+
+  const norm = (t: string) => t === '24:00' ? '23:59' : t;
+  const timesChanged = start !== startTime || norm(end) !== norm(endTime);
+  const hasValidTimes = timeToMinutes(start) < timeToMinutes(end);
+  const tempChanged = isDhw || temp !== initialTemp;
+  const canApply = !isNewSlot && !timesChanged;
+  const canAddSlot = hasValidTimes && (isNewSlot || timesChanged) && (isNewSlot || tempChanged);
+  const showTempHint = !isDhw && timesChanged && !tempChanged;
 
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onCancel} />
       <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl p-6 animate-in slide-in-from-bottom duration-300">
         <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
-        <h3 className="text-base font-black text-slate-800 mb-5">Edit Slot</h3>
+        <h3 className="text-base font-black text-slate-800 mb-5">{isNewSlot ? 'Add New Slot' : 'Edit Slot'}</h3>
         <div className="grid grid-cols-2 gap-4 mb-6">
           <label className="text-sm font-bold text-slate-500 self-center">Start Time</label>
           <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
 
           <label className="text-sm font-bold text-slate-500 self-center">End Time</label>
-          <input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
 
           <label className="text-sm font-bold text-slate-500 self-center">{isDhw ? 'State' : 'Target Temp'}</label>
           {isDhw ? (
@@ -195,17 +231,20 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
             </div>
           )}
         </div>
+        {showTempHint && (
+          <p className="text-xs text-amber-500 font-bold mb-4">Change temperature to create a distinct new slot</p>
+        )}
         <div className="flex gap-3">
           <div className="flex gap-2">
-            <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
+            {!isNewSlot && <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
               <Trash2 size={16} /> Delete
-            </button>
-            <button onClick={() => onAddSlot(start, end, temp)} className="px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-bold hover:bg-emerald-100 transition-colors flex items-center gap-2">
+            </button>}
+            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${canAddSlot ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
               <Plus size={16} /> Add slot
             </button>
           </div>
           <button onClick={onCancel} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">Cancel</button>
-          <button onClick={() => onSave(temp, start, end)} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold hover:bg-indigo-700 transition-colors">Apply</button>
+          <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Apply</button>
         </div>
       </div>
     </>
@@ -358,12 +397,19 @@ export const Scheduler: React.FC = () => {
     const splitMins = Math.round(rawSplit / resolution) * resolution;
     const clampedSplit = Math.max(startMins + resolution, Math.min(endMins - resolution, splitMins));
     if (clampedSplit <= startMins || clampedSplit >= endMins) return;
-    const defaultTemp = uiConfig?.defaultTemp ?? 20;
+    const isDhwZone = zoneId === dhw?.dhwId;
     updateScheduleBlocks(day, zoneId, (blocks) => {
       const splitBlock = clampedSplit / resolution;
       const endBlock = endMins / resolution;
       const originalTemp = blocks[splitBlock - 1];
-      const newTemp = originalTemp !== defaultTemp ? defaultTemp : Math.max(0, defaultTemp - 0.5);
+      let newTemp: number;
+      if (isDhwZone) {
+        // DHW: flip state — OFF→ON adds a heating period, ON→OFF carves one out
+        newTemp = originalTemp === 1 ? 0 : 1;
+      } else {
+        const defaultTemp = uiConfig?.defaultTemp ?? 20;
+        newTemp = originalTemp !== defaultTemp ? defaultTemp : Math.max(0, defaultTemp - 0.5);
+      }
       for (let i = splitBlock; i < endBlock; i++) blocks[i] = newTemp;
     });
     setSelectedSlot(null);
@@ -504,16 +550,17 @@ export const Scheduler: React.FC = () => {
             const startTimeText = minutesToTime(seg.start * resolution);
             const endTimeText = minutesToTime((seg.start + seg.length) * resolution);
             const rangeText = `${startTimeText} - ${endTimeText}`;
-            const color = isDhw ? (seg.val === 1 ? '#6366f1' : '#94a3b8') : getTempColor(seg.val, uiConfig?.tempColors);
+            const color = isDhw ? (seg.val === 1 ? (uiConfig?.dhwColors?.on ?? '#6366f1') : (uiConfig?.dhwColors?.off ?? '#e2e8f0')) : getTempColor(seg.val, uiConfig?.tempColors);
             const labelText = isDhw ? (seg.val === 1 ? 'ON' : 'OFF') : `${seg.val.toFixed(1)}°`;
 
             const slotKey = `${dayName}-${zoneId}-${i}`;
             const isSelected = selectedSlot?.key === slotKey;
+            const textColor = getContrastColor(color);
             slots.push(
                 <div
                     key={i}
-                    style={{ width: `${width}%`, backgroundColor: color }}
-                    className={`h-full border-r border-white/10 flex flex-col items-center justify-center text-white font-bold cursor-pointer hover:brightness-110 transition-all select-none relative group/slot flex-shrink-0 ${isSelected ? 'ring-2 ring-white ring-inset brightness-125 z-10' : ''}`}
+                    style={{ width: `${width}%`, backgroundColor: color, color: textColor }}
+                    className={`h-full border-r border-white/10 flex flex-col items-center justify-center font-bold cursor-pointer hover:brightness-90 transition-all select-none relative group/slot flex-shrink-0 ${isSelected ? 'ring-2 ring-inset brightness-90 z-10' : ''}`}
                     onClick={(e) => {
                         e.stopPropagation();
                         const rect = e.currentTarget.getBoundingClientRect();
@@ -528,7 +575,7 @@ export const Scheduler: React.FC = () => {
                 >
                     <span className="text-[10px]">{labelText}</span>
                     {width > 8 && (
-                        <span className="absolute top-0.5 left-1 text-[7px] text-white/40 group-hover/slot:text-white/80 transition-colors uppercase tracking-tighter">
+                        <span className="absolute top-0.5 left-1 text-[7px] opacity-40 group-hover/slot:opacity-80 transition-opacity uppercase tracking-tighter">
                             {startTimeText}
                         </span>
                     )}
@@ -557,7 +604,7 @@ export const Scheduler: React.FC = () => {
                           }
                           const daySched = draft[zoneId]?.schedule.find((s: any) => s.dayOfWeek === dayName);
                           if (daySched) {
-                              daySched.switchpoints = [isDhw ? { timeOfDay: '00:00', state: 'Off' } : { timeOfDay: '00:00', heatSetpoint: defaultTemp }] as any;
+                              daySched.switchpoints = [isDhw ? { timeOfDay: '00:00', state: 'On' } : { timeOfDay: '00:00', heatSetpoint: defaultTemp }] as any;
                           }
                       }));
                   }}
@@ -774,53 +821,33 @@ export const Scheduler: React.FC = () => {
         </div>
       </footer>
 
-      {editingSlot && (
-        isMobile ? (
-          <EditBottomSheet
-            anchor={editingSlot.element}
-            initialTemp={parseFloat(editingSlot.element.dataset.val || '20')}
-            startTime={editingSlot.element.dataset.startTime!}
-            endTime={editingSlot.element.dataset.endTime!}
-            isDhw={editingSlot.zoneId === dhw?.dhwId}
-            onSave={handleUpdate}
-            onCancel={() => { setEditingSlot(null); setSelectedSlot(null); }}
-            onDelete={handleDelete}
-            onAddSlot={(newStart, newEnd, newTemp) => {
-              if (editingSlot) {
-                const { day, zoneId } = editingSlot;
-                updateScheduleBlocks(day, zoneId, (blocks) => {
-                  const s = Math.round(timeToMinutes(newStart) / resolution);
-                  const e = Math.round(timeToMinutes(newEnd) / resolution) || totalBlocks;
-                  for (let i = s; i < e; i++) blocks[i % totalBlocks] = newTemp;
-                });
-                setEditingSlot(null);
-              }
-            }}
-          />
-        ) : (
-          <EditPopover
-            anchor={editingSlot.element}
-            initialTemp={parseFloat(editingSlot.element.dataset.val || '20')}
-            startTime={editingSlot.element.dataset.startTime!}
-            endTime={editingSlot.element.dataset.endTime!}
-            isDhw={editingSlot.zoneId === dhw?.dhwId}
-            onSave={handleUpdate}
-            onCancel={() => { setEditingSlot(null); setSelectedSlot(null); }}
-            onDelete={handleDelete}
-            onAddSlot={(newStart, newEnd, newTemp) => {
-              if (editingSlot) {
-                const { day, zoneId } = editingSlot;
-                updateScheduleBlocks(day, zoneId, (blocks) => {
-                  const s = Math.round(timeToMinutes(newStart) / resolution);
-                  const e = Math.round(timeToMinutes(newEnd) / resolution) || totalBlocks;
-                  for (let i = s; i < e; i++) blocks[i % totalBlocks] = newTemp;
-                });
-                setEditingSlot(null);
-              }
-            }}
-          />
-        )
-      )}
+      {editingSlot && (() => {
+        const isDhwSlot = editingSlot.zoneId === dhw?.dhwId;
+        const editingDaySched = schedules[editingSlot.zoneId]?.schedule.find(s => s.dayOfWeek === editingSlot.day);
+        // isNewSlot: DHW day with no ON periods (empty, or only Off switchpoints)
+        const isNewSlot = isDhwSlot && (!editingDaySched || editingDaySched.switchpoints.every((sp: any) => sp.state !== 'On'));
+        const sharedProps = {
+          anchor: editingSlot.element,
+          initialTemp: parseFloat(editingSlot.element.dataset.val || '20'),
+          startTime: editingSlot.element.dataset.startTime!,
+          endTime: editingSlot.element.dataset.endTime!,
+          isDhw: isDhwSlot,
+          isNewSlot,
+          onSave: handleUpdate,
+          onCancel: () => { setEditingSlot(null); setSelectedSlot(null); },
+          onDelete: handleDelete,
+          onAddSlot: (newStart: string, newEnd: string, newTemp: number) => {
+            const { day, zoneId } = editingSlot;
+            updateScheduleBlocks(day, zoneId, (blocks) => {
+              const s = Math.round(timeToMinutes(newStart) / resolution);
+              const e = Math.round(timeToMinutes(newEnd) / resolution) || totalBlocks;
+              for (let i = s; i < e; i++) blocks[i % totalBlocks] = newTemp;
+            });
+            setEditingSlot(null);
+          },
+        };
+        return isMobile ? <EditBottomSheet {...sharedProps} /> : <EditPopover {...sharedProps} />;
+      })()}
 
       {selectedSlot && (
         <FloatingPortal>
