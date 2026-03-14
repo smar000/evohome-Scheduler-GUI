@@ -139,52 +139,52 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
 
   return (
     <FloatingPortal>
-      <div ref={refs.setFloating} style={floatingStyles} className="bg-white text-slate-700 p-4 rounded-2xl shadow-2xl z-50 border border-slate-100">
+      <div ref={refs.setFloating} style={floatingStyles} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 p-4 rounded-2xl shadow-2xl z-50 border border-slate-100 dark:border-slate-700">
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Start Time</label>
-          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
+          <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">Start Time</label>
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 dark:bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200" />
 
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">End Time</label>
-          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
+          <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">End Time</label>
+          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 dark:bg-slate-700 rounded p-1 text-sm outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200" />
 
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{isDhw ? 'State' : 'Target Temp'}</label>
+          <label className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tighter">{isDhw ? 'State' : 'Target Temp'}</label>
           {isDhw ? (
-            <div className="flex bg-slate-100 rounded p-1">
+            <div className="flex bg-slate-100 dark:bg-slate-700 rounded p-1">
               <button
                 onClick={() => setTemp(1)}
-                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}
+                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400 dark:text-slate-500'}`}
               >
                 ON
               </button>
               <button
                 onClick={() => setTemp(0)}
-                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 0 ? 'bg-slate-400 text-white' : 'text-slate-400'}`}
+                className={`flex-1 px-2 py-1 rounded text-xs font-bold transition-colors ${temp === 0 ? 'bg-slate-400 dark:bg-slate-500 text-white' : 'text-slate-400 dark:text-slate-500'}`}
               >
                 OFF
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700" />
-              <span className="text-xs font-bold text-slate-400">°C</span>
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 dark:bg-slate-700 rounded p-1 text-sm w-full outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 dark:text-slate-200" />
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500">°C</span>
             </div>
           )}
         </div>
         {showTempHint && (
           <p className="text-[10px] text-amber-500 font-bold mb-3 -mt-1">Change temperature to create a distinct new slot</p>
         )}
-        <div className="flex justify-between gap-2 border-t border-slate-100 pt-4">
+        <div className="flex justify-between gap-2 border-t border-slate-100 dark:border-slate-700 pt-4">
           <div className="flex gap-2">
-            {!isNewSlot && <button onClick={onDelete} className="px-3 py-1 bg-red-50 text-red-500 rounded text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
+            {!isNewSlot && <button onClick={onDelete} className="px-3 py-1 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded text-xs font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
                 <Trash2 size={12}/> Delete
             </button>}
-            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-3 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1 ${canAddSlot ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
+            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-3 py-1 rounded text-xs font-bold transition-colors flex items-center gap-1 ${canAddSlot ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50' : 'bg-slate-50 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}>
                 <Plus size={12}/> Add slot
             </button>
           </div>
           <div className="flex gap-2">
-            <button onClick={onCancel} className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200 transition-colors">Cancel</button>
-            <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`px-3 py-1 rounded text-xs font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Apply</button>
+            <button onClick={onCancel} className="px-3 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-xs hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+            <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`px-3 py-1 rounded text-xs font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}>Apply</button>
           </div>
         </div>
       </div>
@@ -208,26 +208,26 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onCancel} />
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl shadow-2xl p-6 animate-in slide-in-from-bottom duration-300">
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
-        <h3 className="text-base font-black text-slate-800 mb-5">{isNewSlot ? 'Add New Slot' : 'Edit Slot'}</h3>
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-slate-800 rounded-t-3xl shadow-2xl p-6 animate-in slide-in-from-bottom duration-300">
+        <div className="w-10 h-1 bg-slate-200 dark:bg-slate-600 rounded-full mx-auto mb-6" />
+        <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-5">{isNewSlot ? 'Add New Slot' : 'Edit Slot'}</h3>
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <label className="text-sm font-bold text-slate-500 self-center">Start Time</label>
-          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+          <label className="text-sm font-bold text-slate-500 dark:text-slate-400 self-center">Start Time</label>
+          <input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="bg-slate-100 dark:bg-slate-700 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
 
-          <label className="text-sm font-bold text-slate-500 self-center">End Time</label>
-          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
+          <label className="text-sm font-bold text-slate-500 dark:text-slate-400 self-center">End Time</label>
+          <input type="time" value={end === '24:00' ? '23:59' : end} onChange={(e) => setEnd(e.target.value)} className="bg-slate-100 dark:bg-slate-700 rounded-xl p-3 text-base outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
 
-          <label className="text-sm font-bold text-slate-500 self-center">{isDhw ? 'State' : 'Target Temp'}</label>
+          <label className="text-sm font-bold text-slate-500 dark:text-slate-400 self-center">{isDhw ? 'State' : 'Target Temp'}</label>
           {isDhw ? (
-            <div className="flex bg-slate-100 rounded-xl p-1">
-              <button onClick={() => setTemp(1)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400'}`}>ON</button>
-              <button onClick={() => setTemp(0)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 0 ? 'bg-slate-600 text-white' : 'text-slate-400'}`}>OFF</button>
+            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1">
+              <button onClick={() => setTemp(1)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 1 ? 'bg-indigo-600 text-white' : 'text-slate-400 dark:text-slate-500'}`}>ON</button>
+              <button onClick={() => setTemp(0)} className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors ${temp === 0 ? 'bg-slate-600 text-white' : 'text-slate-400 dark:text-slate-500'}`}>OFF</button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 rounded-xl p-3 text-base w-full outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 font-bold" />
-              <span className="text-sm font-bold text-slate-400">°C</span>
+              <input type="number" value={temp} step="0.5" onChange={(e) => setTemp(parseFloat(e.target.value))} className="bg-slate-100 dark:bg-slate-700 rounded-xl p-3 text-base w-full outline-none focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 font-bold" />
+              <span className="text-sm font-bold text-slate-400 dark:text-slate-500">°C</span>
             </div>
           )}
         </div>
@@ -236,15 +236,15 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
         )}
         <div className="flex gap-3">
           <div className="flex gap-2">
-            {!isNewSlot && <button onClick={onDelete} className="px-4 py-3 bg-red-50 text-red-500 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors flex items-center gap-2">
+            {!isNewSlot && <button onClick={onDelete} className="px-4 py-3 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors flex items-center gap-2">
               <Trash2 size={16} /> Delete
             </button>}
-            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${canAddSlot ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-slate-50 text-slate-300 cursor-not-allowed'}`}>
+            <button onClick={() => onAddSlot(start, end, temp)} disabled={!canAddSlot} className={`px-4 py-3 rounded-xl text-sm font-bold transition-colors flex items-center gap-2 ${canAddSlot ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50' : 'bg-slate-50 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}>
               <Plus size={16} /> Add slot
             </button>
           </div>
-          <button onClick={onCancel} className="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-colors">Cancel</button>
-          <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}>Apply</button>
+          <button onClick={onCancel} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+          <button onClick={() => onSave(temp, start, end)} disabled={!canApply} className={`flex-1 py-3 rounded-xl text-sm font-bold transition-colors ${canApply ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-100 dark:bg-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'}`}>Apply</button>
         </div>
       </div>
     </>
@@ -276,8 +276,6 @@ export const Scheduler: React.FC = () => {
   } | null>(null);
   const [, setTick] = useState(0);
 
-  const queryParams = new URLSearchParams(window.location.search);
-  const isEmbedded = queryParams.get('embed') === 'true';
 
   const handleZoneRefresh = async (zoneId: string) => {
     const now = Date.now();
@@ -509,8 +507,8 @@ export const Scheduler: React.FC = () => {
             const left = (hour / 24) * 100;
             return (
               <div key={hour} style={{ left: `${left}%` }} className="absolute flex flex-col items-center -translate-x-1/2">
-                <span className="text-[10px] font-black text-slate-400">{hour.toString().padStart(2, '0')}:00</span>
-                <div className="h-1 w-[1px] bg-slate-200 mt-1" />
+                <span className="text-[10px] font-black text-slate-400 dark:text-slate-600">{hour.toString().padStart(2, '0')}:00</span>
+                <div className="h-1 w-[1px] bg-slate-200 dark:bg-slate-700 mt-1" />
               </div>
             );
           })}
@@ -588,11 +586,11 @@ export const Scheduler: React.FC = () => {
 
     return (
       <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
-        <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</div>
-        <div className="flex-1 h-10 bg-slate-50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 relative" onClick={() => setSelectedSlot(null)}>
+        <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight">{label}</div>
+        <div className="flex-1 h-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 dark:border-slate-700 relative" onClick={() => setSelectedSlot(null)}>
           {hasData ? slots : (
               <div
-                  className="flex-1 flex items-center justify-center gap-2 text-slate-300 hover:text-indigo-400 hover:bg-indigo-50/50 cursor-pointer transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 text-slate-300 dark:text-slate-600 hover:text-indigo-400 dark:hover:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 cursor-pointer transition-colors"
                   title="Click to add first slot"
                   onClick={(e) => {
                       e.stopPropagation();
@@ -617,10 +615,10 @@ export const Scheduler: React.FC = () => {
         <div className="hidden sm:flex w-16 items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
             {hasData && (
                 <>
-                    <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-2 lg:p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}><Copy size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
-                    {clipboard && (isSource ? 
+                    <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-2 lg:p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}`}><Copy size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
+                    {clipboard && (isSource ?
                         <button onClick={handlePasteToAll} className="p-2 lg:p-1.5 rounded-lg bg-amber-500 text-white hover:bg-amber-600 shadow-sm"><ClipboardPaste size={16} className="lg:w-[14px] lg:h-[14px]" /></button> :
-                        <button onClick={() => handlePaste(dayName, zoneId)} className="p-2 lg:p-1.5 rounded-lg bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700"><ClipboardCheck size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
+                        <button onClick={() => handlePaste(dayName, zoneId)} className="p-2 lg:p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:text-indigo-700 dark:hover:text-indigo-300"><ClipboardCheck size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
                     )}
                 </>
             )}
@@ -630,7 +628,7 @@ export const Scheduler: React.FC = () => {
   };
 
   return (
-    <section className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col min-h-[600px] p-2 md:p-8">
+    <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-100 dark:border-slate-700 overflow-hidden flex flex-col min-h-[600px] p-2 md:p-8">
       <header className="mb-4 flex items-center gap-2 sm:gap-3">
         <div
           ref={refs.setReference}
@@ -649,20 +647,20 @@ export const Scheduler: React.FC = () => {
             <div
               ref={refs.setFloating}
               style={floatingStyles}
-              className="bg-white border border-slate-100 p-1 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+              className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-1 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
             >
-              <div className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 mb-1 tracking-widest border-b border-slate-50">Select Provider</div>
-              <button onClick={() => selectProvider('honeywell')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+              <div className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 px-3 py-2 mb-1 tracking-widest border-b border-slate-50 dark:border-slate-700">Select Provider</div>
+              <button onClick={() => selectProvider('honeywell')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 transition-colors">
                 <Cloud size={16} className="text-sky-500" /> Cloud (Honeywell)
               </button>
-              <button onClick={() => selectProvider('mqtt')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+              <button onClick={() => selectProvider('mqtt')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 transition-colors">
                 <Cpu size={16} className="text-emerald-500" /> Local (MQTT)
               </button>
             </div>
           </FloatingPortal>
         )}
 
-        {viewMode === 'zone' && <div className="hidden sm:block w-px h-6 bg-slate-100 flex-shrink-0" />}
+        {viewMode === 'zone' && <div className="hidden sm:block w-px h-6 bg-slate-100 dark:bg-slate-700 flex-shrink-0" />}
 
         {viewMode === 'zone' && (
           <div className="w-28 sm:w-48 flex-shrink-0">
@@ -681,16 +679,16 @@ export const Scheduler: React.FC = () => {
           return (
             <div className="hidden sm:flex items-end gap-2 flex-shrink-0">
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current</span>
-                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Current</span>
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target</span>
-                <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Target</span>
+                <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
               </div>
               <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mode</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>{modeLabel}</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Mode</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30' : 'text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700'}`}>{modeLabel}</span>
               </div>
             </div>
           );
@@ -700,7 +698,7 @@ export const Scheduler: React.FC = () => {
           {viewMode === 'zone' && selectedZoneId && (() => {
             const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
             const thresholdDays = uiConfig?.scheduleStaleThresholdDays ?? 7;
-            if (!fetchedAt) return <span className="text-[10px] font-black uppercase text-slate-300 hidden sm:block">Schedule: unknown</span>;
+            if (!fetchedAt) return <span className="text-[10px] font-black uppercase text-slate-300 dark:text-slate-600 hidden sm:block">Schedule: unknown</span>;
             const ageMs = Date.now() - new Date(fetchedAt).getTime();
             const ageHours = ageMs / 3600000;
             const ageDays = ageHours / 24;
@@ -710,48 +708,48 @@ export const Scheduler: React.FC = () => {
             return <span className={`text-[10px] font-black uppercase ${color} hidden sm:block`} title={new Date(fetchedAt).toLocaleString()}>Synced: {label}</span>;
           })()}
           {viewMode === 'zone' && selectedZoneId && (
-            <button onClick={() => handleZoneRefresh(selectedZoneId)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-xs font-black transition-all" title="Refresh zone schedule (click twice within 20s to force from controller)">
+            <button onClick={() => handleZoneRefresh(selectedZoneId)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-black transition-all" title="Refresh zone schedule (click twice within 20s to force from controller)">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
           )}
           {viewMode === 'day' && (
-            <button onClick={fetchAllSchedulesSequentially} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-xs font-black transition-all" title="Reload schedules for all zones from the controller">
+            <button onClick={fetchAllSchedulesSequentially} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-xl text-xs font-black transition-all" title="Reload schedules for all zones from the controller">
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Refresh All</span>
             </button>
           )}
-          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
+          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
             <Save size={14} /><span className="hidden sm:inline">Save</span>
           </button>
-          <div className="w-px h-5 bg-slate-200 mx-0.5" />
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setViewMode('zone')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><User size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Zones</span></button>
-            <button onClick={() => setViewMode('day')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Days</span></button>
+          <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+          <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
+            <button onClick={() => setViewMode('zone')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'zone' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><User size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Zones</span></button>
+            <button onClick={() => setViewMode('day')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'day' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><Calendar size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Days</span></button>
           </div>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">
         {viewMode === 'day' && (
-          <div className="flex items-center gap-2 mb-4 bg-slate-50 p-2 rounded-2xl w-fit">
+          <div className="flex items-center gap-2 mb-4 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-2xl w-fit">
             {DAYS.map(day => (
               <button
                 key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white text-indigo-600 shadow-md shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md shadow-indigo-100 dark:shadow-indigo-900/50' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
               >{day.substring(0, 3)}</button>
             ))}
           </div>
         )}
 
-        <div className="bg-slate-50/50 rounded-2xl p-1 md:p-6 border border-slate-100">
+        <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-1 md:p-6 border border-slate-100 dark:border-slate-700">
           <div className="overflow-x-auto">
             <div style={{ width: zoomLevel === 1 ? '100%' : `${zoomLevel * 100}%`, minWidth: '100%' }}>
               {renderTimelineHeader()}
               <div className="space-y-1">
                 {viewMode === 'zone' ? (
-                  selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 font-bold">Select a zone to view schedule</div>
+                  selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 dark:text-slate-500 font-bold">Select a zone to view schedule</div>
                 ) : (
                   [...zones, ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : [])].map(z => renderRow(z.name, selectedDay, z.zoneId))
                 )}
@@ -769,46 +767,46 @@ export const Scheduler: React.FC = () => {
             ? `Override${zoneStatus.until ? ` until ${new Date(zoneStatus.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
             : 'Schedule';
           return (
-            <div className="sm:hidden flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-100">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current</span>
-              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
-              <span className="text-[10px] text-slate-300">→</span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target</span>
-              <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
-              <span className="text-slate-200 mx-0.5">·</span>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mode</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>{modeLabel}</span>
+            <div className="sm:hidden flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Current</span>
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
+              <span className="text-[10px] text-slate-300 dark:text-slate-600">→</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Target</span>
+              <span className="text-xs font-bold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
+              <span className="text-slate-200 dark:text-slate-700 mx-0.5">·</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Mode</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30' : 'text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700'}`}>{modeLabel}</span>
             </div>
           );
         })()}
 
         {clipboard && (
-            <div className="mt-8 flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="mt-8 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-2xl text-indigo-600 dark:text-indigo-300 animate-in slide-in-from-bottom-2 duration-300">
                 <ClipboardCheck size={18} />
                 <span className="text-xs font-bold">Day schedule copied from <span className="font-black underline">{clipboardSource}</span>. Ready to paste!</span>
-                <button onClick={() => setClipboard(null)} className="ml-auto text-indigo-300 hover:text-indigo-600"><X size={16}/></button>
+                <button onClick={() => setClipboard(null)} className="ml-auto text-indigo-300 dark:text-indigo-600 hover:text-indigo-600 dark:hover:text-indigo-400"><X size={16}/></button>
             </div>
         )}
       </main>
 
-      <footer className="mt-3 md:mt-8 pt-3 md:pt-6 border-t border-slate-100 flex items-center justify-between text-slate-400">
+      <footer className="mt-3 md:mt-8 pt-3 md:pt-6 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-slate-400 dark:text-slate-500">
         <div className="flex items-center gap-4">
           <div className="flex sm:hidden items-center gap-2">
             <Clock size={14}/>
             <span className="text-[10px] font-black uppercase tracking-widest">Resolution: {resolution} mins</span>
           </div>
-          <div className="flex sm:hidden items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+          <div className="flex sm:hidden items-center gap-1 bg-slate-100 dark:bg-slate-700 rounded-lg p-0.5">
             <button
               onClick={() => setZoomLevel(l => Math.max(1, l - 1))}
               disabled={zoomLevel === 1}
-              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Zoom out"
             >−</button>
             <span className="text-[10px] font-black uppercase tracking-widest px-1 min-w-[2rem] text-center">{zoomLevel}×</span>
             <button
               onClick={() => setZoomLevel(l => Math.min(4, l + 1))}
               disabled={zoomLevel === 4}
-              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 hover:bg-white hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="w-6 h-6 flex items-center justify-center rounded text-xs font-black text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-600 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Zoom in"
             >+</button>
           </div>
@@ -848,7 +846,7 @@ export const Scheduler: React.FC = () => {
           <div
             ref={toolbarRefs.setFloating}
             style={toolbarFloatingStyles}
-            className="flex items-center gap-1 bg-white rounded-2xl shadow-xl border border-slate-100 p-1.5 z-50"
+            className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-1.5 z-50"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
@@ -856,7 +854,7 @@ export const Scheduler: React.FC = () => {
                 e.stopPropagation();
                 if (selectedSlot) { setEditingSlot({ day: selectedSlot.day, zoneId: selectedSlot.zoneId, element: selectedSlot.element }); setSelectedSlot(null); }
               }}
-              className="p-2 hover:bg-indigo-50 text-indigo-600 rounded-xl transition-colors"
+              className="p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl transition-colors"
               title="Edit slot"
             >
               <Pencil size={14} />
@@ -866,18 +864,18 @@ export const Scheduler: React.FC = () => {
                 e.stopPropagation();
                 if (selectedSlot) handleSplitDirect(selectedSlot.day, selectedSlot.zoneId, selectedSlot.element, selectedSlot.relX);
               }}
-              className="p-2 hover:bg-emerald-50 text-emerald-600 rounded-xl transition-colors"
+              className="p-2 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl transition-colors"
               title="Add new slot here"
             >
               <Plus size={14} />
             </button>
-            <div className="w-px h-4 bg-slate-200 mx-0.5" />
+            <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-0.5" />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 if (selectedSlot) handleDeleteDirect(selectedSlot.day, selectedSlot.zoneId, selectedSlot.element);
               }}
-              className="p-2 hover:bg-red-50 text-red-500 rounded-xl transition-colors"
+              className="p-2 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl transition-colors"
               title="Delete slot"
             >
               <Trash2 size={14} />
