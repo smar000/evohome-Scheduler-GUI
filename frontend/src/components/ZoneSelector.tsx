@@ -6,9 +6,10 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 interface ZoneSelectorProps {
   selectedZoneId: string | null;
   onSelectZone: (zoneId: string) => void;
+  compact?: boolean;
 }
 
-export const ZoneSelector: React.FC<ZoneSelectorProps> = ({ selectedZoneId, onSelectZone }) => {
+export const ZoneSelector: React.FC<ZoneSelectorProps> = ({ selectedZoneId, onSelectZone, compact = false }) => {
   const { zones, dhw, provider } = useHeatingStore();
   const { refreshMqttMappings } = useHeatingApi();
   const sortedZones = [...zones].sort((a, b) => a.name.localeCompare(b.name));
@@ -22,21 +23,28 @@ export const ZoneSelector: React.FC<ZoneSelectorProps> = ({ selectedZoneId, onSe
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-2 ml-1">
-        <label htmlFor="zone-select" className="block text-[10px] font-black uppercase text-slate-400">
-          Select Active Zone
-        </label>
-        {isEmpty && provider?.name === 'MQTT' && (
-            <button 
-                onClick={handleSync}
-                className="text-[10px] font-black uppercase text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition-colors group"
-                title="Sync zone names from Cloud"
-            >
-                <RefreshCw size={10} className="group-hover:rotate-180 transition-transform duration-500" />
-                Sync Mappings
-            </button>
-        )}
-      </div>
+      {!compact && (
+        <div className="flex justify-between items-center mb-2 ml-1">
+          <label htmlFor="zone-select" className="block text-[10px] font-black uppercase text-slate-400">
+            Select Active Zone
+          </label>
+          {isEmpty && provider?.name === 'MQTT' && (
+              <button
+                  onClick={handleSync}
+                  className="text-[10px] font-black uppercase text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition-colors group"
+                  title="Sync zone names from Cloud"
+              >
+                  <RefreshCw size={10} className="group-hover:rotate-180 transition-transform duration-500" />
+                  Sync Mappings
+              </button>
+          )}
+        </div>
+      )}
+      {compact && isEmpty && provider?.name === 'MQTT' && (
+        <button onClick={handleSync} className="text-[10px] font-black uppercase text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition-colors group" title="Sync zone names from Cloud">
+          <RefreshCw size={10} className="group-hover:rotate-180 transition-transform duration-500" /> Sync
+        </button>
+      )}
       
       <div className="relative group">
         <select

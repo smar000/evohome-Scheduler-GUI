@@ -129,7 +129,7 @@ function App() {
 
   return (
     <div className={`min-h-screen bg-slate-50 text-slate-900 font-sans p-4 md:p-8 transition-all pb-20 ${loading ? 'cursor-wait' : ''}`}>
-      <header className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between border-b border-slate-200 pb-6 gap-6">
+      <header className="mb-3 flex flex-col lg:flex-row lg:items-center justify-between pb-2 gap-6">
         <div className="flex flex-col gap-2 min-w-[200px]">
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">{getTitle()}</h1>
@@ -203,43 +203,22 @@ function App() {
             </div>
           ) : (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-black flex items-center gap-3 text-slate-800 tracking-tight">
-                  <LayoutDashboard size={28} className="text-indigo-500" />
+              <div className="flex flex-wrap items-center gap-3 mb-6">
+                <h2 className="text-base font-black flex items-center gap-2 text-slate-400 tracking-tight uppercase mr-2">
+                  <LayoutDashboard size={16} className="text-slate-300" />
                   Live House Overview
                 </h2>
-              </div>
-
-              {/* --- Connection status row --- */}
-              <div className="flex flex-wrap gap-3 mb-8">
-                {/* MQTT */}
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${mqttConnected ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'}`}>
-                  <Cpu size={16} className={mqttConnected ? 'text-emerald-500' : 'text-slate-400'} />
-                  <div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Local (MQTT)</div>
-                    <div className={`text-xs font-black uppercase tracking-wide ${mqttConnected ? 'text-emerald-600' : 'text-slate-500'}`}>
-                      {providersStatus?.mqtt?.status ?? (mqttSnapshot ? 'unknown' : '—')}
-                    </div>
-                    {providersStatus?.mqtt?.error && (
-                      <div className="text-[9px] text-rose-500 font-bold mt-0.5">{providersStatus.mqtt.error}</div>
-                    )}
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ml-1 ${mqttConnected ? 'bg-emerald-400' : 'bg-slate-300'}`} />
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${mqttConnected ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'}`} title={providersStatus?.mqtt?.error ?? ''}>
+                  <Cpu size={13} className={mqttConnected ? 'text-emerald-500' : 'text-slate-400'} />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Local</span>
+                  <span className={`text-[10px] font-black uppercase tracking-wide ${mqttConnected ? 'text-emerald-600' : 'text-slate-400'}`}>{providersStatus?.mqtt?.status ?? (mqttSnapshot ? 'unknown' : '—')}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${mqttConnected ? 'bg-emerald-400' : 'bg-slate-300'}`} />
                 </div>
-
-                {/* Cloud */}
-                <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${cloudConnected ? 'bg-sky-50 border-sky-100' : 'bg-slate-50 border-slate-200'}`}>
-                  <Cloud size={16} className={cloudConnected ? 'text-sky-500' : 'text-slate-400'} />
-                  <div>
-                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400">Cloud (Honeywell)</div>
-                    <div className={`text-xs font-black uppercase tracking-wide ${cloudConnected ? 'text-sky-600' : 'text-slate-500'}`}>
-                      {providersStatus?.cloud?.status ?? (cloudSnapshot ? 'unknown' : '—')}
-                    </div>
-                    {providersStatus?.cloud?.error && (
-                      <div className="text-[9px] text-rose-500 font-bold mt-0.5">{providersStatus.cloud.error}</div>
-                    )}
-                  </div>
-                  <div className={`w-2 h-2 rounded-full ml-1 ${cloudConnected ? 'bg-sky-400' : 'bg-slate-300'}`} />
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${cloudConnected ? 'bg-sky-50 border-sky-100' : 'bg-slate-50 border-slate-200'}`} title={providersStatus?.cloud?.error ?? ''}>
+                  <Cloud size={13} className={cloudConnected ? 'text-sky-500' : 'text-slate-400'} />
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Cloud</span>
+                  <span className={`text-[10px] font-black uppercase tracking-wide ${cloudConnected ? 'text-sky-600' : 'text-slate-400'}`}>{providersStatus?.cloud?.status ?? (cloudSnapshot ? 'unknown' : '—')}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${cloudConnected ? 'bg-sky-400' : 'bg-slate-300'}`} />
                 </div>
               </div>
 
@@ -272,7 +251,7 @@ function App() {
                             <div className="flex gap-4 flex-1 items-center min-w-0">
                               <div className="shrink-0">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Temp</div>
-                                <div className="text-lg font-black text-slate-700 leading-none">{mqttDhw.temperature.toFixed(1)}°</div>
+                                <div className="text-lg font-black text-slate-700 leading-none">{mqttDhw.temperature != null ? mqttDhw.temperature.toFixed(1) : '--'}°</div>
                               </div>
                               <div className="shrink-0">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">State</div>
@@ -295,7 +274,7 @@ function App() {
                             <div className="flex gap-4 flex-1 items-center min-w-0">
                               <div className="shrink-0">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Temp</div>
-                                <div className="text-lg font-black text-slate-700 leading-none">{cloudDhw.temperature.toFixed(1)}°</div>
+                                <div className="text-lg font-black text-slate-700 leading-none">{cloudDhw.temperature != null ? cloudDhw.temperature.toFixed(1) : '--'}°</div>
                               </div>
                               <div className="shrink-0">
                                 <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">State</div>
@@ -337,11 +316,11 @@ function App() {
                               <div className="flex gap-4 flex-1 items-center min-w-0">
                                 <div className="shrink-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Now</div>
-                                  <div className="text-lg font-black text-slate-700 leading-none">{mqttZone.temperature.toFixed(1)}°</div>
+                                  <div className="text-lg font-black text-slate-700 leading-none">{mqttZone.temperature != null ? mqttZone.temperature.toFixed(1) : '--'}°</div>
                                 </div>
                                 <div className="shrink-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Set</div>
-                                  <div className="text-lg font-black text-amber-600 leading-none">{mqttZone.setpoint.toFixed(1)}°</div>
+                                  <div className="text-lg font-black text-amber-600 leading-none">{mqttZone.setpoint != null ? mqttZone.setpoint.toFixed(1) : '--'}°</div>
                                 </div>
                                 <div className="min-w-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>
@@ -361,11 +340,11 @@ function App() {
                               <div className="flex gap-4 flex-1 items-center min-w-0">
                                 <div className="shrink-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Now</div>
-                                  <div className="text-lg font-black text-slate-700 leading-none">{cloudZone.temperature.toFixed(1)}°</div>
+                                  <div className="text-lg font-black text-slate-700 leading-none">{cloudZone.temperature != null ? cloudZone.temperature.toFixed(1) : '--'}°</div>
                                 </div>
                                 <div className="shrink-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Set</div>
-                                  <div className="text-lg font-black text-sky-600 leading-none">{cloudZone.setpoint.toFixed(1)}°</div>
+                                  <div className="text-lg font-black text-sky-600 leading-none">{cloudZone.setpoint != null ? cloudZone.setpoint.toFixed(1) : '--'}°</div>
                                 </div>
                                 <div className="min-w-0">
                                   <div className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Mode</div>

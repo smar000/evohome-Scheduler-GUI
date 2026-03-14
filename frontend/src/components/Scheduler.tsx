@@ -133,9 +133,9 @@ const EditPopover: React.FC<EditPopoverProps> = ({ anchor, initialTemp, startTim
   const timesChanged = start !== startTime || norm(end) !== norm(endTime);
   const hasValidTimes = timeToMinutes(start) < timeToMinutes(end);
   const tempChanged = isDhw || temp !== initialTemp;
-  const canApply = !isNewSlot && !timesChanged;
+  const canApply = !isNewSlot;
   const canAddSlot = hasValidTimes && (isNewSlot || timesChanged) && (isNewSlot || tempChanged);
-  const showTempHint = !isDhw && timesChanged && !tempChanged;
+  const showTempHint = isNewSlot && !isDhw && timesChanged && !tempChanged;
 
   return (
     <FloatingPortal>
@@ -201,9 +201,9 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
   const timesChanged = start !== startTime || norm(end) !== norm(endTime);
   const hasValidTimes = timeToMinutes(start) < timeToMinutes(end);
   const tempChanged = isDhw || temp !== initialTemp;
-  const canApply = !isNewSlot && !timesChanged;
+  const canApply = !isNewSlot;
   const canAddSlot = hasValidTimes && (isNewSlot || timesChanged) && (isNewSlot || tempChanged);
-  const showTempHint = !isDhw && timesChanged && !tempChanged;
+  const showTempHint = isNewSlot && !isDhw && timesChanged && !tempChanged;
 
   return (
     <>
@@ -631,145 +631,117 @@ export const Scheduler: React.FC = () => {
 
   return (
     <section className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col min-h-[600px] p-2 md:p-8">
-      <header className="mb-3 md:mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-3 md:gap-6">
-        <div className="flex items-center gap-4">
-          <div 
-            ref={refs.setReference}
-            onMouseDown={handleLongPressStart}
-            onMouseUp={handleLongPressEnd}
-            onMouseLeave={handleLongPressEnd}
-            onTouchStart={handleLongPressStart}
-            onTouchEnd={handleLongPressEnd}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg cursor-pointer transition-colors ${(['online', 'authenticated'].includes((provider?.gatewayStatus ?? '').toLowerCase())) ? 'bg-emerald-500 shadow-emerald-200 hover:bg-emerald-400' : 'bg-rose-500 shadow-rose-200 hover:bg-rose-400'}`}
-          >
-            {provider?.name === 'MQTT' ? <Cpu size={24}/> : <Cloud size={24}/>}
-          </div>
-          
-          {showProviderPopup && (
-            <FloatingPortal>
-              <div 
-                ref={refs.setFloating}
-                style={floatingStyles}
-                className="bg-white border border-slate-100 p-1 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
-              >
-                <div className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 mb-1 tracking-widest border-b border-slate-50">Select Provider</div>
-                <button 
-                  onClick={() => selectProvider('honeywell')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors"
-                >
-                  <Cloud size={16} className="text-sky-500" /> Cloud (Honeywell)
-                </button>
-                <button 
-                  onClick={() => selectProvider('mqtt')}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors"
-                >
-                  <Cpu size={16} className="text-emerald-500" /> Local (MQTT)
-                </button>
-              </div>
-            </FloatingPortal>
-          )}
-
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Schedule Manager</h2>
-          {isEmbedded && provider?.gatewayStatus && (
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-rose-50 text-rose-600 border-rose-100/50'}`}>
-                <div className={`w-1.5 h-1.5 rounded-full ${(['online', 'authenticated'].includes(provider.gatewayStatus.toLowerCase())) ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                <span className="text-[10px] font-black uppercase tracking-wider">
-                  {provider.name === 'Honeywell' ? 'TCC' : 'evoGateway'}: {provider.gatewayStatus}
-                </span>
-            </div>
-          )}
+      <header className="mb-4 flex items-center gap-2 sm:gap-3">
+        <div
+          ref={refs.setReference}
+          onMouseDown={handleLongPressStart}
+          onMouseUp={handleLongPressEnd}
+          onMouseLeave={handleLongPressEnd}
+          onTouchStart={handleLongPressStart}
+          onTouchEnd={handleLongPressEnd}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-md cursor-pointer transition-colors flex-shrink-0 ${(['online', 'authenticated'].includes((provider?.gatewayStatus ?? '').toLowerCase())) ? 'bg-emerald-500 shadow-emerald-200 hover:bg-emerald-400' : 'bg-rose-500 shadow-rose-200 hover:bg-rose-400'}`}
+        >
+          {provider?.name === 'MQTT' ? <Cpu size={18}/> : <Cloud size={18}/>}
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl">
-            <button onClick={() => setViewMode('zone')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><User size={16} className="inline mr-2"/>Zones</button>
-            <button onClick={() => setViewMode('day')} className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={16} className="inline mr-2"/>Days</button>
-          </div>
 
+        {showProviderPopup && (
+          <FloatingPortal>
+            <div
+              ref={refs.setFloating}
+              style={floatingStyles}
+              className="bg-white border border-slate-100 p-1 rounded-2xl shadow-2xl z-50 min-w-[180px] animate-in fade-in zoom-in-95 duration-100"
+            >
+              <div className="text-[10px] font-black uppercase text-slate-400 px-3 py-2 mb-1 tracking-widest border-b border-slate-50">Select Provider</div>
+              <button onClick={() => selectProvider('honeywell')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+                <Cloud size={16} className="text-sky-500" /> Cloud (Honeywell)
+              </button>
+              <button onClick={() => selectProvider('mqtt')} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-sm font-bold text-slate-700 transition-colors">
+                <Cpu size={16} className="text-emerald-500" /> Local (MQTT)
+              </button>
+            </div>
+          </FloatingPortal>
+        )}
+
+        {viewMode === 'zone' && <div className="hidden sm:block w-px h-6 bg-slate-100 flex-shrink-0" />}
+
+        {viewMode === 'zone' && (
+          <div className="w-28 sm:w-48 flex-shrink-0">
+            <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} compact />
+          </div>
+        )}
+
+        {viewMode === 'zone' && selectedZoneId && (() => {
+          const zoneStatus = zones.find(z => z.zoneId === selectedZoneId);
+          if (!zoneStatus) return null;
+          const modeNorm = zoneStatus.setpointMode.toLowerCase().replace(/[\s_]/g, '');
+          const isOverride = !modeNorm.startsWith('follow') && modeNorm !== 'unknown' && modeNorm !== '';
+          const modeLabel = isOverride
+            ? `Override${zoneStatus.until ? ` until ${new Date(zoneStatus.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
+            : 'Schedule';
+          return (
+            <div className="hidden sm:flex items-end gap-2 flex-shrink-0">
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current</span>
+                <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target</span>
+                <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mode</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>{modeLabel}</span>
+              </div>
+            </div>
+          );
+        })()}
+
+        <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+          {viewMode === 'zone' && selectedZoneId && (() => {
+            const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
+            const thresholdDays = uiConfig?.scheduleStaleThresholdDays ?? 7;
+            if (!fetchedAt) return <span className="text-[10px] font-black uppercase text-slate-300 hidden sm:block">Schedule: unknown</span>;
+            const ageMs = Date.now() - new Date(fetchedAt).getTime();
+            const ageHours = ageMs / 3600000;
+            const ageDays = ageHours / 24;
+            const ageMins = ageMs / 60000;
+            const label = ageMins < 1 ? 'Just now' : ageHours < 1 ? `${Math.round(ageMins)}m ago` : ageHours < 24 ? `${Math.round(ageHours)}h ago` : `${Math.round(ageDays)}d ago`;
+            const color = ageDays > thresholdDays ? 'text-red-400' : ageDays > 1 ? 'text-amber-400' : 'text-emerald-500';
+            return <span className={`text-[10px] font-black uppercase ${color} hidden sm:block`} title={new Date(fetchedAt).toLocaleString()}>Synced: {label}</span>;
+          })()}
+          {viewMode === 'zone' && selectedZoneId && (
+            <button onClick={() => handleZoneRefresh(selectedZoneId)} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-xs font-black transition-all" title="Refresh zone schedule (click twice within 20s to force from controller)">
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+          )}
+          {viewMode === 'day' && (
+            <button onClick={fetchAllSchedulesSequentially} className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-xs font-black transition-all" title="Reload schedules for all zones from the controller">
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh All</span>
+            </button>
+          )}
+          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
+            <Save size={14} /><span className="hidden sm:inline">Save</span>
+          </button>
+          <div className="w-px h-5 bg-slate-200 mx-0.5" />
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button onClick={() => setViewMode('zone')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'zone' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><User size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Zones</span></button>
+            <button onClick={() => setViewMode('day')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'day' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'}`}><Calendar size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Days</span></button>
+          </div>
         </div>
       </header>
 
       <main className="flex-1 overflow-y-auto">
-        {viewMode === 'zone' ? (
-          <div className="flex-1 flex items-end gap-4 md:gap-6 mb-4 md:mb-8">
-            <div className="max-w-xs w-full">
-              <ZoneSelector selectedZoneId={selectedZoneId} onSelectZone={setSelectedZoneId} />
-            </div>
-            {selectedZoneId && (() => {
-              const zoneStatus = zones.find(z => z.zoneId === selectedZoneId);
-              if (!zoneStatus) return null;
-              const modeNorm = zoneStatus.setpointMode.toLowerCase().replace(/[\s_]/g, '');
-              const isOverride = !modeNorm.startsWith('follow') && modeNorm !== 'unknown' && modeNorm !== '';
-              const modeLabel = isOverride
-                ? `Override${zoneStatus.until ? ` until ${new Date(zoneStatus.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
-                : 'Following Schedule';
-              return (
-                <div className="hidden sm:inline-grid grid-cols-[auto_auto_auto] gap-x-3 gap-y-0.5">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current</div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Target</div>
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mode</div>
-                  <div className="text-2xl font-black text-slate-700 leading-none">{zoneStatus.temperature.toFixed(1)}°</div>
-                  <div className="text-2xl font-black text-indigo-500 leading-none">{zoneStatus.setpoint.toFixed(1)}°</div>
-                  <div className={`text-sm font-black uppercase tracking-widest self-end leading-none ${isOverride ? 'text-amber-500' : 'text-indigo-500'}`}>{modeLabel}</div>
-                </div>
-              );
-            })()}
-            <div className="flex-1" />
-            {selectedZoneId && (() => {
-              const fetchedAt = schedules[selectedZoneId]?.fetchedAt;
-              const thresholdDays = uiConfig?.scheduleStaleThresholdDays ?? 7;
-              if (!fetchedAt) return <span className="text-[10px] font-black uppercase text-slate-300 hidden sm:block">Schedule: unknown</span>;
-              const ageMs = Date.now() - new Date(fetchedAt).getTime();
-              const ageHours = ageMs / 3600000;
-              const ageDays = ageHours / 24;
-              const ageMins = ageMs / 60000;
-              const label = ageMins < 1 ? 'Just now' : ageHours < 1 ? `${Math.round(ageMins)}m ago` : ageHours < 24 ? `${Math.round(ageHours)}h ago` : `${Math.round(ageDays)}d ago`;
-              const color = ageDays > thresholdDays ? 'text-red-400' : ageDays > 1 ? 'text-amber-400' : 'text-emerald-500';
-              return <span className={`text-[10px] font-black uppercase ${color} hidden sm:block`} title={new Date(fetchedAt).toLocaleString()}>Synced: {label}</span>;
-            })()}
-            {selectedZoneId && (
-                <button
-                    onClick={() => handleZoneRefresh(selectedZoneId)}
-                    className="flex items-center gap-2 px-5 py-2 bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl text-sm font-black transition-all"
-                    title="Refresh zone schedule (click twice within 20s to force from controller)"
-                >
-                    <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-                    <span className="hidden sm:inline">Refresh</span>
-                </button>
-            )}
-            <button
-                onClick={() => saveAllSchedules(schedules)}
-                disabled={!isDirty}
-                className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
-                title="Save all pending schedule changes to the controller"
-            >
-                <Save size={18} />Save
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-4 mb-4 md:mb-8 bg-slate-50 p-2 rounded-2xl w-fit">
+        {viewMode === 'day' && (
+          <div className="flex items-center gap-2 mb-4 bg-slate-50 p-2 rounded-2xl w-fit">
             {DAYS.map(day => (
-              <button 
-                key={day} 
+              <button
+                key={day}
                 onClick={() => setSelectedDay(day)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white text-indigo-600 shadow-md shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white text-indigo-600 shadow-md shadow-indigo-100' : 'text-slate-400 hover:text-slate-600'}`}
               >{day.substring(0, 3)}</button>
             ))}
-            <div className="h-6 w-px bg-slate-200 mx-2"></div>
-            <button
-                onClick={fetchAllSchedulesSequentially}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
-                title="Reload schedules for all zones from the controller"
-            >
-                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh All
-            </button>
-            <button
-                onClick={() => saveAllSchedules(schedules)}
-                disabled={!isDirty}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
-                title="Save all pending schedule changes to the controller"
-            >
-                <Save size={14} /> Save
-            </button>
           </div>
         )}
 
@@ -787,6 +759,28 @@ export const Scheduler: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {viewMode === 'zone' && selectedZoneId && (() => {
+          const zoneStatus = zones.find(z => z.zoneId === selectedZoneId);
+          if (!zoneStatus) return null;
+          const modeNorm = zoneStatus.setpointMode.toLowerCase().replace(/[\s_]/g, '');
+          const isOverride = !modeNorm.startsWith('follow') && modeNorm !== 'unknown' && modeNorm !== '';
+          const modeLabel = isOverride
+            ? `Override${zoneStatus.until ? ` until ${new Date(zoneStatus.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}`
+            : 'Schedule';
+          return (
+            <div className="sm:hidden flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-100">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Current</span>
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.temperature != null ? zoneStatus.temperature.toFixed(1) : '--'}°</span>
+              <span className="text-[10px] text-slate-300">→</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target</span>
+              <span className="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg tabular-nums">{zoneStatus.setpoint != null ? zoneStatus.setpoint.toFixed(1) : '--'}°</span>
+              <span className="text-slate-200 mx-0.5">·</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mode</span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-lg ${isOverride ? 'text-amber-600 bg-amber-50' : 'text-slate-500 bg-slate-100'}`}>{modeLabel}</span>
+            </div>
+          );
+        })()}
 
         {clipboard && (
             <div className="mt-8 flex items-center gap-3 px-4 py-3 bg-indigo-50 border border-indigo-100 rounded-2xl text-indigo-600 animate-in slide-in-from-bottom-2 duration-300">
