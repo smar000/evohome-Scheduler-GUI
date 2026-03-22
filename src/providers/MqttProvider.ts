@@ -161,8 +161,8 @@ export class MqttProvider implements HeatingProvider {
     this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/temperature`);
     this.client.subscribe(`${this.zonesTopic}/+/ctl_controller/zone_mode`);
     this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule`);
-    this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule_ts`);
-    this.client.subscribe(`${this.dhwTopic}/+/zone_schedule_ts`);
+    this.client.subscribe(`${this.zonesTopic}/+/+/zone_schedule/zone_schedule_ts`);
+    this.client.subscribe(`${this.dhwTopic}/+/zone_schedule/zone_schedule_ts`);
 
     // DHW
     this.client.subscribe(`${this.dhwTopic}/+/zone_schedule`);
@@ -183,7 +183,7 @@ export class MqttProvider implements HeatingProvider {
     if (topic.endsWith('_ts')) {
         if (topic.endsWith('/zone_schedule_ts')) {
             const parts = topic.split('/');
-            const zoneLabel = parts[parts.length - 3] || parts[parts.length - 2];
+            const zoneLabel = parts[parts.length - 4] || parts[parts.length - 3];
             const zoneId = this.labelToZoneId[zoneLabel] || zoneLabel;
             try {
                 const raw = payload.trim().replace(/^"|"$/g, '');
@@ -192,7 +192,11 @@ export class MqttProvider implements HeatingProvider {
                 if (!isNaN(date.getTime())) {
                     this.scheduleTimestamps[zoneId] = date;
                     if (zoneLabel !== zoneId) this.scheduleTimestamps[zoneLabel] = date;
-                    Logger.debug(`MQTT: Schedule timestamp for ${zoneLabel}: ${date.toISOString()}`);
+                    // Embed into stored schedules so fetchedAt travels with the schedule object
+                    const iso = date.toISOString();
+                    if (this.schedules[zoneId]) this.schedules[zoneId] = { ...this.schedules[zoneId], fetchedAt: iso };
+                    if (zoneLabel !== zoneId && this.schedules[zoneLabel]) this.schedules[zoneLabel] = { ...this.schedules[zoneLabel], fetchedAt: iso };
+                    Logger.debug(`MQTT: Schedule timestamp for ${zoneLabel}: ${iso}`);
                 }
             } catch { /* ignore malformed */ }
         }
@@ -295,6 +299,17 @@ export class MqttProvider implements HeatingProvider {
             
             const resolvedId = zoneId || zoneLabel;
             if (resolvedId) {
+                // If zone_idx gave us a confirmed numeric ID and the label isn't yet mapped,
+                // record it now — zone_schedule is the most reliable source for label→ID
+                if (zoneId && zoneLabel && zoneLabel !== zoneId && !this.labelToZoneId[zoneLabel]) {
+                    this.labelToZoneId[zoneLabel] = zoneId;
+                    // Migrate any _ts timestamp stored under the label before this mapping was known
+                    if (this.scheduleTimestamps[zoneLabel] && !this.scheduleTimestamps[zoneId]) {
+                        this.scheduleTimestamps[zoneId] = this.scheduleTimestamps[zoneLabel];
+                        Logger.debug(`MQTT: Migrated schedule timestamp from label "${zoneLabel}" to zone ID ${zoneId}`);
+                    }
+                }
+
                 const schedule = this.translateScheduleFromMqtt(data);
                 schedule.name = resolvedId === 'dhw' ? "Hot Water" : (this.zoneIdToMapping[resolvedId]?.name || zoneLabel);
                 // Cache under both the derived zone ID and the topic label for resilient lookups
@@ -385,10 +400,10 @@ export class MqttProvider implements HeatingProvider {
                 // If we found a mismatch (different label for same ID) or new mapping, update the cache
                 if (rawZoneId && (!this.zoneIdToMapping[zoneId] || this.zoneIdToMapping[zoneId].label !== zoneLabel)) {
                     Logger.info(`MQTT: Mapping discovered/updated for ${zoneLabel} to zone ID ${zoneId}`);
-                    this.zoneIdToMapping[zoneId] = { 
-                        name: data.name || (this.zoneIdToMapping[zoneId]?.name) || zoneLabel, 
-                        label: zoneLabel, 
-                        honeywellId: this.zoneIdToMapping[zoneId]?.honeywellId || "" 
+                    this.zoneIdToMapping[zoneId] = {
+                        name: data.name || (this.zoneIdToMapping[zoneId]?.name) || zoneLabel,
+                        label: zoneLabel,
+                        honeywellId: this.zoneIdToMapping[zoneId]?.honeywellId || ""
                     };
                     this.labelToZoneId[zoneLabel] = zoneId;
                     this.saveZoneMapping();
@@ -462,14 +477,17 @@ export class MqttProvider implements HeatingProvider {
   async getAllSchedules(): Promise<Record<string, ZoneSchedule>> {
     const result: Record<string, ZoneSchedule> = {};
     for (const [id, schedule] of Object.entries(this.schedules)) {
-        result[id] = { ...schedule, fetchedAt: this.scheduleTimestamps[id]?.toISOString() };
+        // fetchedAt is embedded when _ts arrives; fall back to scheduleTimestamps for the
+        // edge case where _ts arrived before zone_schedule (schedule object didn't exist yet)
+        result[id] = { ...schedule, fetchedAt: schedule.fetchedAt ?? this.scheduleTimestamps[id]?.toISOString() };
     }
     return result;
   }
 
   async getScheduleForId(id: string, force = false): Promise<ZoneSchedule> {
     if (!force && this.schedules[id]) {
-        return { ...this.schedules[id], fetchedAt: this.scheduleTimestamps[id]?.toISOString() };
+        const s = this.schedules[id];
+        return { ...s, fetchedAt: s.fetchedAt ?? this.scheduleTimestamps[id]?.toISOString() };
     }
 
     return new Promise((resolve, reject) => {
