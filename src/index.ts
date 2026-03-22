@@ -513,10 +513,6 @@ app.post('/rest/cancelzoneoverride', async (req, res) => {
     }
 });
 
-app.get('/rest/setloglevel', (req, res) => {
-    const level = req.query.level;
-    res.json({ loglevel: level });
-});
 
 app.get('/rest/api', (req, res) => {
     res.setHeader('Content-Type', 'text/html');
