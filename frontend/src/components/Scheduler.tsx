@@ -265,6 +265,7 @@ export const Scheduler: React.FC = () => {
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
   const [clipboard, setClipboard] = useState<any[] | null>(null);
   const [clipboardSource, setClipboardSource] = useState<string | null>(null);
+  const [clipboardMessage, setClipboardMessage] = useState<string | null>(null);
   const [showProviderPopup, setShowProviderPopup] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
@@ -273,6 +274,9 @@ export const Scheduler: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<{
     key: string; day: string; zoneId: string; element: HTMLElement; relX: number;
     startTime: string; endTime: string; val: number;
+  } | null>(null);
+  const [selectedLabel, setSelectedLabel] = useState<{
+    element: HTMLElement; dayName: string; zoneId: string; label: string;
   } | null>(null);
   const [, setTick] = useState(0);
 
@@ -354,6 +358,26 @@ export const Scheduler: React.FC = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [selectedSlot, toolbarRefs.floating]);
+
+  const { refs: labelRefs, floatingStyles: labelFloatingStyles } = useFloating({
+    placement: 'top',
+    middleware: [offset(6), shift({ padding: 4 })],
+  });
+
+  useEffect(() => {
+    labelRefs.setReference(selectedLabel?.element ?? null);
+  }, [selectedLabel]);
+
+  useEffect(() => {
+    if (!selectedLabel) return;
+    const handler = (e: MouseEvent) => {
+      if (!labelRefs.floating.current?.contains(e.target as Node)) {
+        setSelectedLabel(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [selectedLabel, labelRefs.floating]);
 
   const handleLongPressStart = () => {
     const timer = setTimeout(() => {
@@ -469,8 +493,10 @@ export const Scheduler: React.FC = () => {
   const handleCopy = (dayName: string, zoneId: string, rowLabel: string) => {
     const daySchedule = schedules[zoneId]?.schedule.find(s => s.dayOfWeek === dayName);
     if (daySchedule) {
+        const zoneName = zones.find(z => z.zoneId === zoneId)?.name ?? (dhw?.dhwId === zoneId ? 'Hot Water' : zoneId);
         setClipboard([...daySchedule.switchpoints]);
         setClipboardSource(rowLabel);
+        setClipboardMessage(`${dayName}'s schedule copied from ${zoneName}`);
     }
   };
 
@@ -586,7 +612,13 @@ export const Scheduler: React.FC = () => {
 
     return (
       <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
-        <div className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight">{label}</div>
+        <div
+          className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors select-none"
+          onClick={(e) => { e.stopPropagation(); setSelectedSlot(null); setSelectedLabel({ element: e.currentTarget, dayName, zoneId, label }); }}
+          title={viewMode === 'zone' ? `View ${dayName} across all zones` : `View ${label} schedule`}
+        >
+          {label}
+        </div>
         <div className="flex-1 h-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 dark:border-slate-700 relative" onClick={() => setSelectedSlot(null)}>
           {hasData ? slots : (
               <div
@@ -780,13 +812,6 @@ export const Scheduler: React.FC = () => {
           );
         })()}
 
-        {clipboard && (
-            <div className="mt-8 flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 rounded-2xl text-indigo-600 dark:text-indigo-300 animate-in slide-in-from-bottom-2 duration-300">
-                <ClipboardCheck size={18} />
-                <span className="text-xs font-bold">Day schedule copied from <span className="font-black underline">{clipboardSource}</span>. Ready to paste!</span>
-                <button onClick={() => setClipboard(null)} className="ml-auto text-indigo-300 dark:text-indigo-600 hover:text-indigo-600 dark:hover:text-indigo-400"><X size={16}/></button>
-            </div>
-        )}
       </main>
 
       <footer className="mt-3 md:mt-8 pt-3 md:pt-6 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-slate-400 dark:text-slate-500">
@@ -841,6 +866,35 @@ export const Scheduler: React.FC = () => {
         return isMobile ? <EditBottomSheet {...sharedProps} /> : <EditPopover {...sharedProps} />;
       })()}
 
+      {selectedLabel && (
+        <FloatingPortal>
+          <div
+            ref={labelRefs.setFloating}
+            style={labelFloatingStyles}
+            className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-1.5 z-50"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                if (viewMode === 'zone') {
+                  setSelectedDay(selectedLabel.dayName);
+                  setViewMode('day');
+                } else {
+                  setSelectedZoneId(selectedLabel.zoneId);
+                  setViewMode('zone');
+                }
+                setSelectedLabel(null);
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl transition-colors text-xs font-bold"
+              title={viewMode === 'zone' ? `Switch to day view for ${selectedLabel.dayName}` : `Switch to zone view for ${selectedLabel.label}`}
+            >
+              {viewMode === 'zone' ? <Calendar size={13} /> : <User size={13} />}
+              {viewMode === 'zone' ? selectedLabel.dayName : selectedLabel.label}
+            </button>
+          </div>
+        </FloatingPortal>
+      )}
+
       {selectedSlot && (
         <FloatingPortal>
           <div
@@ -883,6 +937,15 @@ export const Scheduler: React.FC = () => {
           </div>
         </FloatingPortal>
       )}
+
+      <div
+        className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${clipboard ? 'translate-y-0' : 'translate-y-full'}`}
+        style={{ backgroundColor: 'var(--notification-bg)', color: 'var(--notification-color)' }}
+      >
+        <ClipboardCheck size={16} className="text-indigo-400 flex-shrink-0" />
+        <span className="text-xs font-bold uppercase tracking-widest">{clipboardMessage} — Ready to paste!</span>
+        <button onClick={() => { setClipboard(null); setClipboardMessage(null); }} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Clear clipboard"><X size={16} /></button>
+      </div>
     </section>
   );
 };
