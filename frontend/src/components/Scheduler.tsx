@@ -612,7 +612,7 @@ export const Scheduler: React.FC = () => {
               </div>
           )}
         </div>
-        <div className="hidden sm:flex w-16 items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
+        <div className="flex w-16 items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
             {hasData && (
                 <>
                     <button onClick={() => handleCopy(dayName, zoneId, label)} className={`p-2 lg:p-1.5 rounded-lg transition-colors ${isSource ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}`}><Copy size={16} className="lg:w-[14px] lg:h-[14px]" /></button>
