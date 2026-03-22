@@ -783,7 +783,7 @@ export const Scheduler: React.FC = () => {
                 {viewMode === 'zone' ? (
                   selectedZoneId ? DAYS.map(day => renderRow(day.substring(0, 3), day, selectedZoneId)) : <div className="py-20 text-center text-slate-400 dark:text-slate-500 font-bold">Select a zone to view schedule</div>
                 ) : (
-                  [...zones, ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : [])].map(z => renderRow(z.name, selectedDay, z.zoneId))
+                  [...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : []), ...[...zones].sort((a, b) => a.name.localeCompare(b.name))].map(z => renderRow(z.name, selectedDay, z.zoneId))
                 )}
               </div>
             </div>
