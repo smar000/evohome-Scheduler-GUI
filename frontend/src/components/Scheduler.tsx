@@ -280,6 +280,9 @@ export const Scheduler: React.FC = () => {
   } | null>(null);
   const [, setTick] = useState(0);
 
+  const todayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
+  const currentMinutePct = (new Date().getHours() * 60 + new Date().getMinutes()) / 1440 * 100;
+
 
   const handleZoneRefresh = async (zoneId: string) => {
     const now = Date.now();
@@ -538,13 +541,17 @@ export const Scheduler: React.FC = () => {
               </div>
             );
           })}
+          <div style={{ left: `${currentMinutePct}%` }} className="absolute top-0 bottom-0 w-px bg-red-400/60 pointer-events-none z-20">
+            <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-400" />
+          </div>
         </div>
-        <div className="hidden sm:block w-16 opacity-0" />
+        <div className="w-16 opacity-0" />
       </div>
     );
   };
 
   const renderRow = (label: string, dayName: string, zoneId: string) => {
+    const isToday = viewMode === 'zone' ? dayName === todayName : selectedDay === todayName;
     const isDhw = zoneId === dhw?.dhwId;
     const zoneSchedule = schedules[zoneId];
     const hasData = zoneSchedule && zoneSchedule.schedule && zoneSchedule.schedule.length > 0;
@@ -611,15 +618,19 @@ export const Scheduler: React.FC = () => {
     const isSource = clipboardSource === label;
 
     return (
-      <div key={`${zoneId}-${dayName}`} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
+      <div key={`${zoneId}-${dayName}`} style={isToday && viewMode === 'zone' ? { filter: 'brightness(1.12) saturate(1.2)' } : undefined} className="flex items-center group gap-1 sm:gap-2 mb-1 last:mb-0">
         <div
-          className="w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors select-none"
+          className={`w-10 sm:w-24 pr-1 sm:pr-2 text-right text-[10px] font-black uppercase tracking-widest leading-tight cursor-pointer hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors select-none flex items-center justify-end gap-1 ${isToday ? 'text-red-400 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'}`}
           onClick={(e) => { e.stopPropagation(); setSelectedSlot(null); setSelectedLabel({ element: e.currentTarget, dayName, zoneId, label }); }}
           title={viewMode === 'zone' ? `View ${dayName} across all zones` : `View ${label} schedule`}
         >
+          {isToday && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
           {label}
         </div>
-        <div className="flex-1 h-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 dark:border-slate-700 relative" onClick={() => setSelectedSlot(null)}>
+        <div className={`flex-1 h-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 dark:border-slate-700 relative dark:[filter:saturate(0.88)_brightness(0.92)] ${isToday && viewMode === 'zone' ? 'ring-2 ring-slate-400/60 dark:ring-0 dark:outline dark:outline-2 dark:outline-white/30' : ''}`} onClick={() => setSelectedSlot(null)}>
+          {isToday && viewMode === 'zone' && (
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400/60 dark:bg-red-400/50 pointer-events-none z-20" />
+          )}
           {hasData ? slots : (
               <div
                   className="flex-1 flex items-center justify-center gap-2 text-slate-300 dark:text-slate-600 hover:text-indigo-400 dark:hover:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-900/20 cursor-pointer transition-colors"
@@ -643,6 +654,11 @@ export const Scheduler: React.FC = () => {
                   <span className="text-[10px] font-bold uppercase tracking-widest">Add first slot</span>
               </div>
           )}
+
+          <div
+            style={{ left: `${currentMinutePct}%`, filter: isToday ? 'drop-shadow(0 0 2px rgba(0,0,0,0.25))' : 'drop-shadow(0 0 1.5px rgba(0,0,0,0.55))' }}
+            className={`absolute top-0 bottom-0 pointer-events-none z-20 ${isToday ? 'w-0.5 bg-red-400/90' : 'w-px bg-white/75'}`}
+          />
         </div>
         <div className="flex w-16 items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity pr-2">
             {hasData && (
@@ -770,7 +786,12 @@ export const Scheduler: React.FC = () => {
                 key={day}
                 onClick={() => setSelectedDay(day)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${selectedDay === day ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-md shadow-indigo-100 dark:shadow-indigo-900/50' : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'}`}
-              >{day.substring(0, 3)}</button>
+              >
+                <span className="flex items-center gap-1">
+                  {day === todayName && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
+                  {day.substring(0, 3)}
+                </span>
+              </button>
             ))}
           </div>
         )}

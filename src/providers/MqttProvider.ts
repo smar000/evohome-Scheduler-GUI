@@ -196,7 +196,7 @@ export class MqttProvider implements HeatingProvider {
                     const iso = date.toISOString();
                     if (this.schedules[zoneId]) this.schedules[zoneId] = { ...this.schedules[zoneId], fetchedAt: iso };
                     if (zoneLabel !== zoneId && this.schedules[zoneLabel]) this.schedules[zoneLabel] = { ...this.schedules[zoneLabel], fetchedAt: iso };
-                    Logger.debug(`MQTT: Schedule timestamp for ${zoneLabel}: ${iso}`);
+                    Logger.silly(`MQTT: Schedule timestamp for ${zoneLabel}: ${iso}`);
                 }
             } catch { /* ignore malformed */ }
         }
