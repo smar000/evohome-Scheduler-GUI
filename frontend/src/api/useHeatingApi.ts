@@ -22,6 +22,11 @@ const api = axios.create({
   timeout: 15000,
 });
 
+const saveApi = axios.create({
+  baseURL: '/rest',
+  timeout: 60000,
+});
+
 export const useHeatingApi = () => {
   const {
     setZones,
@@ -36,6 +41,8 @@ export const useHeatingApi = () => {
     setProviderInfo,
     setUiConfig,
     markScheduleFailed,
+    markSaveZoneFailed,
+    clearSaveFailedZones,
     setMqttSnapshot,
     setCloudSnapshot,
     setProvidersStatus,
@@ -118,26 +125,37 @@ export const useHeatingApi = () => {
     }
   };
 
-  const saveAllSchedules = async (schedules: Record<string, ZoneSchedule>) => {
+  const saveAllSchedules = async (
+    schedules: Record<string, ZoneSchedule>,
+    onProgress?: (message: string) => void
+  ): Promise<{ saved: string[]; failed: string[] }> => {
+    const changed = Object.entries(schedules).filter(([id, s]) => !isEqual(s, originalSchedules[id]));
+    if (changed.length === 0) return { saved: [], failed: [] };
+
+    clearSaveFailedZones();
     setLoading(true);
-    try {
-      const changedSchedules: Record<string, ZoneSchedule> = {};
-      let changeCount = 0;
-      for (const zoneId in schedules) {
-          if (!isEqual(schedules[zoneId], originalSchedules[zoneId])) {
-              changedSchedules[zoneId] = schedules[zoneId];
-              changeCount++;
-          }
+    const saved: string[] = [];
+    const failed: string[] = [];
+
+    for (let i = 0; i < changed.length; i++) {
+      const [zoneId, schedule] = changed[i];
+      const progress = `Saving ${schedule.name} (${i + 1} of ${changed.length})...`;
+      setLoadingMessage(progress);
+      onProgress?.(progress);
+      try {
+        await saveApi.post(`/savescheduleforzone/${zoneId}`, schedule);
+        setZoneSchedule(zoneId, schedule, true);
+        saved.push(schedule.name);
+      } catch {
+        markSaveZoneFailed(zoneId);
+        failed.push(schedule.name);
       }
-      if (changeCount === 0) { setLoading(false); return; }
-      await api.post('/saveallschedules', changedSchedules);
-      setInitialSchedules(schedules);
-      setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save schedules');
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
+    setLoadingMessage(null);
+    setError(failed.length > 0 ? `${failed.length} zone${failed.length > 1 ? 's' : ''} failed to save` : null);
+    return { saved, failed };
   };
 
   const refreshMqttMappings = async () => {

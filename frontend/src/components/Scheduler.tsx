@@ -254,7 +254,7 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
 type ViewMode = 'zone' | 'day';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, uiConfig } = useHeatingStore();
+  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, saveFailedZones, uiConfig } = useHeatingStore();
   const { saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
   
   const resolution = uiConfig?.timeResolution || 10;
@@ -360,6 +360,20 @@ export const Scheduler: React.FC = () => {
       setTimeout(() => setNotification(null), 6000);
     };
     reader.readAsText(file);
+  };
+
+  const handleSave = async () => {
+    setNotification({ type: 'success', message: 'Starting save...' });
+    const { saved, failed } = await saveAllSchedules(schedules, (msg) => setNotification({ type: 'success', message: msg }));
+    if (saved.length === 0 && failed.length === 0) { setNotification(null); return; }
+    if (failed.length === 0) {
+      setNotification({ type: 'success', message: `Saved: ${saved.join(', ')}` });
+    } else if (saved.length === 0) {
+      setNotification({ type: 'error', message: `Save failed — ${failed.join(', ')}` });
+    } else {
+      setNotification({ type: 'error', message: `Saved ${saved.length} · Failed: ${failed.join(', ')}` });
+    }
+    setTimeout(() => setNotification(null), 7000);
   };
 
   const handleZoneRefresh = async (zoneId: string) => {
@@ -712,6 +726,7 @@ export const Scheduler: React.FC = () => {
           title={viewMode === 'zone' ? `View ${dayName} across all zones` : `View ${label} schedule`}
         >
           {isToday && <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />}
+          {saveFailedZones.has(zoneId) && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" title="Failed to save" />}
           {label}
         </div>
         <div className={`flex-1 h-10 bg-slate-50 dark:bg-slate-900/50 rounded-xl overflow-hidden flex shadow-inner border border-slate-100 dark:border-slate-700 relative dark:[filter:saturate(0.88)_brightness(0.92)] ${isToday && viewMode === 'zone' ? 'ring-2 ring-slate-400/60 dark:ring-0 dark:outline dark:outline-2 dark:outline-white/30' : ''}`} onClick={() => setSelectedSlot(null)}>
@@ -854,7 +869,7 @@ export const Scheduler: React.FC = () => {
               <span className="hidden sm:inline">Refresh All</span>
             </button>
           )}
-          <button onClick={() => saveAllSchedules(schedules)} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
+          <button onClick={handleSave} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
             <Save size={14} /><span className="hidden sm:inline">Save</span>
           </button>
           <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-0.5" />

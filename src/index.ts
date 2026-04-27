@@ -456,6 +456,16 @@ app.post('/rest/saveallschedules', async (req, res) => {
     }
 });
 
+app.post('/rest/savescheduleforzone/:zoneId', async (req, res) => {
+    try {
+        const { zoneId } = req.params;
+        await activeProvider.saveScheduleForZone(zoneId, req.body);
+        res.json({ status: "Ok" });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 app.post('/rest/setsystemmode', async (req, res) => {
     try {
         const { mode, until } = req.body;

@@ -438,27 +438,23 @@ export class MqttProvider implements HeatingProvider {
     return { name: "", schedule: dailySchedules };
   }
 
-  private translateScheduleToMqtt(zoneId: string, schedule: ZoneSchedule): any {
-    const isDhw = zoneId === 'HW' || zoneId === 'DH';
+  private translateDayToMqtt(zoneId: string, ds: ZoneSchedule['schedule'][number], isDhw: boolean): any {
     return {
       command: "set_schedule",
       zone_idx: zoneId,
-      schedule: schedule.schedule.map(ds => ({
+      schedule: [{
         day_of_week: DAYS.indexOf(ds.dayOfWeek),
         switchpoints: ds.switchpoints.map(sw => {
-            const sp: any = { time_of_day: sw.timeOfDay };
-            if (isDhw) {
-                if (sw.state !== undefined) {
-                    sp.enabled = (sw.state === "On" || (sw.state as any) === true);
-                } else if (sw.heatSetpoint !== undefined) {
-                    sp.enabled = sw.heatSetpoint > 0;
-                }
-            } else {
-                if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
-            }
-            return sp;
+          const sp: any = { time_of_day: sw.timeOfDay };
+          if (isDhw) {
+            if (sw.state !== undefined) sp.enabled = (sw.state === "On" || (sw.state as any) === true);
+            else if (sw.heatSetpoint !== undefined) sp.enabled = sw.heatSetpoint > 0;
+          } else {
+            if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
+          }
+          return sp;
         })
-      }))
+      }]
     };
   }
 
@@ -510,8 +506,14 @@ export class MqttProvider implements HeatingProvider {
 
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
     const hexId = zoneId === 'dhw' ? 'HW' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
-    const command = this.translateScheduleToMqtt(hexId, schedule);
-    this.client?.publish(this.commandTopic, JSON.stringify(command));
+    const isDhw = hexId === 'HW';
+    const delay = this.config.saveDayDelayMs ?? 1500;
+    for (let i = 0; i < schedule.schedule.length; i++) {
+      const command = this.translateDayToMqtt(hexId, schedule.schedule[i], isDhw);
+      this.client?.publish(this.commandTopic, JSON.stringify(command));
+      Logger.debug(`MQTT: Saved ${schedule.schedule[i].dayOfWeek} for zone ${zoneId} (day ${i + 1}/${schedule.schedule.length})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 
   async setZoneSetpoint(zoneId: string, setpoint: number, until?: string): Promise<void> {

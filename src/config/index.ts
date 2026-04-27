@@ -31,6 +31,7 @@ export const config = {
     retainedWindow: parseInt(process.env.MQTT_RETAINED_WINDOW || '1000', 10),
     scheduleTimeout: parseInt(process.env.MQTT_SCHEDULE_TIMEOUT || '10000', 10),
     scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
+    saveDayDelayMs: parseInt(process.env.MQTT_SAVE_DAY_DELAY_MS || '2500', 10),
   },
 
   scheduler: {
