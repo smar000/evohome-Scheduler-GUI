@@ -33,6 +33,7 @@ export const config = {
     scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
     saveDayDelayMs: parseInt(process.env.MQTT_SAVE_DAY_DELAY_MS || '2500', 10),
     saveConfirmTimeoutMs: parseInt(process.env.MQTT_SAVE_CONFIRM_TIMEOUT || '30000', 10),
+    saveMode: (process.env.MQTT_SAVE_MODE as 'week' | 'day') || 'day',
   },
 
   scheduler: {
@@ -41,6 +42,7 @@ export const config = {
     longPressMs: parseInt(process.env.SCHEDULER_LONG_PRESS_MS || '600', 10),
     apiTimeout: parseInt(process.env.FRONTEND_API_TIMEOUT || '15000', 10),
     scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
+    mqttSaveMode: (process.env.MQTT_SAVE_MODE as 'week' | 'day') || 'day',
     accentColor: process.env.ACCENT_COLOR || '#6366f1',
     dhwColors: (() => {
       const defaults = { on: '#6366f1', off: '#e2e8f0' };

@@ -466,23 +466,23 @@ export class MqttProvider implements HeatingProvider {
     return { name: "", schedule: dailySchedules };
   }
 
-  private translateDayToMqtt(zoneId: string, ds: ZoneSchedule['schedule'][number], isDhw: boolean): any {
+  private buildSetScheduleCommand(hexId: string, days: ZoneSchedule['schedule'], isDhw: boolean): any {
     return {
-      command: "set_schedule",
-      zone_idx: zoneId,
-      schedule: [{
+      command: 'set_schedule',
+      zone_idx: hexId,
+      schedule: days.map(ds => ({
         day_of_week: DAYS.indexOf(ds.dayOfWeek),
         switchpoints: ds.switchpoints.map(sw => {
           const sp: any = { time_of_day: sw.timeOfDay };
           if (isDhw) {
-            if (sw.state !== undefined) sp.enabled = (sw.state === "On" || (sw.state as any) === true);
+            if (sw.state !== undefined) sp.enabled = (sw.state === 'On' || (sw.state as any) === true);
             else if (sw.heatSetpoint !== undefined) sp.enabled = sw.heatSetpoint > 0;
           } else {
             if (sw.heatSetpoint !== undefined) sp.heat_setpoint = sw.heatSetpoint;
           }
           return sp;
         })
-      }]
+      }))
     };
   }
 
@@ -550,27 +550,24 @@ export class MqttProvider implements HeatingProvider {
     const isDhw = hexId === 'HW';
     const delayMs = this.config.saveDayDelayMs ?? 2500;
     const confirmTimeoutMs = this.config.saveConfirmTimeoutMs ?? 30000;
-    const failedDays: string[] = [];
 
-    for (let i = 0; i < schedule.schedule.length; i++) {
-      const ds = schedule.schedule[i];
-      const command = this.translateDayToMqtt(hexId, ds, isDhw);
-      const confirmPromise = this.awaitCommandConfirmation(hexId, confirmTimeoutMs);
-      this.client?.publish(this.commandTopic, JSON.stringify(command));
-      Logger.debug(`MQTT: → set_schedule ${ds.dayOfWeek} zone ${schedule.name} (${i + 1}/${schedule.schedule.length})`);
-      const { success, raw } = await confirmPromise;
-      if (success) {
-        Logger.info(`MQTT: ✓ ${ds.dayOfWeek} confirmed for zone ${schedule.name}`);
-      } else {
-        Logger.warn(`MQTT: ✗ ${ds.dayOfWeek} failed for zone ${schedule.name}: ${raw}`);
-        failedDays.push(ds.dayOfWeek);
-      }
-      await new Promise(r => setTimeout(r, delayMs));
+    const command = this.buildSetScheduleCommand(hexId, schedule.schedule, isDhw);
+    const dayCount = schedule.schedule.length;
+    const label = dayCount === 1 ? schedule.schedule[0].dayOfWeek : `all ${dayCount} days`;
+
+    const confirmPromise = this.awaitCommandConfirmation(hexId, confirmTimeoutMs);
+    this.client?.publish(this.commandTopic, JSON.stringify(command));
+    Logger.debug(`MQTT: → set_schedule ${label} for zone ${schedule.name}`);
+
+    const { success, raw } = await confirmPromise;
+    if (success) {
+      Logger.info(`MQTT: ✓ ${label} confirmed for zone ${schedule.name}`);
+    } else {
+      Logger.warn(`MQTT: ✗ ${label} no confirmation for zone ${schedule.name}: ${raw}`);
+      throw new Error(raw);
     }
 
-    if (failedDays.length > 0) {
-      throw new Error(`Days without confirmation: ${failedDays.join(', ')}`);
-    }
+    await new Promise(r => setTimeout(r, delayMs));
   }
 
   async setZoneSetpoint(zoneId: string, setpoint: number, until?: string): Promise<void> {

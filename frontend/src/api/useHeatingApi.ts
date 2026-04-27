@@ -142,20 +142,46 @@ export const useHeatingApi = () => {
     setLoading(true);
     const saved: string[] = [];
     const failed: string[] = [];
+    const saveMode = useHeatingStore.getState().uiConfig?.mqttSaveMode ?? 'day';
 
     for (let i = 0; i < changed.length; i++) {
       const [zoneId, schedule] = changed[i];
-      const progress = `Saving ${schedule.name} (${i + 1} of ${changed.length})...`;
-      setLoadingMessage(progress);
-      onProgress?.(progress);
-      try {
-        await saveApi.post(`/savescheduleforzone/${zoneId}`, schedule);
-        setZoneSchedule(zoneId, schedule, true);
-        saved.push(schedule.name);
-      } catch (err: any) {
-        markSaveZoneFailed(zoneId);
-        const detail = err?.response?.data?.error || err?.message || '';
-        failed.push(detail ? `${schedule.name}: ${detail}` : schedule.name);
+
+      if (saveMode === 'week') {
+        const progress = `Saving ${schedule.name} (${i + 1} of ${changed.length})...`;
+        setLoadingMessage(progress);
+        onProgress?.(progress);
+        try {
+          await saveApi.post(`/savescheduleforzone/${zoneId}`, schedule);
+          setZoneSchedule(zoneId, schedule, true);
+          saved.push(schedule.name);
+        } catch (err: any) {
+          markSaveZoneFailed(zoneId);
+          const detail = err?.response?.data?.error || err?.message || '';
+          failed.push(detail ? `${schedule.name}: ${detail}` : schedule.name);
+        }
+      } else {
+        // Day-by-day: one HTTP call per day → granular progress + per-day ACK
+        const dayFailed: string[] = [];
+        for (let d = 0; d < schedule.schedule.length; d++) {
+          const day = schedule.schedule[d];
+          const progress = `Saving ${schedule.name} · ${day.dayOfWeek.substring(0, 3)} (${i + 1} of ${changed.length})`;
+          setLoadingMessage(progress);
+          onProgress?.(progress);
+          try {
+            await saveApi.post(`/savescheduleforzone/${zoneId}`, { name: schedule.name, schedule: [day] });
+          } catch (err: any) {
+            const detail = err?.response?.data?.error || err?.message || '';
+            dayFailed.push(detail ? `${day.dayOfWeek}: ${detail}` : day.dayOfWeek);
+          }
+        }
+        if (dayFailed.length === 0) {
+          setZoneSchedule(zoneId, schedule, true);
+          saved.push(schedule.name);
+        } else {
+          markSaveZoneFailed(zoneId);
+          failed.push(`${schedule.name} (${dayFailed.join('; ')})`);
+        }
       }
     }
 

@@ -45,6 +45,7 @@ interface HeatingState {
       longPressMs: number;
       apiTimeout: number;
       scheduleStaleThresholdDays?: number;
+      mqttSaveMode?: 'week' | 'day';
       accentColor?: string;
       dhwColors?: { on: string; off: string };
       tempColors?: { maxTemp?: number; color: string }[];

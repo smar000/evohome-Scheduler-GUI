@@ -251,8 +251,9 @@ System behavior is managed via environment variables.
 | `HONEYWELL_LOGIN_LIMIT` | `15` | Minimum minutes between full password re-authentications (guards against rate-limiting). |
 | `MQTT_RECONNECT_PERIOD` | `5000` | Milliseconds between MQTT reconnection attempts. |
 | `MQTT_SCHEDULE_TIMEOUT` | `10000` | Milliseconds to wait for an MQTT schedule response. |
-| `MQTT_SAVE_DAY_DELAY_MS` | `2500` | Delay (ms) between successive per-day schedule publishes when saving via MQTT. The RF layer (0404 messages) needs time to acknowledge each day before the next arrives; increase for zones with many switchpoints or if the evogateway log shows errors after saves. |
-| `MQTT_SAVE_CONFIRM_TIMEOUT` | `30000` | Milliseconds to wait for the gateway to acknowledge each per-day schedule command on the `_lastcommand` topic. If no ACK arrives within this window the day is marked as failed. |
+| `MQTT_SAVE_MODE` | `day` | Schedule save granularity. `day` sends one `set_schedule` RF command per day with an individual ACK wait — safer for crowded RF environments with multiple zones. `week` sends all 7 days in a single command per zone — faster and lower RF overhead, suitable for single-zone saves or less congested installations. |
+| `MQTT_SAVE_DAY_DELAY_MS` | `2500` | Delay (ms) after each `set_schedule` command to pace RF traffic. In `day` mode this gap separates individual day commands; in `week` mode it separates zone commands. |
+| `MQTT_SAVE_CONFIRM_TIMEOUT` | `30000` | Milliseconds to wait for the gateway to acknowledge each `set_schedule` command on the `_lastcommand` topic. If no ACK arrives within this window the command is marked as failed. |
 | `SCHEDULER_TIME_RESOLUTION` | `10` | The granularity of the grid (in minutes). |
 | `SCHEDULER_DEFAULT_TEMP` | `20` | Default temperature for newly created slots. |
 
