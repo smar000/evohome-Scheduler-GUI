@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2, Download, Upload } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -279,10 +279,88 @@ export const Scheduler: React.FC = () => {
     element: HTMLElement; dayName: string; zoneId: string; label: string;
   } | null>(null);
   const [, setTick] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const todayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
   const currentMinutePct = (new Date().getHours() * 60 + new Date().getMinutes()) / 1440 * 100;
 
+
+  const triggerDownload = (payload: object, filename: string) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportZone = () => {
+    if (!selectedZoneId || !schedules[selectedZoneId]) return;
+    setShowExportMenu(false);
+    const zone = schedules[selectedZoneId];
+    const slug = zone.name.toLowerCase().replace(/\s+/g, '-');
+    triggerDownload(
+      { exportedAt: new Date().toISOString(), version: 1, schedules: { [selectedZoneId]: zone } },
+      `evohome-${slug}-${new Date().toISOString().slice(0, 10)}.json`
+    );
+  };
+
+  const handleExportAll = async () => {
+    setShowExportMenu(false);
+    const allItems = [
+      ...zones.map(z => ({ zoneId: z.zoneId, name: z.name })),
+      ...(dhw ? [{ zoneId: dhw.dhwId, name: 'Hot Water' }] : []),
+    ];
+    const missing = allItems.filter(item => !useHeatingStore.getState().schedules[item.zoneId]);
+    for (const item of missing) {
+      await fetchScheduleForZone(item.zoneId, true, false);
+    }
+    const finalSchedules = useHeatingStore.getState().schedules;
+    const canonicalIds = new Set(allItems.map(i => i.zoneId));
+    const filtered = Object.fromEntries(Object.entries(finalSchedules).filter(([id]) => canonicalIds.has(id)));
+    triggerDownload(
+      { exportedAt: new Date().toISOString(), version: 1, schedules: filtered },
+      `evohome-schedules-${new Date().toISOString().slice(0, 10)}.json`
+    );
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string);
+        const raw: Record<string, any> = parsed?.schedules ?? parsed;
+        if (typeof raw !== 'object' || Array.isArray(raw)) throw new Error('Invalid file format');
+        let zoneCount = 0;
+        let hasDhw = false;
+        for (const [id, z] of Object.entries(raw)) {
+          if (typeof z?.name !== 'string' || !Array.isArray(z?.schedule)) throw new Error(`Invalid data for zone: ${id}`);
+          if ((z.name as string).toLowerCase().replace(/[\s_]/g, '') === 'hotwater') hasDhw = true;
+          else zoneCount++;
+        }
+        if (zoneCount === 0 && !hasDhw) throw new Error('No zones found in file');
+        const parts = [];
+        if (zoneCount > 0) parts.push(`${zoneCount} zone${zoneCount !== 1 ? 's' : ''}`);
+        if (hasDhw) parts.push('Hot Water');
+        const current = useHeatingStore.getState().schedules;
+        setSchedules({ ...current, ...raw });
+        setNotification({ type: 'success', message: `Imported ${parts.join(' + ')} — review and hit Save to push to controller` });
+      } catch (err: any) {
+        setNotification({ type: 'error', message: err?.message ?? 'Import failed' });
+      }
+      e.target.value = '';
+      setTimeout(() => setNotification(null), 6000);
+    };
+    reader.readAsText(file);
+  };
 
   const handleZoneRefresh = async (zoneId: string) => {
     const now = Date.now();
@@ -292,6 +370,15 @@ export const Scheduler: React.FC = () => {
     await fetchScheduleForZone(zoneId, false, isForce);
     setLastRefreshTime(prev => ({ ...prev, [zoneId]: now }));
   };
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (!exportMenuRef.current?.contains(e.target as Node)) setShowExportMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showExportMenu]);
 
   useEffect(() => {
     if (viewMode === 'zone' && zones.length > 0 && !selectedZoneId) {
@@ -857,6 +944,47 @@ export const Scheduler: React.FC = () => {
             >+</button>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <div ref={exportMenuRef} className="relative">
+            <button
+              onClick={() => setShowExportMenu(v => !v)}
+              disabled={zones.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl text-xs font-black transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Export schedules to a JSON file"
+            >
+              <Download size={14} /><span className="hidden sm:inline ml-1">Export</span>
+            </button>
+            {showExportMenu && (
+              <div className="absolute bottom-full mb-2 right-0 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 min-w-[140px]">
+                <button
+                  onClick={handleExportZone}
+                  disabled={!selectedZoneId || !schedules[selectedZoneId]}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <User size={13} />Current Zone
+                </button>
+                <div className="h-px bg-slate-100 dark:bg-slate-700 mx-2" />
+                <button
+                  onClick={handleExportAll}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  <Download size={13} />All Zones
+                </button>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              if (isDirty && !window.confirm('You have unsaved changes. Importing will overwrite them. Continue?')) return;
+              fileInputRef.current?.click();
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl text-xs font-black transition-all"
+            title="Import schedules from a JSON file"
+          >
+            <Upload size={14} /><span className="hidden sm:inline ml-1">Import</span>
+          </button>
+          <input ref={fileInputRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImportFile} />
+        </div>
       </footer>
 
       {editingSlot && (() => {
@@ -960,12 +1088,24 @@ export const Scheduler: React.FC = () => {
       )}
 
       <div
-        className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${clipboard ? 'translate-y-0' : 'translate-y-full'}`}
+        className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${(clipboard || notification) ? 'translate-y-0' : 'translate-y-full'}`}
         style={{ backgroundColor: 'var(--notification-bg)', color: 'var(--notification-color)' }}
       >
-        <ClipboardCheck size={16} className="text-indigo-400 flex-shrink-0" />
-        <span className="text-xs font-bold uppercase tracking-widest">{clipboardMessage} — Ready to paste!</span>
-        <button onClick={() => { setClipboard(null); setClipboardMessage(null); }} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Clear clipboard"><X size={16} /></button>
+        {clipboard ? (
+          <>
+            <ClipboardCheck size={16} className="text-indigo-400 flex-shrink-0" />
+            <span className="text-xs font-bold uppercase tracking-widest">{clipboardMessage} — Ready to paste!</span>
+            <button onClick={() => { setClipboard(null); setClipboardMessage(null); }} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Clear clipboard"><X size={16} /></button>
+          </>
+        ) : notification ? (
+          <>
+            {notification.type === 'error'
+              ? <X size={16} className="text-red-400 flex-shrink-0" />
+              : <Upload size={16} className="text-emerald-400 flex-shrink-0" />}
+            <span className="text-xs font-bold uppercase tracking-widest">{notification.message}</span>
+            <button onClick={() => setNotification(null)} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Dismiss"><X size={16} /></button>
+          </>
+        ) : null}
       </div>
     </section>
   );

@@ -76,6 +76,17 @@ When a day row shows **"Add first slot"**, clicking it bootstraps a full-day slo
 ### Saving Changes
 Modifications remain local to the browser session until the **Save** button is clicked. This action pushes the updated weekly schedule to the evohome controller.
 
+### Exporting and Importing Schedules
+
+The **Export** button (bottom-right of the scheduler) opens a dropdown with two options:
+
+*   **Current Zone** — downloads the selected zone's schedule as a JSON file (e.g. `evohome-living-room-2026-04-27.json`). Only available when a zone is selected in Zone View.
+*   **All Zones** — downloads schedules for every zone and DHW as a single JSON file (e.g. `evohome-schedules-2026-04-27.json`). Any zones not yet loaded into memory are fetched automatically before the download begins.
+
+The **Import** button loads schedules from a previously exported JSON file. Imported schedules are merged into the current session — zones present in the file overwrite their in-memory counterparts while any zones absent from the file are left unchanged. The Save button is enabled after a successful import only if the imported data differs from the last saved state; clicking Save then pushes all changes to the controller.
+
+If there are unsaved changes when Import is clicked, a confirmation prompt is shown before the file picker opens.
+
 ## Status Indicators
 
 The system provides real-time connection feedback via status badges.
