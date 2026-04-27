@@ -33,6 +33,11 @@ export class MqttProvider implements HeatingProvider {
   private pendingSchedules: Map<string, (schedule: ZoneSchedule) => void> = new Map();
   private scheduleTimestamps: Record<string, Date> = {};
 
+  // Per-day save ACK tracking
+  private pendingCommandResolve: ((result: { success: boolean; raw: string }) => void) | null = null;
+  private pendingCommandConfirmTimeout: NodeJS.Timeout | null = null;
+  private pendingCommandExpectedIdx: string | null = null;
+
   // Derived topics
   private base: string;
   private commandTopic: string;
@@ -216,9 +221,32 @@ export class MqttProvider implements HeatingProvider {
     }
 
     try {
-        // 2. Command status
+        // 2. Command status — resolve any pending per-day save ACK
         if (topic === this.statusTopic) {
-            Logger.debug(`MQTT: Last command status: ${payload}`);
+            Logger.debug(`MQTT: Command status: ${payload}`);
+            if (this.pendingCommandResolve) {
+                let isError = false;
+                try {
+                    const data = JSON.parse(payload);
+                    // If we can identify the zone, ignore messages for other zones
+                    if (this.pendingCommandExpectedIdx && data.zone_idx && data.zone_idx !== this.pendingCommandExpectedIdx) {
+                        return;
+                    }
+                    const statusStr = (data.status || '').toLowerCase();
+                    isError = statusStr.includes('error') || statusStr.includes('fail');
+                } catch {
+                    const lower = payload.toLowerCase();
+                    isError = lower.includes('"status":"error') || lower.includes('error:');
+                }
+                const resolver = this.pendingCommandResolve;
+                this.pendingCommandResolve = null;
+                this.pendingCommandExpectedIdx = null;
+                if (this.pendingCommandConfirmTimeout) {
+                    clearTimeout(this.pendingCommandConfirmTimeout);
+                    this.pendingCommandConfirmTimeout = null;
+                }
+                resolver({ success: !isError, raw: payload });
+            }
             return;
         }
 
@@ -504,15 +532,44 @@ export class MqttProvider implements HeatingProvider {
     });
   }
 
+  private awaitCommandConfirmation(hexZoneIdx: string, timeoutMs: number): Promise<{ success: boolean; raw: string }> {
+    return new Promise((resolve) => {
+      this.pendingCommandExpectedIdx = hexZoneIdx;
+      this.pendingCommandConfirmTimeout = setTimeout(() => {
+        this.pendingCommandResolve = null;
+        this.pendingCommandExpectedIdx = null;
+        this.pendingCommandConfirmTimeout = null;
+        resolve({ success: false, raw: `No gateway ACK within ${timeoutMs}ms` });
+      }, timeoutMs);
+      this.pendingCommandResolve = resolve;
+    });
+  }
+
   async saveScheduleForZone(zoneId: string, schedule: ZoneSchedule): Promise<void> {
     const hexId = zoneId === 'dhw' ? 'HW' : parseInt(zoneId, 10).toString(16).toUpperCase().padStart(2, '0');
     const isDhw = hexId === 'HW';
-    const delay = this.config.saveDayDelayMs ?? 1500;
+    const delayMs = this.config.saveDayDelayMs ?? 2500;
+    const confirmTimeoutMs = this.config.saveConfirmTimeoutMs ?? 30000;
+    const failedDays: string[] = [];
+
     for (let i = 0; i < schedule.schedule.length; i++) {
-      const command = this.translateDayToMqtt(hexId, schedule.schedule[i], isDhw);
+      const ds = schedule.schedule[i];
+      const command = this.translateDayToMqtt(hexId, ds, isDhw);
+      const confirmPromise = this.awaitCommandConfirmation(hexId, confirmTimeoutMs);
       this.client?.publish(this.commandTopic, JSON.stringify(command));
-      Logger.debug(`MQTT: Saved ${schedule.schedule[i].dayOfWeek} for zone ${zoneId} (day ${i + 1}/${schedule.schedule.length})`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      Logger.debug(`MQTT: → set_schedule ${ds.dayOfWeek} zone ${schedule.name} (${i + 1}/${schedule.schedule.length})`);
+      const { success, raw } = await confirmPromise;
+      if (success) {
+        Logger.info(`MQTT: ✓ ${ds.dayOfWeek} confirmed for zone ${schedule.name}`);
+      } else {
+        Logger.warn(`MQTT: ✗ ${ds.dayOfWeek} failed for zone ${schedule.name}: ${raw}`);
+        failedDays.push(ds.dayOfWeek);
+      }
+      await new Promise(r => setTimeout(r, delayMs));
+    }
+
+    if (failedDays.length > 0) {
+      throw new Error(`Days without confirmation: ${failedDays.join(', ')}`);
     }
   }
 

@@ -129,7 +129,13 @@ export const useHeatingApi = () => {
     schedules: Record<string, ZoneSchedule>,
     onProgress?: (message: string) => void
   ): Promise<{ saved: string[]; failed: string[] }> => {
-    const changed = Object.entries(schedules).filter(([id, s]) => !isEqual(s, originalSchedules[id]));
+    const changed = Object.entries(schedules)
+      .filter(([id, s]) => !isEqual(s, originalSchedules[id]))
+      .sort(([a], [b]) => {
+        if (a === 'dhw') return 1;
+        if (b === 'dhw') return -1;
+        return parseInt(a, 10) - parseInt(b, 10);
+      });
     if (changed.length === 0) return { saved: [], failed: [] };
 
     clearSaveFailedZones();
@@ -146,9 +152,10 @@ export const useHeatingApi = () => {
         await saveApi.post(`/savescheduleforzone/${zoneId}`, schedule);
         setZoneSchedule(zoneId, schedule, true);
         saved.push(schedule.name);
-      } catch {
+      } catch (err: any) {
         markSaveZoneFailed(zoneId);
-        failed.push(schedule.name);
+        const detail = err?.response?.data?.error || err?.message || '';
+        failed.push(detail ? `${schedule.name}: ${detail}` : schedule.name);
       }
     }
 

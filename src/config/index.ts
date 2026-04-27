@@ -32,6 +32,7 @@ export const config = {
     scheduleTimeout: parseInt(process.env.MQTT_SCHEDULE_TIMEOUT || '10000', 10),
     scheduleStaleThresholdDays: parseInt(process.env.MQTT_SCHEDULE_STALE_DAYS || '7', 10),
     saveDayDelayMs: parseInt(process.env.MQTT_SAVE_DAY_DELAY_MS || '2500', 10),
+    saveConfirmTimeoutMs: parseInt(process.env.MQTT_SAVE_CONFIRM_TIMEOUT || '30000', 10),
   },
 
   scheduler: {

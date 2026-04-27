@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2, Download, Upload } from 'lucide-react';
+import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2, Download, Upload, ChevronDown } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -281,8 +281,11 @@ export const Scheduler: React.FC = () => {
   const [, setTick] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const saveMenuRef = useRef<HTMLDivElement>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showSaveMenu, setShowSaveMenu] = useState(false);
+  const [saveReport, setSaveReport] = useState<{ saved: string[]; failed: string[] } | null>(null);
 
   const todayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
   const currentMinutePct = (new Date().getHours() * 60 + new Date().getMinutes()) / 1440 * 100;
@@ -362,18 +365,39 @@ export const Scheduler: React.FC = () => {
     reader.readAsText(file);
   };
 
+  const finaliseSaveResult = (saved: string[], failed: string[]) => {
+    if (saved.length === 0 && failed.length === 0) { setNotification(null); return; }
+    const needsModal = failed.length > 0 || saved.length + failed.length > 4;
+    if (needsModal) {
+      setSaveReport({ saved, failed });
+      const brief = failed.length === 0
+        ? `Saved ${saved.length} zone${saved.length !== 1 ? 's' : ''} — see details`
+        : `${failed.length} zone${failed.length !== 1 ? 's' : ''} failed — see details`;
+      setNotification({ type: failed.length > 0 ? 'error' : 'success', message: brief });
+    } else if (failed.length === 0) {
+      setNotification({ type: 'success', message: `Saved: ${saved.join(', ')}` });
+    } else {
+      setNotification({ type: 'error', message: `Failed: ${failed.join(', ')}` });
+    }
+    setTimeout(() => setNotification(null), 8000);
+  };
+
   const handleSave = async () => {
+    setShowSaveMenu(false);
     setNotification({ type: 'success', message: 'Starting save...' });
     const { saved, failed } = await saveAllSchedules(schedules, (msg) => setNotification({ type: 'success', message: msg }));
-    if (saved.length === 0 && failed.length === 0) { setNotification(null); return; }
-    if (failed.length === 0) {
-      setNotification({ type: 'success', message: `Saved: ${saved.join(', ')}` });
-    } else if (saved.length === 0) {
-      setNotification({ type: 'error', message: `Save failed — ${failed.join(', ')}` });
-    } else {
-      setNotification({ type: 'error', message: `Saved ${saved.length} · Failed: ${failed.join(', ')}` });
-    }
-    setTimeout(() => setNotification(null), 7000);
+    finaliseSaveResult(saved, failed);
+  };
+
+  const handleSaveCurrentZone = async () => {
+    if (!selectedZoneId || !schedules[selectedZoneId]) return;
+    setShowSaveMenu(false);
+    setNotification({ type: 'success', message: `Saving ${schedules[selectedZoneId].name}...` });
+    const { saved, failed } = await saveAllSchedules(
+      { [selectedZoneId]: schedules[selectedZoneId] },
+      (msg) => setNotification({ type: 'success', message: msg })
+    );
+    finaliseSaveResult(saved, failed);
   };
 
   const handleZoneRefresh = async (zoneId: string) => {
@@ -393,6 +417,15 @@ export const Scheduler: React.FC = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [showExportMenu]);
+
+  useEffect(() => {
+    if (!showSaveMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (!saveMenuRef.current?.contains(e.target as Node)) setShowSaveMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showSaveMenu]);
 
   useEffect(() => {
     if (viewMode === 'zone' && zones.length > 0 && !selectedZoneId) {
@@ -869,9 +902,36 @@ export const Scheduler: React.FC = () => {
               <span className="hidden sm:inline">Refresh All</span>
             </button>
           )}
-          <button onClick={handleSave} disabled={!isDirty} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`} title="Save all pending schedule changes to the controller">
-            <Save size={14} /><span className="hidden sm:inline">Save</span>
-          </button>
+          <div ref={saveMenuRef} className="relative">
+            <button
+              onClick={() => viewMode === 'zone' && isDirty ? setShowSaveMenu(v => !v) : handleSave()}
+              disabled={!isDirty}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${isDirty ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
+              title="Save pending schedule changes to the controller"
+            >
+              <Save size={14} />
+              <span className="hidden sm:inline">Save</span>
+              {viewMode === 'zone' && isDirty && <ChevronDown size={11} className="-mr-0.5" />}
+            </button>
+            {showSaveMenu && viewMode === 'zone' && isDirty && (
+              <div className="absolute top-full mt-2 right-0 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 min-w-[150px]">
+                <button
+                  onClick={handleSaveCurrentZone}
+                  disabled={!selectedZoneId || !schedules[selectedZoneId]}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <User size={13} />Current Zone
+                </button>
+                <div className="h-px bg-slate-100 dark:bg-slate-700 mx-2" />
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-2 w-full px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  <Save size={13} />All Zones
+                </button>
+              </div>
+            )}
+          </div>
           <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-0.5" />
           <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-xl">
             <button onClick={() => setViewMode('zone')} className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all ${viewMode === 'zone' ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-500 dark:text-slate-400'}`}><User size={13} className="inline sm:mr-1"/><span className="hidden sm:inline">Zones</span></button>
@@ -1100,6 +1160,43 @@ export const Scheduler: React.FC = () => {
             </button>
           </div>
         </FloatingPortal>
+      )}
+
+      {saveReport && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto border border-slate-100 dark:border-slate-700">
+            <h3 className="text-base font-black text-slate-800 dark:text-slate-100 mb-4">Save Results</h3>
+            {saveReport.saved.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-2">Saved ({saveReport.saved.length})</p>
+                {saveReport.saved.map((name, i) => (
+                  <div key={i} className="flex items-start gap-2 py-1 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="text-emerald-500 flex-shrink-0 mt-0.5">✓</span>
+                    <span className="break-words">{name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {saveReport.failed.length > 0 && (
+              <div className="mb-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-500 dark:text-red-400 mb-2">Failed ({saveReport.failed.length})</p>
+                {saveReport.failed.map((name, i) => (
+                  <div key={i} className="flex items-start gap-2 py-1 text-sm text-slate-700 dark:text-slate-300">
+                    <span className="text-red-500 flex-shrink-0 mt-0.5">✗</span>
+                    <span className="break-words">{name}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-4">Full details are written to the server log.</p>
+            <button
+              onClick={() => setSaveReport(null)}
+              className="w-full py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
 
       <div

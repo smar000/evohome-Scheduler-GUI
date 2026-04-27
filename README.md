@@ -252,6 +252,7 @@ System behavior is managed via environment variables.
 | `MQTT_RECONNECT_PERIOD` | `5000` | Milliseconds between MQTT reconnection attempts. |
 | `MQTT_SCHEDULE_TIMEOUT` | `10000` | Milliseconds to wait for an MQTT schedule response. |
 | `MQTT_SAVE_DAY_DELAY_MS` | `2500` | Delay (ms) between successive per-day schedule publishes when saving via MQTT. The RF layer (0404 messages) needs time to acknowledge each day before the next arrives; increase for zones with many switchpoints or if the evogateway log shows errors after saves. |
+| `MQTT_SAVE_CONFIRM_TIMEOUT` | `30000` | Milliseconds to wait for the gateway to acknowledge each per-day schedule command on the `_lastcommand` topic. If no ACK arrives within this window the day is marked as failed. |
 | `SCHEDULER_TIME_RESOLUTION` | `10` | The granularity of the grid (in minutes). |
 | `SCHEDULER_DEFAULT_TEMP` | `20` | Default temperature for newly created slots. |
 
