@@ -2,7 +2,41 @@
   "permissions": {
     "allow": [
       "Bash(npx tsc --noEmit)",
-      "Read(//root/.claude/**)"
+      "Read(//root/.claude/**)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/refs/heads/main/README.md)",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/contents/\")",
+      "Bash(python3 -c \"import json,sys; [print\\(x[''''name''''], x[''''type'''']\\) for x in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/contents/docs\")",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/contents/src\")",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/main/README.md)",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/contents/src/ramses_rf\")",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/git/trees/main?recursive=1\")",
+      "Bash(python3 -c \":*)",
+      "Bash(curl -s \"https://api.github.com/repos/ramses-rf/ramses_rf/git/trees/master?recursive=1\")",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/README.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/schemas.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/transport/mqtt.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/schemas.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/entity_base.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/device_registry.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/gateway.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/system/zones.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_rf/dispatcher.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/gateway.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/logger.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/message.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/frame.py)",
+      "Bash(curl -s \"https://api.github.com/search/code?q=alias+repo:ramses-rf/ramses_rf+extension:py&per_page=20\" -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/packet.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/address.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/helpers.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_tx/ramses.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/docs/source/usage.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/docs/source/glossary.rst)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/client.py)",
+      "Bash(curl -s https://raw.githubusercontent.com/ramses-rf/ramses_rf/master/src/ramses_cli/client.py)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

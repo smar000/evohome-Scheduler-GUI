@@ -291,6 +291,12 @@ export const Scheduler: React.FC = () => {
   const currentMinutePct = (new Date().getHours() * 60 + new Date().getMinutes()) / 1440 * 100;
 
 
+  const compactTimestamp = () => {
+    const d = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  };
+
   const triggerDownload = (payload: object, filename: string) => {
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -310,7 +316,7 @@ export const Scheduler: React.FC = () => {
     const slug = zone.name.toLowerCase().replace(/\s+/g, '-');
     triggerDownload(
       { exportedAt: new Date().toISOString(), version: 1, schedules: { [selectedZoneId]: zone } },
-      `evohome-${slug}-${new Date().toISOString().slice(0, 10)}.json`
+      `evohome-sched-${slug}-${compactTimestamp()}.json`
     );
   };
 
@@ -329,7 +335,7 @@ export const Scheduler: React.FC = () => {
     const filtered = Object.fromEntries(Object.entries(finalSchedules).filter(([id]) => canonicalIds.has(id)));
     triggerDownload(
       { exportedAt: new Date().toISOString(), version: 1, schedules: filtered },
-      `evohome-schedules-${new Date().toISOString().slice(0, 10)}.json`
+      `evohome-sched-all-${compactTimestamp()}.json`
     );
   };
 
