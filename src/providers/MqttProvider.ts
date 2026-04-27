@@ -33,10 +33,8 @@ export class MqttProvider implements HeatingProvider {
   private pendingSchedules: Map<string, (schedule: ZoneSchedule) => void> = new Map();
   private scheduleTimestamps: Record<string, Date> = {};
 
-  // Per-day save ACK tracking
-  private pendingCommandResolve: ((result: { success: boolean; raw: string }) => void) | null = null;
-  private pendingCommandConfirmTimeout: NodeJS.Timeout | null = null;
-  private pendingCommandExpectedIdx: string | null = null;
+  // Save confirmation: resolves when zone_schedule arrives after a save command
+  private pendingSaveConfirm: Map<string, () => void> = new Map();
 
   // Derived topics
   private base: string;
@@ -221,32 +219,9 @@ export class MqttProvider implements HeatingProvider {
     }
 
     try {
-        // 2. Command status — resolve any pending per-day save ACK
+        // 2. Command status — informational only, evogateway does not publish here for set_schedule
         if (topic === this.statusTopic) {
             Logger.debug(`MQTT: Command status: ${payload}`);
-            if (this.pendingCommandResolve) {
-                let isError = false;
-                try {
-                    const data = JSON.parse(payload);
-                    // If we can identify the zone, ignore messages for other zones
-                    if (this.pendingCommandExpectedIdx && data.zone_idx && data.zone_idx !== this.pendingCommandExpectedIdx) {
-                        return;
-                    }
-                    const statusStr = (data.status || '').toLowerCase();
-                    isError = statusStr.includes('error') || statusStr.includes('fail');
-                } catch {
-                    const lower = payload.toLowerCase();
-                    isError = lower.includes('"status":"error') || lower.includes('error:');
-                }
-                const resolver = this.pendingCommandResolve;
-                this.pendingCommandResolve = null;
-                this.pendingCommandExpectedIdx = null;
-                if (this.pendingCommandConfirmTimeout) {
-                    clearTimeout(this.pendingCommandConfirmTimeout);
-                    this.pendingCommandConfirmTimeout = null;
-                }
-                resolver({ success: !isError, raw: payload });
-            }
             return;
         }
 
@@ -353,6 +328,17 @@ export class MqttProvider implements HeatingProvider {
                     this.scheduleTimestamps[pendingKey] = fetchedAt;
                     this.pendingSchedules.get(pendingKey)!(schedule);
                     this.pendingSchedules.delete(pendingKey);
+                }
+
+                // Resolve any pending save confirmation — zone_schedule published after RF success
+                const saveKey = this.pendingSaveConfirm.has(resolvedId) ? resolvedId
+                              : zoneId && this.pendingSaveConfirm.has(zoneId) ? zoneId
+                              : null;
+                if (saveKey) {
+                    Logger.info(`MQTT: ✓ zone_schedule confirmed for zone ${resolvedId} (RF success)`);
+                    const resolver = this.pendingSaveConfirm.get(saveKey)!;
+                    this.pendingSaveConfirm.delete(saveKey);
+                    resolver();
                 }
             }
             return;
@@ -532,16 +518,16 @@ export class MqttProvider implements HeatingProvider {
     });
   }
 
-  private awaitCommandConfirmation(hexZoneIdx: string, timeoutMs: number): Promise<{ success: boolean; raw: string }> {
-    return new Promise((resolve) => {
-      this.pendingCommandExpectedIdx = hexZoneIdx;
-      this.pendingCommandConfirmTimeout = setTimeout(() => {
-        this.pendingCommandResolve = null;
-        this.pendingCommandExpectedIdx = null;
-        this.pendingCommandConfirmTimeout = null;
-        resolve({ success: false, raw: `No gateway ACK within ${timeoutMs}ms` });
+  private awaitSaveConfirmation(zoneId: string, timeoutMs: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pendingSaveConfirm.delete(zoneId);
+        reject(new Error(`No zone_schedule confirmation within ${timeoutMs}ms`));
       }, timeoutMs);
-      this.pendingCommandResolve = resolve;
+      this.pendingSaveConfirm.set(zoneId, () => {
+        clearTimeout(timeout);
+        resolve();
+      });
     });
   }
 
@@ -555,17 +541,13 @@ export class MqttProvider implements HeatingProvider {
     const dayCount = schedule.schedule.length;
     const label = dayCount === 1 ? schedule.schedule[0].dayOfWeek : `all ${dayCount} days`;
 
-    const confirmPromise = this.awaitCommandConfirmation(hexId, confirmTimeoutMs);
+    // Register confirmation listener BEFORE publishing to avoid any race
+    const confirmPromise = this.awaitSaveConfirmation(zoneId, confirmTimeoutMs);
     this.client?.publish(this.commandTopic, JSON.stringify(command));
     Logger.debug(`MQTT: → set_schedule ${label} for zone ${schedule.name}`);
 
-    const { success, raw } = await confirmPromise;
-    if (success) {
-      Logger.info(`MQTT: ✓ ${label} confirmed for zone ${schedule.name}`);
-    } else {
-      Logger.warn(`MQTT: ✗ ${label} no confirmation for zone ${schedule.name}: ${raw}`);
-      throw new Error(raw);
-    }
+    await confirmPromise; // resolves when zone_schedule arrives post-RF; throws on timeout
+    Logger.info(`MQTT: ✓ ${label} confirmed for zone ${schedule.name}`);
 
     await new Promise(r => setTimeout(r, delayMs));
   }
