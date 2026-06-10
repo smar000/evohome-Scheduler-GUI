@@ -1,17 +1,17 @@
 {
   "name": "evo-webscheduler",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Evohome browser based schedule manager interface",
   "main": "server.js",
   "directories": {
     "lib": "lib"
   },
   "dependencies": {
-    "axios": "^1.13.5",
+    "axios": "^1.17.0",
     "dotenv": "^17.3.1",
     "express": "^5.0.0",
     "luxon": "^3.7.2",
-    "mqtt": "^5.15.0"
+    "mqtt": "^5.15.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
