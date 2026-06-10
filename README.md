@@ -76,6 +76,27 @@ When a day row shows **"Add first slot"**, clicking it bootstraps a full-day slo
 ### Saving Changes
 Modifications remain local to the browser session until the **Save** button is clicked. This action pushes the updated weekly schedule to the evohome controller.
 
+### Copying and Duplicating Schedules
+
+#### Per-row copy / paste
+Each schedule row carries a **Copy** icon (visible on hover, always visible on mobile). Clicking it captures that row's slot pattern to the in-session clipboard and highlights the source row in amber. A status bar slides up at the bottom of the screen confirming what was copied.
+
+While a row is on the clipboard:
+- Every other row in the same view shows a **Paste** icon — clicking it applies the copied pattern to that row only.
+- The source row itself shows a **Paste-all** icon — clicking it pastes the pattern to **every** row in the current view (all days for the current zone in Zone View; all zones for the current day in Day View).
+
+The clipboard is cleared by clicking the **×** in the status bar, or by copying a new row.
+
+#### Duplicate Zone / Duplicate Day
+The **Dup Zone** / **Dup Day** button in the scheduler footer (next to Export) performs a bulk duplicate of the currently visible context:
+
+| View | Button | Action |
+|------|--------|--------|
+| Zone View | **Dup Zone** | Copies the complete 7-day schedule of the currently selected zone to one or more other zones. |
+| Day View | **Dup Day** | Copies every zone's slot pattern for the currently selected day to one or more other days. |
+
+Clicking the button opens a picker listing the available targets (other zones or other days). Individual items can be ticked, or **All** selects every target at once. The **Apply** button is labelled with the number of selected targets and becomes active as soon as at least one target is chosen. A notification bar confirms the operation on completion.
+
 ### Exporting and Importing Schedules
 
 The **Export** button (bottom-right of the scheduler) opens a dropdown with two options:

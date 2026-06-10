@@ -245,11 +245,26 @@ The toolbar is rendered via `FloatingPortal` (from `@floating-ui/react`) anchore
 
 **Add first slot:** When a day row has no schedule data, it shows an "Add first slot" placeholder. Clicking it bootstraps a full-day switchpoint at `defaultTemp` (or Off for DHW), initialising the zone schedule structure if needed.
 
-### 5.5 MQTT Schedule Staleness
+### 5.5 Schedule Copy / Paste and Duplicate
+
+**Per-row clipboard** (`clipboard`, `clipboardSource`, `clipboardMessage` state)
+
+Each rendered row exposes Copy and Paste controls. `handleCopy` captures the source row's `switchpoints` array via a deep clone into `clipboard` state and records the row label in `clipboardSource` for amber highlighting. `handlePaste` deep-clones the clipboard back into the target day/zone via an Immer `produce` draft. `handlePasteToAll` pastes to every row in the current view: all days of the active zone (Zone View) or all zones for the active day (Day View).
+
+**Duplicate Zone / Duplicate Day** (`showDuplicateMenu`, `duplicateTargets` state)
+
+A footer-level "Dup Zone" / "Dup Day" button opens an inline popover listing all valid targets (other zones in Zone View, other days in Day View). `duplicateOptions` is derived on each render from `viewMode`, `zones`, `dhw`, and `selectedDay`/`selectedZoneId` — no additional persistent state is required. `handleApplyDuplicate` performs a single Immer `produce` pass:
+
+- *Zone View:* deep-clones the entire `schedule` array of the source zone into each selected target zone.
+- *Day View:* iterates every loaded zone and deep-clones the source day's `switchpoints` into each selected target day.
+
+The two mechanisms are independent: the per-row clipboard persists across duplicate operations and vice versa.
+
+### 5.6 MQTT Schedule Staleness
 
 Each zone's schedule carries a `fetchedAt` timestamp (populated from `zone_schedule_ts` MQTT topics or on explicit force-refresh). The Scheduler shows a staleness badge (`Xm/Xh/Xd ago`) coloured green/amber/red relative to `MQTT_SCHEDULE_STALE_DAYS`. A 1-minute interval ticker re-renders the badge. On zone selection, if the schedule is older than the threshold, an auto-refresh is triggered automatically.
 
-### 5.6 Responsive Strategy
+### 5.7 Responsive Strategy
 
 - **Mobile (< 640px):** Bottom-sheet popover replaces the desktop floating popover for slot editing.
 - **Always-visible copy/paste:** Row-level copy/paste controls remain visible on mobile where hover states are unavailable.
