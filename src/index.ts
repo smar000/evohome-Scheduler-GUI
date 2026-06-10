@@ -146,7 +146,7 @@ app.get('/rest/providers/status', (req, res) => {
 
 // Named provider: MQTT current status
 // GET /rest/mqtt/currentstatus[/dhw|system|<zone_label>][?refresh=1]
-app.get('/rest/mqtt/currentstatus/:item?', async (req, res) => {
+app.get('/rest/mqtt/currentstatus{/:item}', async (req, res) => {
     if (!mqttProvider) {
         return res.status(503).json({ error: hasValidMqttConfig() ? 'MQTT provider not initialized' : 'MQTT not configured' });
     }
@@ -185,7 +185,7 @@ app.get('/rest/mqtt/currentstatus/:item?', async (req, res) => {
 
 // Named provider: Cloud current status
 // GET /rest/cloud/currentstatus[/dhw|system|<zone_label>][?refresh=1]
-app.get('/rest/cloud/currentstatus/:item?', async (req, res) => {
+app.get('/rest/cloud/currentstatus{/:item}', async (req, res) => {
     if (!cloudProvider) {
         return res.status(503).json({ error: hasValidCloudConfig() ? 'Cloud provider not initialized' : 'Cloud not configured' });
     }
@@ -326,7 +326,7 @@ app.get('/rest/getsystemmode', async (req, res) => {
     }
 });
 
-app.get('/rest/getzones/:forItem?', async (req, res) => {
+app.get('/rest/getzones{/:forItem}', async (req, res) => {
     try {
         const { forItem } = req.params as any;
         const force = isRefresh(req.query.refresh);
@@ -354,7 +354,7 @@ app.get('/rest/getdhw', async (req, res) => {
 
 // Active-provider current status
 // GET /rest/getcurrentstatus[/dhw|system|<zone_label>][?refresh=1]
-app.get('/rest/getcurrentstatus/:forItem?', async (req, res) => {
+app.get('/rest/getcurrentstatus{/:forItem}', async (req, res) => {
     try {
         if (!activeProvider) throw new Error("Heating provider not initialized.");
         const { forItem } = req.params as any;
@@ -398,7 +398,7 @@ app.get('/rest/getallschedules', async (req, res) => {
     }
 });
 
-app.get('/rest/getscheduleforzone/:forItem?', async (req, res) => {
+app.get('/rest/getscheduleforzone{/:forItem}', async (req, res) => {
     try {
         const { forItem } = req.params as any;
         if (!forItem) return res.status(400).json({ error: "Missing zone name/ID" });
@@ -616,11 +616,11 @@ app.get('/rest/api', (req, res) => {
 </html>`);
 });
 
-app.get('/rest/*', (req, res) => {
+app.get('/rest/{*path}', (req, res) => {
     res.status(404).send("Endpoint not found.");
 });
 
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
     res.send('Page not found.');
 });
 
