@@ -16,7 +16,7 @@ classDiagram
         +getZonesStatus(force, cache)
         +getSystemStatus(force, cache)
         +getHotWaterStatus(force, cache)
-        +getAllSchedules()
+        +getAllSchedules(force)
         +getScheduleForId(id, force)
         +saveScheduleForZone(id, schedule)
         +setZoneSetpoint(id, temp, until)

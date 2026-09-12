@@ -36,3 +36,6 @@ Thumbs.db
 *.bak
 bak_*
 old_*
+
+# Local agent notes (not shared via repo)
+CLAUDE.md
