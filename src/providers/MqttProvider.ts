@@ -484,7 +484,23 @@ export class MqttProvider implements HeatingProvider {
     return this.dhw;
   }
 
-  async getAllSchedules(): Promise<Record<string, ZoneSchedule>> {
+  async getAllSchedules(force = false): Promise<Record<string, ZoneSchedule>> {
+    if (force) {
+        // Schedules aren't pushed live like zone/system status — each one has to be
+        // RQ'd from the controller individually, so a forced refresh means walking
+        // every known zone (+ dhw) through getScheduleForId. Sequential, to avoid
+        // flooding evogateway/the RF bus with simultaneous RQs; one zone timing out
+        // shouldn't stop the rest, so fall back to whatever's cached for it.
+        const ids = [...Object.keys(this.zones), ...(this.dhw ? ['dhw'] : [])];
+        for (const id of ids) {
+            try {
+                await this.getScheduleForId(id, true);
+            } catch (e: any) {
+                Logger.warn(`MQTT: Forced schedule refresh failed for zone ${id}: ${e.message}`);
+            }
+        }
+    }
+
     const result: Record<string, ZoneSchedule> = {};
     for (const [id, schedule] of Object.entries(this.schedules)) {
         // fetchedAt is embedded when _ts arrives; fall back to scheduleTimestamps for the

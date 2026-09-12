@@ -61,9 +61,10 @@ export interface HeatingProvider {
   getHotWaterStatus(): Promise<DhwStatus | null>;
 
   /**
-   * Get the full schedule for all zones.
+   * Get the full schedule for all zones. Pass force=true to bypass any cache
+   * and re-fetch every zone's schedule from the underlying source.
    */
-  getAllSchedules(): Promise<Record<string, ZoneSchedule>>;
+  getAllSchedules(force?: boolean): Promise<Record<string, ZoneSchedule>>;
 
   /**
    * Get the schedule for a single zone or DHW.
