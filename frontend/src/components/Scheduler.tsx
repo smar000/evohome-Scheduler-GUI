@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHeatingStore } from '../store/useHeatingStore';
 import { useHeatingApi } from '../api/useHeatingApi';
 import { ZoneSelector } from './ZoneSelector';
-import { Plus, Pencil, Save, X, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2, Download, Upload, ChevronDown, Layers } from 'lucide-react';
+import { Plus, Pencil, Save, Calendar, User, Copy, ClipboardCheck, ClipboardPaste, Clock, RefreshCw, Cloud, Cpu, Trash2, Download, Upload, ChevronDown, Layers } from 'lucide-react';
 import { produce } from 'immer';
 import { useFloating, FloatingPortal, offset, shift } from '@floating-ui/react';
 
@@ -254,7 +254,10 @@ const EditBottomSheet: React.FC<EditPopoverProps> = ({ initialTemp, startTime, e
 type ViewMode = 'zone' | 'day';
 
 export const Scheduler: React.FC = () => {
-  const { schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, saveFailedZones, uiConfig } = useHeatingStore();
+  const {
+    schedules, zones, dhw, setSchedules, isDirty, loading, selectedZoneId, setSelectedZoneId, provider, failedSchedules, saveFailedZones, uiConfig,
+    setNotification, clipboard, setClipboard, clipboardSource, setClipboardSource, setClipboardMessage,
+  } = useHeatingStore();
   const { saveAllSchedules, fetchScheduleForZone, fetchAllSchedulesSequentially, selectProvider } = useHeatingApi();
   
   const resolution = uiConfig?.timeResolution || 10;
@@ -263,9 +266,6 @@ export const Scheduler: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('zone');
   const [selectedDay, setSelectedDay] = useState<string>(DAYS[0]);
   const [editingSlot, setEditingSlot] = useState<{ day: string; element: HTMLElement; zoneId: string } | null>(null);
-  const [clipboard, setClipboard] = useState<any[] | null>(null);
-  const [clipboardSource, setClipboardSource] = useState<string | null>(null);
-  const [clipboardMessage, setClipboardMessage] = useState<string | null>(null);
   const [showProviderPopup, setShowProviderPopup] = useState(false);
   const [longPressTimer, setLongPressTimer] = useState<any | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<Record<string, number>>({});
@@ -282,7 +282,6 @@ export const Scheduler: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const saveMenuRef = useRef<HTMLDivElement>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const [saveReport, setSaveReport] = useState<{ saved: string[]; failed: string[] } | null>(null);
@@ -1309,26 +1308,10 @@ export const Scheduler: React.FC = () => {
         </div>
       )}
 
-      <div
-        className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${(clipboard || notification) ? 'translate-y-0' : 'translate-y-full'}`}
-        style={{ backgroundColor: 'var(--notification-bg)', color: 'var(--notification-color)' }}
-      >
-        {clipboard ? (
-          <>
-            <ClipboardCheck size={16} className="text-indigo-400 flex-shrink-0" />
-            <span className="text-xs font-bold uppercase tracking-widest">{clipboardMessage} — Ready to paste!</span>
-            <button onClick={() => { setClipboard(null); setClipboardMessage(null); }} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Clear clipboard"><X size={16} /></button>
-          </>
-        ) : notification ? (
-          <>
-            {notification.type === 'error'
-              ? <X size={16} className="text-red-400 flex-shrink-0" />
-              : <Upload size={16} className="text-emerald-400 flex-shrink-0" />}
-            <span className="text-xs font-bold uppercase tracking-widest">{notification.message}</span>
-            <button onClick={() => setNotification(null)} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Dismiss"><X size={16} /></button>
-          </>
-        ) : null}
-      </div>
+      {/* Clipboard-ready and notification feedback now render from the shared
+          bottom bar in App.tsx — see useHeatingStore's clipboard/notification
+          fields — so there's exactly one "fixed bottom-0" bar app-wide instead
+          of this one potentially stacking under/over App's own. */}
     </section>
   );
 };

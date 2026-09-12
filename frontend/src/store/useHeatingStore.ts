@@ -59,10 +59,19 @@ interface HeatingState {
   cloudSnapshot: ProviderSnapshot | null;
   providersStatus: ProvidersStatus | null;
 
-  // App-level notification bar (visible regardless of active tab) — distinct
-  // from Scheduler's own local save/import notification bar, which only
-  // matters while the scheduler is on screen.
-  globalNotification: { type: 'success' | 'error'; message: string } | null;
+  // Single shared bottom notification bar, rendered once in App.tsx so it's
+  // visible regardless of active tab (Scheduler and App-level code both post
+  // to this — kept in the store, not component-local, precisely so there's
+  // only ever one "fixed bottom-0" bar rather than two independently-shown
+  // ones stacking/hiding each other).
+  notification: { type: 'success' | 'error'; message: string } | null;
+  // Copied schedule slot(s), ready to paste — Scheduler-only concept, but
+  // lives here too so the shared bottom bar can show/clear it without
+  // reaching into Scheduler's component state. clipboardSource is the
+  // day/zone label copied FROM, used to highlight it in the grid.
+  clipboard: any[] | null;
+  clipboardSource: string | null;
+  clipboardMessage: string | null;
 
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
@@ -84,7 +93,10 @@ interface HeatingState {
   setMqttSnapshot: (snapshot: ProviderSnapshot | null) => void;
   setCloudSnapshot: (snapshot: ProviderSnapshot | null) => void;
   setProvidersStatus: (status: ProvidersStatus) => void;
-  setGlobalNotification: (n: { type: 'success' | 'error'; message: string } | null) => void;
+  setNotification: (n: { type: 'success' | 'error'; message: string } | null) => void;
+  setClipboard: (data: any[] | null) => void;
+  setClipboardSource: (source: string | null) => void;
+  setClipboardMessage: (message: string | null) => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -105,7 +117,10 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   mqttSnapshot: null,
   cloudSnapshot: null,
   providersStatus: null,
-  globalNotification: null,
+  notification: null,
+  clipboard: null,
+  clipboardSource: null,
+  clipboardMessage: null,
 
   setZones: (zones) => set({ zones }),
   setDhw: (dhw) => set({ dhw }),
@@ -143,5 +158,8 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setMqttSnapshot: (mqttSnapshot) => set({ mqttSnapshot }),
   setCloudSnapshot: (cloudSnapshot) => set({ cloudSnapshot }),
   setProvidersStatus: (providersStatus) => set({ providersStatus }),
-  setGlobalNotification: (globalNotification) => set({ globalNotification }),
+  setNotification: (notification) => set({ notification }),
+  setClipboard: (clipboard) => set({ clipboard }),
+  setClipboardSource: (clipboardSource) => set({ clipboardSource }),
+  setClipboardMessage: (clipboardMessage) => set({ clipboardMessage }),
 }));

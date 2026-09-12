@@ -44,7 +44,7 @@ export const useHeatingApi = () => {
     markSaveZoneFailed,
     clearSaveFailedZones,
     revertSchedules,
-    setGlobalNotification,
+    setNotification,
     setMqttSnapshot,
     setCloudSnapshot,
     setProvidersStatus,
@@ -251,14 +251,14 @@ export const useHeatingApi = () => {
     if (total === 0) return; // nothing was missing/forced — a silent no-op revert
     const plural = (n: number) => (n === 1 ? '' : 's');
     if (failed.length === 0) {
-        setGlobalNotification({ type: 'success', message: `${verb} ${succeeded.length} zone schedule${plural(succeeded.length)}` });
+        setNotification({ type: 'success', message: `${verb} ${succeeded.length} zone schedule${plural(succeeded.length)}` });
     } else {
-        setGlobalNotification({
+        setNotification({
             type: 'error',
             message: `${verb} ${succeeded.length} of ${total} zone schedule${plural(total)} — failed: ${failed.join(', ')}`,
         });
     }
-    setTimeout(() => setGlobalNotification(null), failed.length > 0 ? 10000 : 6000);
+    setTimeout(() => setNotification(null), failed.length > 0 ? 10000 : 6000);
   };
 
   // Runs the given zones through _downloadOneZoneSchedule one at a time

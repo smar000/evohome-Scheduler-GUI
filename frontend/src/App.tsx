@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHeatingApi } from './api/useHeatingApi';
 import { useHeatingStore } from './store/useHeatingStore';
-import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard, Cpu, Cloud, Sun, Moon, CheckCircle2, X } from 'lucide-react';
+import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard, Cpu, Cloud, Sun, Moon, CheckCircle2, ClipboardCheck, X } from 'lucide-react';
 import { Scheduler } from './components/Scheduler';
 
 // Normalise setpointMode strings from both providers into a short human label
@@ -23,7 +23,8 @@ function App() {
   const { fetchCurrentStatus, fetchAllSchedules, revertAllSchedules, forceDownloadAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
   const {
     zones, system, loading, loadingMessage, error, provider, setSelectedZoneId,
-    selectedZoneId, isDirty, globalNotification, setGlobalNotification,
+    selectedZoneId, isDirty, notification, setNotification,
+    clipboard, clipboardMessage, setClipboard, setClipboardSource, setClipboardMessage,
     mqttSnapshot, cloudSnapshot, providersStatus,
   } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
@@ -422,7 +423,19 @@ function App() {
         <Moon size={11} className="text-slate-400 dark:text-indigo-300" />
       </div>
 
-      <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${loading || provider?.error || globalNotification ? 'translate-y-0' : 'translate-y-full'} ${provider?.error || globalNotification?.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
+      {/*
+        Single shared bottom bar for the whole app (was previously duplicated:
+        this footer plus Scheduler's own local clipboard/notification bar,
+        both "fixed bottom-0 z-40" — whichever was later in the DOM silently
+        hid the other, e.g. a "Saved" notification vanishing behind this
+        footer the moment any background fetch set `loading`). Priority,
+        highest first: a provider connection error > an in-flight operation >
+        a pending clipboard paste > a transient notification. Lower-priority
+        items aren't lost when pre-empted — their state persists in the store
+        and they reappear once whatever outranked them clears, as long as
+        their own auto-dismiss timer hasn't already run out.
+      */}
+      <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${loading || provider?.error || clipboard || notification ? 'translate-y-0' : 'translate-y-full'} ${provider?.error || notification?.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
         {provider?.error ? (
             <div className="flex items-center gap-2">
                 <AlertCircle size={16} className="text-red-200" />
@@ -437,13 +450,19 @@ function App() {
                     {loadingMessage ? loadingMessage : `Retrieving data from ${provider?.name || 'Loading...'}...`}
                 </span>
             </div>
-        ) : globalNotification ? (
+        ) : clipboard ? (
             <>
-                {globalNotification.type === 'error'
+                <ClipboardCheck size={16} className="text-indigo-400 flex-shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-widest">{clipboardMessage} — Ready to paste!</span>
+                <button onClick={() => { setClipboard(null); setClipboardSource(null); setClipboardMessage(null); }} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Clear clipboard"><X size={16} /></button>
+            </>
+        ) : notification ? (
+            <>
+                {notification.type === 'error'
                     ? <AlertCircle size={16} className="text-red-200 flex-shrink-0" />
                     : <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />}
-                <span className="text-xs font-bold uppercase tracking-widest">{globalNotification.message}</span>
-                <button onClick={() => setGlobalNotification(null)} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Dismiss"><X size={16} /></button>
+                <span className="text-xs font-bold uppercase tracking-widest">{notification.message}</span>
+                <button onClick={() => setNotification(null)} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Dismiss"><X size={16} /></button>
             </>
         ) : null}
       </footer>
