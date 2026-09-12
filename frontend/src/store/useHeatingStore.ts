@@ -65,6 +65,10 @@ interface HeatingState {
   // only ever one "fixed bottom-0" bar rather than two independently-shown
   // ones stacking/hiding each other).
   notification: { type: 'success' | 'error'; message: string } | null;
+  // True while a bulk zone-schedule download (revert's missing-zone catch-up,
+  // or the forced re-download) is in flight — lets the Refresh All button
+  // switch to "Cancel" without reacting to unrelated loading states.
+  isRefreshRunning: boolean;
   // Copied schedule slot(s), ready to paste — Scheduler-only concept, but
   // lives here too so the shared bottom bar can show/clear it without
   // reaching into Scheduler's component state. clipboardSource is the
@@ -94,6 +98,7 @@ interface HeatingState {
   setCloudSnapshot: (snapshot: ProviderSnapshot | null) => void;
   setProvidersStatus: (status: ProvidersStatus) => void;
   setNotification: (n: { type: 'success' | 'error'; message: string } | null) => void;
+  setIsRefreshRunning: (v: boolean) => void;
   setClipboard: (data: any[] | null) => void;
   setClipboardSource: (source: string | null) => void;
   setClipboardMessage: (message: string | null) => void;
@@ -118,6 +123,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   cloudSnapshot: null,
   providersStatus: null,
   notification: null,
+  isRefreshRunning: false,
   clipboard: null,
   clipboardSource: null,
   clipboardMessage: null,
@@ -159,6 +165,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setCloudSnapshot: (cloudSnapshot) => set({ cloudSnapshot }),
   setProvidersStatus: (providersStatus) => set({ providersStatus }),
   setNotification: (notification) => set({ notification }),
+  setIsRefreshRunning: (isRefreshRunning) => set({ isRefreshRunning }),
   setClipboard: (clipboard) => set({ clipboard }),
   setClipboardSource: (clipboardSource) => set({ clipboardSource }),
   setClipboardMessage: (clipboardMessage) => set({ clipboardMessage }),

@@ -20,10 +20,10 @@ function formatMode(mode: string, until?: string): string {
 function normName(name: string) { return name.toLowerCase().trim(); }
 
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules, revertAllSchedules, forceDownloadAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
+  const { fetchCurrentStatus, fetchAllSchedules, revertAllSchedules, forceDownloadAllSchedules, cancelScheduleDownload, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
   const {
     zones, system, loading, loadingMessage, error, provider, setSelectedZoneId,
-    selectedZoneId, isDirty, notification, setNotification,
+    selectedZoneId, isDirty, notification, setNotification, isRefreshRunning,
     clipboard, clipboardMessage, setClipboard, setClipboardSource, setClipboardMessage,
     mqttSnapshot, cloudSnapshot, providersStatus,
   } = useHeatingStore();
@@ -221,15 +221,26 @@ function App() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={handleManualRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-all"
-            title="Refresh live status and revert zones to their last-loaded schedules (discards unsaved edits). Click twice quickly to force a full RF re-download instead."
-          >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh All</span>
-          </button>
+          {isRefreshRunning ? (
+            <button
+              onClick={cancelScheduleDownload}
+              className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl shadow-sm text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 transition-all"
+              title="Stop the in-progress schedule download"
+            >
+              <X size={18} />
+              <span className="hidden sm:inline">Cancel Refresh All</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleManualRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-all"
+              title="Refresh live status and revert zones to their last-loaded schedules (discards unsaved edits). Click twice quickly to force a full RF re-download instead."
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              <span className="hidden sm:inline">Refresh All</span>
+            </button>
+          )}
         </div>
       </header>
 

@@ -27,6 +27,13 @@ const saveApi = axios.create({
   timeout: 60000,
 });
 
+// Module-level (not component state) so it's a true singleton shared by every
+// useHeatingApi() call site, tracking the one bulk schedule download that can
+// ever be in flight at a time — set by _downloadSchedulesSequentially, read
+// by cancelScheduleDownload.
+let refreshAbortController: AbortController | null = null;
+let refreshCancelled = false;
+
 export const useHeatingApi = () => {
   const {
     setZones,
@@ -45,6 +52,7 @@ export const useHeatingApi = () => {
     clearSaveFailedZones,
     revertSchedules,
     setNotification,
+    setIsRefreshRunning,
     setMqttSnapshot,
     setCloudSnapshot,
     setProvidersStatus,
@@ -227,18 +235,20 @@ export const useHeatingApi = () => {
 
   // Downloads one zone's schedule directly (bypassing fetchScheduleForZone's
   // own setError — a single zone failing mid-bulk-refresh shouldn't trigger
-  // the app's full-page error view). Returns whether it succeeded, for the
-  // caller to tally into a final result.
-  const _downloadOneZoneSchedule = async (id: string, force: boolean): Promise<boolean> => {
+  // the app's full-page error view). A cancelled request is reported
+  // distinctly from a real failure, so it doesn't get marked failed or
+  // counted against the zone.
+  const _downloadOneZoneSchedule = async (id: string, force: boolean): Promise<'ok' | 'failed' | 'cancelled'> => {
     try {
         let url = `/getscheduleforzone/${id}`;
         if (force) url += '?refresh=true';
-        const response = await api.get(url);
+        const response = await api.get(url, { signal: refreshAbortController?.signal });
         setZoneSchedule(id, response.data, true);
-        return true;
-    } catch {
+        return 'ok';
+    } catch (err) {
+        if (axios.isCancel(err)) return 'cancelled';
         markScheduleFailed(id);
-        return false;
+        return 'failed';
     }
   };
 
@@ -265,7 +275,9 @@ export const useHeatingApi = () => {
   // (never in parallel — a single RF channel means concurrent RQs would
   // just collide), surfacing live per-zone progress via loadingMessage
   // (shown in the app's global footer) and a final tally via the
-  // notification bar.
+  // notification bar. Cancellable mid-run via cancelScheduleDownload, which
+  // both stops the loop before its next zone and aborts whichever request
+  // is currently in flight, so cancelling doesn't wait out a slow/stuck zone.
   const _downloadSchedulesSequentially = async (
     items: { id: string; name: string }[],
     force: boolean,
@@ -273,21 +285,49 @@ export const useHeatingApi = () => {
     reportVerb: string,   // past tense, e.g. "Loaded" / "Downloaded"
   ) => {
     if (items.length === 0) return;
+    refreshCancelled = false;
+    refreshAbortController = new AbortController();
+    setIsRefreshRunning(true);
     setLoading(true);
     const succeeded: string[] = [];
     const failed: string[] = [];
+    let cancelledEarly = false;
     try {
         for (let i = 0; i < items.length; i++) {
+            if (refreshCancelled) { cancelledEarly = true; break; }
             const item = items[i];
             setLoadingMessage(`${progressVerb} schedule: ${item.name} (${i + 1} of ${items.length})...`);
-            const ok = await _downloadOneZoneSchedule(item.id, force);
-            (ok ? succeeded : failed).push(item.name);
+            const outcome = await _downloadOneZoneSchedule(item.id, force);
+            if (outcome === 'cancelled') { cancelledEarly = true; break; }
+            (outcome === 'ok' ? succeeded : failed).push(item.name);
         }
     } finally {
         setLoading(false);
         setLoadingMessage(null);
+        setIsRefreshRunning(false);
+        refreshAbortController = null;
+    }
+
+    if (cancelledEarly) {
+        const plural = (n: number) => (n === 1 ? '' : 's');
+        setNotification({
+            type: 'error',
+            message: succeeded.length > 0
+                ? `Cancelled — ${reportVerb.toLowerCase()} ${succeeded.length} of ${items.length} zone schedule${plural(items.length)} before stopping`
+                : 'Cancelled — no zone schedules were downloaded',
+        });
+        setTimeout(() => setNotification(null), 8000);
+        return;
     }
     _reportScheduleDownload(succeeded, failed, reportVerb);
+  };
+
+  // Stops an in-progress bulk schedule download: prevents the next zone from
+  // starting, and aborts whichever request is currently in flight so the
+  // cancel feels immediate rather than waiting out that zone's timeout.
+  const cancelScheduleDownload = () => {
+    refreshCancelled = true;
+    refreshAbortController?.abort();
   };
 
   // "Refresh All" default behaviour: discard any unsaved edits and fall back to
@@ -411,6 +451,7 @@ export const useHeatingApi = () => {
     fetchScheduleForZone,
     revertAllSchedules,
     forceDownloadAllSchedules,
+    cancelScheduleDownload,
     fetchAllSchedulesSequentially,
     fetchDualStatus,
   };
