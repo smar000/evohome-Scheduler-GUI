@@ -298,10 +298,24 @@ export const useHeatingApi = () => {
   // nothing to revert to, so it still gets a real (non-forced, cache-if-available)
   // download.
   const revertAllSchedules = async () => {
-    const { zones, dhw, originalSchedules: original } = useHeatingStore.getState();
+    const { zones, dhw, originalSchedules: original, isDirty: wasDirty } = useHeatingStore.getState();
     revertSchedules();
     const items = [...zones.map(z => ({ id: z.zoneId, name: z.name })), ...(dhw ? [{ id: dhw.dhwId, name: 'Hot Water' }] : [])];
     const missing = items.filter(item => !original[item.id]);
+
+    if (missing.length === 0) {
+        // Nothing to download — acknowledge rather than silently doing nothing,
+        // so a click that looks like it did nothing doesn't feel broken.
+        setNotification({
+            type: 'success',
+            message: wasDirty
+                ? 'Discarded unsaved changes'
+                : "Already up to date — click Refresh All twice quickly to force a re-download from the controller",
+        });
+        setTimeout(() => setNotification(null), 6000);
+        return;
+    }
+
     await _downloadSchedulesSequentially(missing, false, 'Loading', 'Loaded');
   };
 
