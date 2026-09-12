@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useHeatingApi } from './api/useHeatingApi';
 import { useHeatingStore } from './store/useHeatingStore';
-import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard, Cpu, Cloud, Sun, Moon } from 'lucide-react';
+import { Thermometer, Droplets, Activity, RefreshCw, AlertCircle, LayoutDashboard, Cpu, Cloud, Sun, Moon, CheckCircle2, X } from 'lucide-react';
 import { Scheduler } from './components/Scheduler';
 
 // Normalise setpointMode strings from both providers into a short human label
@@ -20,10 +20,10 @@ function formatMode(mode: string, until?: string): string {
 function normName(name: string) { return name.toLowerCase().trim(); }
 
 function App() {
-  const { fetchCurrentStatus, fetchAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
+  const { fetchCurrentStatus, fetchAllSchedules, revertAllSchedules, forceDownloadAllSchedules, fetchScheduleForZone, selectProvider, fetchDualStatus } = useHeatingApi();
   const {
     zones, system, loading, loadingMessage, error, provider, setSelectedZoneId,
-    selectedZoneId,
+    selectedZoneId, isDirty, globalNotification, setGlobalNotification,
     mqttSnapshot, cloudSnapshot, providersStatus,
   } = useHeatingStore();
   const [activeTab, setActiveTab] = useState<'scheduler' | 'dashboard'>('scheduler');
@@ -94,9 +94,39 @@ function App() {
     if (selectedZoneId) localStorage.setItem('evoWeb:lastZoneId', selectedZoneId);
   }, [selectedZoneId]);
 
+  // Refresh All defaults to reverting zones to their last-loaded schedules (no RF
+  // traffic — see revertAllSchedules). Clicking again within REFRESH_CONFIRM_WINDOW_MS
+  // is treated as "no, I really mean it" and offers a genuine forced RF re-download
+  // of every zone's schedule after an explicit confirm, since that can take minutes.
+  const lastRefreshClickAt = React.useRef(0);
+  const REFRESH_CONFIRM_WINDOW_MS = 10000;
+
   const handleManualRefresh = async () => {
+    const now = Date.now();
+    const isRapidSecondClick = now - lastRefreshClickAt.current < REFRESH_CONFIRM_WINDOW_MS;
+    lastRefreshClickAt.current = now;
+
+    if (isRapidSecondClick) {
+      const confirmed = window.confirm(
+        "Force-download every zone's schedule from the controller over RF? This can take a couple of minutes and will overwrite any unsaved local changes."
+      );
+      if (!confirmed) return;
+    } else if (isDirty) {
+      // Only worth asking if there's actually something to lose.
+      const confirmed = window.confirm(
+        "This will discard your unsaved schedule changes and reload the last-loaded values. Continue?\n\n(Tip: click Refresh All twice quickly instead to force a full re-download from the controller.)"
+      );
+      if (!confirmed) return;
+    }
+
     await fetchCurrentStatus(true);
-    await fetchAllSchedules(true);
+
+    if (isRapidSecondClick) {
+      await forceDownloadAllSchedules();
+    } else {
+      await revertAllSchedules();
+    }
+
     if (activeTab === 'dashboard') await fetchDualStatus();
   };
 
@@ -194,7 +224,7 @@ function App() {
             onClick={handleManualRefresh}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-all"
-            title="Refresh live temperatures, modes and all zone schedules"
+            title="Refresh live status and revert zones to their last-loaded schedules (discards unsaved edits). Click twice quickly to force a full RF re-download instead."
           >
             <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
             <span className="hidden sm:inline">Refresh All</span>
@@ -392,7 +422,7 @@ function App() {
         <Moon size={11} className="text-slate-400 dark:text-indigo-300" />
       </div>
 
-      <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 ${loading || provider?.error ? 'translate-y-0' : 'translate-y-full'} ${provider?.error ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
+      <footer className={`fixed bottom-0 left-0 right-0 p-3 flex items-center justify-center gap-3 transition-all duration-500 z-40 ${loading || provider?.error || globalNotification ? 'translate-y-0' : 'translate-y-full'} ${provider?.error || globalNotification?.type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-900 text-white'}`}>
         {provider?.error ? (
             <div className="flex items-center gap-2">
                 <AlertCircle size={16} className="text-red-200" />
@@ -400,14 +430,22 @@ function App() {
                     {provider.name} Connection Error: <span className="text-red-100 font-black ml-1">{provider.error}</span>
                 </span>
             </div>
-        ) : (
+        ) : loading ? (
             <div className="flex items-center gap-2">
                 <RefreshCw size={16} className="animate-spin text-indigo-400" />
                 <span className="text-xs font-bold uppercase tracking-widest">
                     {loadingMessage ? loadingMessage : `Retrieving data from ${provider?.name || 'Loading...'}...`}
                 </span>
             </div>
-        )}
+        ) : globalNotification ? (
+            <>
+                {globalNotification.type === 'error'
+                    ? <AlertCircle size={16} className="text-red-200 flex-shrink-0" />
+                    : <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />}
+                <span className="text-xs font-bold uppercase tracking-widest">{globalNotification.message}</span>
+                <button onClick={() => setGlobalNotification(null)} className="ml-4 text-slate-400 hover:text-white transition-colors" title="Dismiss"><X size={16} /></button>
+            </>
+        ) : null}
       </footer>
     </div>
   );

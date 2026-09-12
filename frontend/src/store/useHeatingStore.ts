@@ -59,11 +59,17 @@ interface HeatingState {
   cloudSnapshot: ProviderSnapshot | null;
   providersStatus: ProvidersStatus | null;
 
+  // App-level notification bar (visible regardless of active tab) — distinct
+  // from Scheduler's own local save/import notification bar, which only
+  // matters while the scheduler is on screen.
+  globalNotification: { type: 'success' | 'error'; message: string } | null;
+
   setZones: (zones: ZoneStatus[]) => void;
   setDhw: (dhw: DhwStatus | null) => void;
   setSystem: (system: SystemStatus | null) => void;
   setInitialSchedules: (schedules: Record<string, ZoneSchedule>) => void;
   setSchedules: (schedules: Record<string, ZoneSchedule>) => void;
+  revertSchedules: () => void;
   setZoneSchedule: (zoneId: string, schedule: ZoneSchedule, isInitial?: boolean) => void;
   setLoading: (loading: boolean) => void;
   setLoadingMessage: (message: string | null) => void;
@@ -78,6 +84,7 @@ interface HeatingState {
   setMqttSnapshot: (snapshot: ProviderSnapshot | null) => void;
   setCloudSnapshot: (snapshot: ProviderSnapshot | null) => void;
   setProvidersStatus: (status: ProvidersStatus) => void;
+  setGlobalNotification: (n: { type: 'success' | 'error'; message: string } | null) => void;
 }
 
 export const useHeatingStore = create<HeatingState>((set, get) => ({
@@ -98,6 +105,7 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   mqttSnapshot: null,
   cloudSnapshot: null,
   providersStatus: null,
+  globalNotification: null,
 
   setZones: (zones) => set({ zones }),
   setDhw: (dhw) => set({ dhw }),
@@ -107,6 +115,8 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
     const original = get().originalSchedules;
     set({ schedules, isDirty: !isEqual(original, schedules) });
   },
+  // Discard any in-progress edits, restoring the last-loaded values — no network I/O.
+  revertSchedules: () => set((state) => ({ schedules: state.originalSchedules, isDirty: false })),
   setZoneSchedule: (zoneId: string, schedule: ZoneSchedule, isInitial = false) => {
     const schedules = produce(get().schedules, draft => {
         draft[zoneId] = schedule;
@@ -133,4 +143,5 @@ export const useHeatingStore = create<HeatingState>((set, get) => ({
   setMqttSnapshot: (mqttSnapshot) => set({ mqttSnapshot }),
   setCloudSnapshot: (cloudSnapshot) => set({ cloudSnapshot }),
   setProvidersStatus: (providersStatus) => set({ providersStatus }),
+  setGlobalNotification: (globalNotification) => set({ globalNotification }),
 }));

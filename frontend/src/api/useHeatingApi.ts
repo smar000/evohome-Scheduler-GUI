@@ -43,6 +43,8 @@ export const useHeatingApi = () => {
     markScheduleFailed,
     markSaveZoneFailed,
     clearSaveFailedZones,
+    revertSchedules,
+    setGlobalNotification,
     setMqttSnapshot,
     setCloudSnapshot,
     setProvidersStatus,
@@ -223,6 +225,94 @@ export const useHeatingApi = () => {
     }
   };
 
+  // Downloads one zone's schedule directly (bypassing fetchScheduleForZone's
+  // own setError — a single zone failing mid-bulk-refresh shouldn't trigger
+  // the app's full-page error view). Returns whether it succeeded, for the
+  // caller to tally into a final result.
+  const _downloadOneZoneSchedule = async (id: string, force: boolean): Promise<boolean> => {
+    try {
+        let url = `/getscheduleforzone/${id}`;
+        if (force) url += '?refresh=true';
+        const response = await api.get(url);
+        setZoneSchedule(id, response.data, true);
+        return true;
+    } catch {
+        markScheduleFailed(id);
+        return false;
+    }
+  };
+
+  // Surfaces the outcome of a bulk zone-schedule download via the global
+  // notification bar (visible on either tab) instead of the blocking
+  // full-page error view, since a partial failure shouldn't hide the rest
+  // of the app.
+  const _reportScheduleDownload = (succeeded: string[], failed: string[], verb: string) => {
+    const total = succeeded.length + failed.length;
+    if (total === 0) return; // nothing was missing/forced — a silent no-op revert
+    const plural = (n: number) => (n === 1 ? '' : 's');
+    if (failed.length === 0) {
+        setGlobalNotification({ type: 'success', message: `${verb} ${succeeded.length} zone schedule${plural(succeeded.length)}` });
+    } else {
+        setGlobalNotification({
+            type: 'error',
+            message: `${verb} ${succeeded.length} of ${total} zone schedule${plural(total)} — failed: ${failed.join(', ')}`,
+        });
+    }
+    setTimeout(() => setGlobalNotification(null), failed.length > 0 ? 10000 : 6000);
+  };
+
+  // Runs the given zones through _downloadOneZoneSchedule one at a time
+  // (never in parallel — a single RF channel means concurrent RQs would
+  // just collide), surfacing live per-zone progress via loadingMessage
+  // (shown in the app's global footer) and a final tally via the
+  // notification bar.
+  const _downloadSchedulesSequentially = async (
+    items: { id: string; name: string }[],
+    force: boolean,
+    progressVerb: string, // present continuous, e.g. "Loading" / "Downloading"
+    reportVerb: string,   // past tense, e.g. "Loaded" / "Downloaded"
+  ) => {
+    if (items.length === 0) return;
+    setLoading(true);
+    const succeeded: string[] = [];
+    const failed: string[] = [];
+    try {
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            setLoadingMessage(`${progressVerb} schedule: ${item.name} (${i + 1} of ${items.length})...`);
+            const ok = await _downloadOneZoneSchedule(item.id, force);
+            (ok ? succeeded : failed).push(item.name);
+        }
+    } finally {
+        setLoading(false);
+        setLoadingMessage(null);
+    }
+    _reportScheduleDownload(succeeded, failed, reportVerb);
+  };
+
+  // "Refresh All" default behaviour: discard any unsaved edits and fall back to
+  // whatever's already loaded, without touching the RF network (schedules aren't
+  // pushed live like zone/system status, so a real refresh has to RQ the controller
+  // per zone — see forceDownloadAllSchedules for the genuinely-forced path, gated
+  // behind an explicit confirm in the UI). A zone with nothing loaded yet has
+  // nothing to revert to, so it still gets a real (non-forced, cache-if-available)
+  // download.
+  const revertAllSchedules = async () => {
+    const { zones, dhw, originalSchedules: original } = useHeatingStore.getState();
+    revertSchedules();
+    const items = [...zones.map(z => ({ id: z.zoneId, name: z.name })), ...(dhw ? [{ id: dhw.dhwId, name: 'Hot Water' }] : [])];
+    const missing = items.filter(item => !original[item.id]);
+    await _downloadSchedulesSequentially(missing, false, 'Loading', 'Loaded');
+  };
+
+  // The genuine forced RF re-download — every zone, one at a time, gated
+  // behind the double-click confirm in the UI.
+  const forceDownloadAllSchedules = async () => {
+    const { zones, dhw } = useHeatingStore.getState();
+    const items = [...zones.map(z => ({ id: z.zoneId, name: z.name })), ...(dhw ? [{ id: dhw.dhwId, name: 'Hot Water' }] : [])];
+    await _downloadSchedulesSequentially(items, true, 'Downloading', 'Downloaded');
+  };
+
   const fetchAllSchedulesSequentially = async () => {
     const { zones, dhw } = useHeatingStore.getState();
     setLoading(true);
@@ -305,6 +395,8 @@ export const useHeatingApi = () => {
     selectProvider,
     refreshMqttMappings,
     fetchScheduleForZone,
+    revertAllSchedules,
+    forceDownloadAllSchedules,
     fetchAllSchedulesSequentially,
     fetchDualStatus,
   };
